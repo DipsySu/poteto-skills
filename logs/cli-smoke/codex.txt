@@ -1,0 +1,19 @@
+Reading additional input from stdin...
+OpenAI Codex v0.162.1
+--------
+workdir: /home/box/developer/poteto-skills
+model: gpt-6.1-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: ultra
+reasoning summaries: none
+session id: 01a15271-dbc8-7403-9812-42bebe600c83
+--------
+user
+Reply with exactly: CODEX_OK
+codex
+CODEX_OK
+tokens used
+1,971
+CODEX_OK
