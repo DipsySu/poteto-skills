@@ -3,3 +3,6 @@ __pycache__/
 /artifacts/
 logs/curator/
 /examples/todo-app/
+
+# raw CLI debug logs contain account info; kept outside the repo
+logs/**/*.debug.log
