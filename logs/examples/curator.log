@@ -1,0 +1,115 @@
+scratch: /tmp/poteto-examples-7cr39j99
+$ git init -q --initial-branch=main --template= /tmp/poteto-examples-7cr39j99/cache/cursor-plugins
+
+[exit 0; expected 0]
+$ git -C /tmp/poteto-examples-7cr39j99/cache/cursor-plugins add -A
+
+[exit 0; expected 0]
+$ git -C /tmp/poteto-examples-7cr39j99/cache/cursor-plugins -c user.name=example-dev -c user.email=dev@example.local -c commit.gpgsign=false commit -qm 'offline upstream fixture'
+
+[exit 0; expected 0]
+$ /home/box/developer/poteto-skills/skills/curator/scripts/upstream_diff.sh --repo /home/box/developer/poteto-skills --offline --json
+{
+  "upstream": {
+    "url": "/tmp/poteto-examples-7cr39j99/cache/cursor-plugins",
+    "branch": "main",
+    "head": "4f352b52da1c73753e6336b4977e59ca29e9c137",
+    "head_date": "2026-10-19T05:58:51Z",
+    "version": null,
+    "fetch": "skipped",
+    "clone": "/tmp/poteto-examples-7cr39j99/cache/cursor-plugins"
+  },
+  "snapshot": {
+    "dir": "/home/box/developer/poteto-skills/research/upstream",
+    "pinned_sha": "6b78e9f4e46c75d1697d837e51f07c2692e60b24",
+    "files_same": 17,
+    "commits_since": []
+  },
+  "changed": [
+    {
+      "file": "correct/SKILL.md",
+      "upstream_path": "pstack/skills/correct/SKILL.md",
+      "url": "https://github.com/cursor/plugins/blob/main/pstack/skills/correct/SKILL.md"
+    }
+  ],
+  "missing_upstream": [],
+  "new_skills": [
+    {
+      "name": "local-new",
+      "url": "https://github.com/cursor/plugins/tree/main/pstack/skills/local-new"
+    }
+  ],
+  "removed_skills": [],
+  "untracked_skills": [
+    "local-new"
+  ],
+  "first_run": true,
+  "changes": 2
+}
+
+[exit 0; expected 0]
+ASSERT PASS: offline diff detects a changed upstream skill against the snapshot
+ASSERT PASS: first offline diff reports a new skill absent from the snapshot
+ASSERT PASS: fake upstream maps every snapshotted source path correctly
+$ /home/box/developer/poteto-skills/skills/curator/scripts/curate.sh --propose --offline --repo /tmp/poteto-examples-7cr39j99/collection --date 2026-10-19
+[curate 05:58:51] mode=propose offline=1 no_fetch=0 repo=/tmp/poteto-examples-7cr39j99/collection cache=/tmp/poteto-examples-7cr39j99/cache
+[curate 05:58:51] upstream: 2 change(s), 1 changed file(s), head 4f352b52da1c
+[curate 05:58:52] wrote /tmp/poteto-examples-7cr39j99/collection/proposals/2026-10-19.md (offline, from the upstream diff)
+check_proposals: PASS: 2 proposal(s), 0 above prose, 2 prose/review (/tmp/poteto-examples-7cr39j99/collection/proposals/2026-10-19.md)
+[curate 05:58:52] done
+
+[exit 0; expected 0]
+ASSERT PASS: offline curate writes a proposal and execution log
+ASSERT PASS: proposal includes changed and new upstream evidence with source URLs
+$ /home/box/developer/poteto-skills/skills/curator/scripts/check_proposals.py /tmp/poteto-examples-7cr39j99/collection/proposals/2026-10-19.md --skills-dir /tmp/poteto-examples-7cr39j99/collection/skills --json
+{
+  "file": "/tmp/poteto-examples-7cr39j99/collection/proposals/2026-10-19.md",
+  "items": 2,
+  "deterministic": 0,
+  "prose_or_review": 2,
+  "problems": [],
+  "warnings": [],
+  "ok": true,
+  "proposals": [
+    {
+      "title": "1. Upstream changed: correct/SKILL.md",
+      "level": "prose",
+      "skill": "correct",
+      "urls": [
+        "https://github.com/cursor/plugins/blob/main/pstack/skills/correct/SKILL.md"
+      ],
+      "fetch": null
+    },
+    {
+      "title": "2. New upstream skill: local-new",
+      "level": "prose",
+      "skill": "collection",
+      "urls": [
+        "https://github.com/cursor/plugins/tree/main/pstack/skills/local-new"
+      ],
+      "fetch": null
+    }
+  ]
+}
+
+[exit 0; expected 0]
+$ /home/box/developer/poteto-skills/skills/curator/scripts/curate.sh --propose --offline --repo /tmp/poteto-examples-7cr39j99/collection --date 2026-10-20
+[curate 05:58:52] mode=propose offline=1 no_fetch=0 repo=/tmp/poteto-examples-7cr39j99/collection cache=/tmp/poteto-examples-7cr39j99/empty-cache
+upstream_diff: no cached clone at /tmp/poteto-examples-7cr39j99/empty-cache/cursor-plugins and nothing fetched; run once with network access
+[curate 05:58:52] ERROR: upstream_diff failed (exit 3); no proposal can be grounded in this run
+
+[exit 1; expected 1]
+ASSERT PASS: failed upstream diff cannot produce a false clean proposal
+$ /home/box/developer/poteto-skills/skills/curator/scripts/check_proposals.py /home/box/developer/poteto-skills/logs/examples/artifacts/curator/malformed-proposal.md
+FAIL  no proposal sections and no explicit No proposals outcome
+check_proposals: FAIL: 0 proposal(s), 0 above prose, 0 prose/review (/home/box/developer/poteto-skills/logs/examples/artifacts/curator/malformed-proposal.md)
+
+[exit 1; expected 1]
+ASSERT PASS: unstructured proposal text cannot pass as an empty proposal list
+ASSERT PASS: HTTP 401 fails the fetched-source acceptance gate (stubbed transport, no network)
+ASSERT PASS: HTTP 403 fails the fetched-source acceptance gate (stubbed transport, no network)
+ASSERT PASS: HTTP 429 fails the fetched-source acceptance gate (stubbed transport, no network)
+$ git -C /tmp/poteto-examples-7cr39j99/cache/cursor-plugins remote
+
+[exit 0; expected 0]
+ASSERT PASS: local upstream fixture has no git remotes

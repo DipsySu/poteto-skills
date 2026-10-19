@@ -1,0 +1,29 @@
+{
+  "file": "/tmp/poteto-examples-7cr39j99/todo-app/AGENTS.md",
+  "tables": 1,
+  "rules": [
+    {
+      "line": 5,
+      "rule": "Persist JSON only through store.py; use Store.add or Store.transition",
+      "enforced_by": "scripts/lint.sh",
+      "status": "enforced",
+      "reason": "names a check that runs"
+    },
+    {
+      "line": 6,
+      "rule": "Status changes follow open -> done -> archived",
+      "enforced_by": "tests/test_todo.py",
+      "status": "enforced",
+      "reason": "names a check that runs"
+    },
+    {
+      "line": 7,
+      "rule": "Keep error messages concise and useful",
+      "enforced_by": "prose in this document",
+      "status": "prose",
+      "reason": "enforced only by prose or human attention"
+    }
+  ],
+  "flagged": 1,
+  "ok": false
+}

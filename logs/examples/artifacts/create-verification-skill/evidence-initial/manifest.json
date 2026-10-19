@@ -1,0 +1,82 @@
+{
+  "app": "todo",
+  "run_id": "initial",
+  "written": "2026-10-19T05:58:47Z",
+  "files": [
+    {
+      "path": "001-health-http.json",
+      "bytes": 448,
+      "sha256": "5017d085f37091eb67e9898aec1af5c5bd886c5444d1c086a61cbd80eb1c7420"
+    },
+    {
+      "path": "002-create-todo-http.json",
+      "bytes": 528,
+      "sha256": "231c355a5bf296c8e8f2c04bc877e3d2981f8f667be3d46e0ed03831316b79bc"
+    },
+    {
+      "path": "003-create-todo-cli.json",
+      "bytes": 373,
+      "sha256": "d81def020a0dc1160e6695b32a3738cda2d8aefa86e67e48904118326ccc910a"
+    },
+    {
+      "path": "004-list-todos-http.json",
+      "bytes": 597,
+      "sha256": "842b4e1514e8dcc509a09e6cd8aca1bc075193ff162412ddfd41fa8d4c538e83"
+    },
+    {
+      "path": "005-list-todos-cli.json",
+      "bytes": 420,
+      "sha256": "1d34bb717e026596160688d9853e8b1544317df56f5deb3c1a4b7e21432b7754"
+    },
+    {
+      "path": "006-delete-todo-http.json",
+      "bytes": 486,
+      "sha256": "58f7e82be233f3f0ca1becbfacb7102ce3ca56c1d6062ea0b6d0d93da8664d71"
+    },
+    {
+      "path": "007-done-todo-http.json",
+      "bytes": 505,
+      "sha256": "82ba0ecad0f81e6de97d51f01ecbd7282e76a081859df97d66974c6bad96bbdd"
+    },
+    {
+      "path": "008-done-todo-http.json",
+      "bytes": 483,
+      "sha256": "101a3905ed4e7b99db0d3da549cae9b602d944d29771a3cbc0b52c31545aaf46"
+    },
+    {
+      "path": "009-done-todo-cli.json",
+      "bytes": 363,
+      "sha256": "5e248eee2093272a9eb87b407ae72ea3fee8bfdb61211c31744c18dca5f5cf30"
+    },
+    {
+      "path": "010-delete-todo-http.json",
+      "bytes": 508,
+      "sha256": "883a6bf8b0a4a2d30df4af6b0c107456f698ba7199b881cc84dd0ff85bcee826"
+    },
+    {
+      "path": "011-delete-todo-cli.json",
+      "bytes": 367,
+      "sha256": "2787131b47f7826fbf4a23a28b380ae9e424079795aba4c9b549016604798096"
+    },
+    {
+      "path": "012-list-todos-http.json",
+      "bytes": 605,
+      "sha256": "6fe822e3b6b3568d9be48b7cc637087fea5ac4577c68f96e62de954fb1343508"
+    },
+    {
+      "path": "013-data-snapshot/todos.json",
+      "bytes": 113,
+      "sha256": "92181a96bf85c7f223122c05ce5b1756935b9cd32cc63fe46b7a91f53572dbb5"
+    },
+    {
+      "path": "013-data-snapshot/todos.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "launch.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "rules": [
+    {
+      "id": "no-rows-append-outside-store",
+      "regex": "(?:\\brows\\.append\\b|\\bstore\\.path\\.write_text\\b)",
+      "include": [
+        "**/*.py"
+      ],
+      "exclude": [
+        "todo/store.py",
+        "**/tests/**",
+        "**/test/**",
+        "**/test_*.py",
+        "**/*_test.py",
+        "**/*_test.go",
+        "**/*.test.*",
+        "**/*.spec.*"
+      ],
+      "message": "Use `Store.add` instead of `rows.append`, `store.path.write_text` (todo/store.py owns this). Theme T1: store.py / bypassing / direct."
+    }
+  ],
+  "generated_by": "feedback-to-architecture/scripts/plan.py",
+  "source": "/tmp/poteto-examples-7cr39j99/feedback.json"
+}

@@ -1,4 +1,5 @@
 __pycache__/
 *.pyc
-artifacts/
+/artifacts/
 logs/curator/
+/examples/todo-app/

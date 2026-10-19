@@ -1,0 +1,118 @@
+scratch: /tmp/poteto-examples-7cr39j99
+$ /home/box/developer/poteto-skills/skills/feedback-to-architecture/scripts/collect_feedback.py --repo /tmp/poteto-examples-7cr39j99/todo-app --pr-comments /tmp/poteto-examples-7cr39j99/todo-app/review-comments.json --chat /tmp/poteto-examples-7cr39j99/todo-app/chat-feedback.md --out /tmp/poteto-examples-7cr39j99/feedback.json
+collect_feedback: wrote /tmp/poteto-examples-7cr39j99/feedback.json (3 chat, 6 commit, 4 review)
+
+[exit 0; expected 0]
+ASSERT PASS: every normalized feedback item has source provenance
+ASSERT PASS: collection includes commit, review and chat evidence
+$ /home/box/developer/poteto-skills/skills/feedback-to-architecture/scripts/plan.py /tmp/poteto-examples-7cr39j99/feedback.json --out-dir /tmp/poteto-examples-7cr39j99/plan
+{
+  "out_dir": "/tmp/poteto-examples-7cr39j99/plan",
+  "themes": 2,
+  "rules": [
+    "no-rows-append-outside-store"
+  ],
+  "proven": [
+    "no-rows-append-outside-store"
+  ],
+  "levels": {
+    "T1": "architecture",
+    "T2": "types"
+  },
+  "files": [
+    "/tmp/poteto-examples-7cr39j99/plan/REFACTOR_PLAN.md",
+    "/tmp/poteto-examples-7cr39j99/plan/lint-rules.json",
+    "/tmp/poteto-examples-7cr39j99/plan/plan.json"
+  ]
+}
+
+[exit 0; expected 0]
+ASSERT PASS: generated lint is proven against history
+ASSERT PASS: planner writes refactor plan and machine-readable lint rules
+$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-7cr39j99/plan/lint-rules.json --root /tmp/poteto-examples-7cr39j99/todo-app --json --rev dbd44008685859312aee6a60154fd0258c1c063b /tmp/poteto-examples-7cr39j99/todo-app/todo
+{
+  "ok": false,
+  "rules": [
+    "no-rows-append-outside-store"
+  ],
+  "files_scanned": 3,
+  "rev": "dbd44008685859312aee6a60154fd0258c1c063b",
+  "root": "/tmp/poteto-examples-7cr39j99/todo-app",
+  "failing": [
+    {
+      "rule": "no-rows-append-outside-store",
+      "path": "todo/api.py",
+      "line": 42,
+      "col": 17,
+      "message": "Use `Store.add` instead of `rows.append`, `store.path.write_text` (todo/store.py owns this). Theme T1: store.py / bypassing / direct.",
+      "text": "rows.append(row)"
+    },
+    {
+      "rule": "no-rows-append-outside-store",
+      "path": "todo/api.py",
+      "line": 43,
+      "col": 17,
+      "message": "Use `Store.add` instead of `rows.append`, `store.path.write_text` (todo/store.py owns this). Theme T1: store.py / bypassing / direct.",
+      "text": "store.path.write_text(json.dumps(rows))"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "no-rows-append-outside-store",
+      "path": "todo/api.py",
+      "line": 42,
+      "col": 17,
+      "message": "Use `Store.add` instead of `rows.append`, `store.path.write_text` (todo/store.py owns this). Theme T1: store.py / bypassing / direct.",
+      "text": "rows.append(row)"
+    },
+    {
+      "rule": "no-rows-append-outside-store",
+      "path": "todo/api.py",
+      "line": 43,
+      "col": 17,
+      "message": "Use `Store.add` instead of `rows.append`, `store.path.write_text` (todo/store.py owns this). Theme T1: store.py / bypassing / direct.",
+      "text": "store.path.write_text(json.dumps(rows))"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "updated": false
+  }
+}
+
+[exit 1; expected 1]
+ASSERT PASS: generated lint fires on the real direct-write mistake
+$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-7cr39j99/plan/lint-rules.json --root /tmp/poteto-examples-7cr39j99/todo-app --json /tmp/poteto-examples-7cr39j99/todo-app/todo
+{
+  "ok": true,
+  "rules": [
+    "no-rows-append-outside-store"
+  ],
+  "files_scanned": 3,
+  "rev": null,
+  "root": "/tmp/poteto-examples-7cr39j99/todo-app",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "updated": false
+  }
+}
+
+[exit 0; expected 0]
+ASSERT PASS: generated lint also passes the fixed HEAD
+ASSERT PASS: a failed fixed-revision replay never counts as proof

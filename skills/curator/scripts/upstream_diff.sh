@@ -12,7 +12,7 @@ Keeps a sparse, blob-filtered clone of cursor/plugins (pstack/ only) in $POTETO_
 and reports:
   changed           snapshot files whose upstream copy differs (with GitHub URLs)
   missing_upstream  snapshot files upstream no longer has at the expected path
-  new_skills        upstream skills added since the previous run (state in $POTETO_CACHE)
+  new_skills        upstream skills absent from research/upstream/ (including the first run)
   removed_skills    upstream skills gone since the previous run
   untracked_skills  upstream skills this collection has no snapshot of (informational)
   commits_since     upstream commits touching pstack/ since the sha pinned in research/NOTES.md
@@ -142,7 +142,7 @@ try:
 except (OSError, ValueError):
     pass
 skill_url = lambda n: f"https://github.com/cursor/plugins/tree/{branch}/pstack/skills/{n}"
-new = [{"name": n, "url": skill_url(n)} for n in current if prev is not None and n not in prev.get("skills", [])]
+new = [{"name": n, "url": skill_url(n)} for n in current if n not in tracked]
 removed = [{"name": n} for n in (prev or {}).get("skills", []) if n not in current]
 state_file.write_text(json.dumps({"skills": current, "head": head,
                                   "checked": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")}, indent=2))
@@ -171,7 +171,7 @@ if missing:
     for m in missing:
         print(f"  {m['file']} (looked for {', '.join(m['looked_for'])})")
 if report["first_run"]:
-    print("new skills: first run, baseline recorded (new skills are reported from the next run on)")
+    print("new skills absent from snapshot: " + ", ".join(n["name"] for n in new))
 else:
     print(f"new skills since last run ({len(new)}):" + "".join(f"\n  {n['name']:<40} {n['url']}" for n in new))
     if removed:

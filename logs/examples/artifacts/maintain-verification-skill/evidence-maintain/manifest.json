@@ -1,0 +1,82 @@
+{
+  "app": "todo",
+  "run_id": "maintain",
+  "written": "2026-10-19T05:58:48Z",
+  "files": [
+    {
+      "path": "001-health-http.json",
+      "bytes": 448,
+      "sha256": "db167c1526f570bb51669a567855afb2e0a15b976eae71c9b9f4d5ca50e6ee6f"
+    },
+    {
+      "path": "002-create-todo-http.json",
+      "bytes": 528,
+      "sha256": "5dd2ba06290aefac706bb4b43166e320ed1c24ba7af60c2015bd918f8b96c5e5"
+    },
+    {
+      "path": "003-create-todo-cli.json",
+      "bytes": 375,
+      "sha256": "d3c5e35cf7da1ac204bb9dd0e45a5b46a91eb19fc6b542054cbc92afbd0ee482"
+    },
+    {
+      "path": "004-list-todos-http.json",
+      "bytes": 597,
+      "sha256": "a5b9cb97cc9442f88b02b7a23d372c2d8141b2bd45335d0f0a757dec8adda1d9"
+    },
+    {
+      "path": "005-list-todos-cli.json",
+      "bytes": 422,
+      "sha256": "ea2fc9035c7f02aa024cc1f4d4458803c63c97334f11655174494c01411dce24"
+    },
+    {
+      "path": "006-delete-todo-http.json",
+      "bytes": 486,
+      "sha256": "988d349b384ab7b0994bc70ca4deadfd11232db3e30d56c92436876dd2ee82b3"
+    },
+    {
+      "path": "007-done-todo-http.json",
+      "bytes": 505,
+      "sha256": "66a49fed2c30421fb65353dc127905b19c2213b7b1d08bd240118b2b0ed3870d"
+    },
+    {
+      "path": "008-done-todo-http.json",
+      "bytes": 483,
+      "sha256": "fcbd9430d3bbb490bceb2f32e82e8cadd2894e1814a52bb7bd9eb3649a66c988"
+    },
+    {
+      "path": "009-done-todo-cli.json",
+      "bytes": 365,
+      "sha256": "9d97ae9872da377bde6f079cc00400817d520a30d6c27fc13aa306b1e978732b"
+    },
+    {
+      "path": "010-delete-todo-http.json",
+      "bytes": 508,
+      "sha256": "8c3bbe9dad1e4b97042ddfbbf205c9bf4fb9a0ec00f7604eb8220772b6de2b7c"
+    },
+    {
+      "path": "011-delete-todo-cli.json",
+      "bytes": 369,
+      "sha256": "a9a5f0da0b8e705ddb0b835f6e772a7a2b5db8d2fddd49a2239353c74dbadb2e"
+    },
+    {
+      "path": "012-list-todos-http.json",
+      "bytes": 605,
+      "sha256": "73ea56fffbc67c884b8d67631ca47681659abcf61980f8d461f3c92f69e58d10"
+    },
+    {
+      "path": "013-data-snapshot/todos.json",
+      "bytes": 113,
+      "sha256": "92181a96bf85c7f223122c05ce5b1756935b9cd32cc63fe46b7a91f53572dbb5"
+    },
+    {
+      "path": "013-data-snapshot/todos.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "launch.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

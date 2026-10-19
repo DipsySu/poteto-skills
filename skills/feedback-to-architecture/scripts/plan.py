@@ -12,7 +12,7 @@ For themes where the evidence names a bad pattern and the fix (from review
 wording like "don't X, use Y" and from fix-commit diffs: removed lines = bad,
 added lines = good), it writes a patlint rule to DIR/lint-rules.json. Unless
 --no-prove, it replays every rule against the repo's own history: a rule is
-`proven` when it reports more hits at the mistake revision than at the fixed
+`proven` when it reports hits at the mistake revision and zero at the fixed
 revision (fix commit: sha^ vs sha; reverted commit: sha vs sha^).
 
 Outputs: DIR/REFACTOR_PLAN.md, DIR/lint-rules.json, DIR/plan.json.
@@ -21,6 +21,8 @@ Needs the sibling `correct` skill (mine_mistakes.py, patlint.py).
 from __future__ import annotations
 
 import argparse
+import ast
+import tempfile
 import datetime as dt
 import json
 import re
@@ -182,7 +184,7 @@ def owner_module(good: str) -> str | None:
     return None
 
 
-def derive_rule(n: int, title: str, items: list[dict], bad: list[str], good: list[str]):
+def derive_rule(n: int, title: str, items: list[dict], bad: list[str], good: list[str], repo: Path | None = None):
     bad = [b for b in bad if b.removesuffix("()") not in {g.removesuffix("()") for g in good}][:3]
     if not bad:
         return None, "no bad code pattern named in the evidence"
@@ -194,6 +196,18 @@ def derive_rule(n: int, title: str, items: list[dict], bad: list[str], good: lis
     exclude = list(TEST_GLOBS)
     owner = owner_module(good[0])
     owner_globs = [f"**/{owner}.{e}" for e, _ in exts.most_common(2)] if owner else []
+    # Resolve a named class/function to its real source, rather than guessing Store.py.
+    if repo and owner:
+        result = subprocess.run(["git", "-C", str(repo), "ls-files", "--", "*.py"], capture_output=True, text=True)
+        for rel in result.stdout.splitlines():
+            try:
+                tree = ast.parse((repo / rel).read_text())
+            except (OSError, SyntaxError):
+                continue
+            if Path(rel).stem == owner or any(isinstance(node, (ast.ClassDef, ast.FunctionDef)) and node.name == owner
+                                             for node in tree.body):
+                owner_globs = [rel]
+                break
     exclude = owner_globs + exclude
     parts = ["\\b" + re.escape(b.removesuffix("()")) + "\\b" for b in bad]
     regex = parts[0] if len(parts) == 1 else "(?:" + "|".join(parts) + ")"
@@ -242,7 +256,7 @@ def prove(rule: dict, items: list[dict], rules_file: Path, repo: Path) -> dict:
         bad_rev, good_rev = revs
         before, cmd, where = count_hits(patlint_py, rules_file, repo, rule["id"], bad_rev, paths)
         after, _, _ = count_hits(patlint_py, rules_file, repo, rule["id"], good_rev, paths)
-        ok = before is not None and before > (after or 0)
+        ok = before is not None and after is not None and before > 0 and after == 0
         proof["replays"].append({"commit": it["ref"][:10], "kind": it.get("kind"), "mistake_rev": bad_rev,
                                  "fixed_rev": good_rev, "hits_at_mistake": before, "hits_at_fixed": after,
                                  "where": where, "cmd": cmd, "distinguishes": ok})
@@ -324,7 +338,25 @@ def main(argv: list[str] | None = None) -> int:
         title = " / ".join(c["signature"][:3]) or f"theme {n}"
         bad, good, votes = vote_tokens(members)
         level, why, why_not = choose_level(members, bad, good)
-        rule, no_rule = derive_rule(n, title, members, bad, good)
+        rule, no_rule = derive_rule(n, title, members, bad, good, repo)
+        if rule and can_prove:
+            # Diff identifiers are hypotheses: serialization and reads may be innocent.
+            # Keep only patterns that fail on history and pass on the fixed revision.
+            # Existing HEAD hits remain visible for an explicit ratchet baseline.
+            proven_bad = []
+            with tempfile.TemporaryDirectory(prefix="plan-proof-") as temp:
+                candidate_file = Path(temp) / "rules.json"
+                for token in bad:
+                    candidate, _ = derive_rule(n, title, members, [token], good, repo)
+                    if not candidate:
+                        continue
+                    candidate_file.write_text(json.dumps({"rules": [candidate]}))
+                    proof = prove(candidate, members, candidate_file, repo)
+                    if proof["proven"]:
+                        proven_bad.append(token)
+            rule, no_rule = derive_rule(n, title, members, proven_bad, good, repo)
+            if not rule:
+                no_rule = "candidate patterns did not distinguish a real mistake from the fixed code"
         if rule:
             used = {r["id"] for r in rules}
             if rule["id"] in used:

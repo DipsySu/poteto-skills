@@ -1,0 +1,24 @@
+{
+  "feature": "create-todo",
+  "kind": "http",
+  "method": "POST",
+  "url": "http://127.0.0.1:60547/todos",
+  "request_body": {
+    "title": "verify HTTP"
+  },
+  "status": 201,
+  "response_headers": {
+    "Server": "BaseHTTP/0.6 Python/3.13.5",
+    "Date": "Mon, 19 Oct 2026 05:58:46 GMT",
+    "Content-Type": "application/json",
+    "Content-Length": "51"
+  },
+  "response_body": {
+    "id": 1,
+    "title": "verify HTTP",
+    "status": "open"
+  },
+  "started": "2026-10-19T05:58:46Z",
+  "elapsed_ms": 4.3,
+  "expect": "201"
+}

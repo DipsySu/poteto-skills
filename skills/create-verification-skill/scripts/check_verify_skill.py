@@ -167,14 +167,14 @@ def check(skill: Path) -> list[dict]:
 
     todos = []
     for p in sorted(skill.rglob("*")):
-        if p.is_file() and p.stat().st_size < 2_000_000:
+        if p.is_file() and "__pycache__" not in p.parts and p.suffix not in (".pyc", ".pyo") and p.stat().st_size < 2_000_000:
             for n, line in enumerate(p.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
                 if TODO in line:
                     todos.append(f"{p.relative_to(skill).as_posix()}:{n}")
     add("no TODO(verify) left", not todos, (f"{len(todos)}: " + ", ".join(todos[:12]) + (" …" if len(todos) > 12 else ""))
         if todos else "")
 
-    scripts = sorted(p for p in (skill / "scripts").rglob("*") if p.is_file()) if (skill / "scripts").is_dir() else []
+    scripts = sorted(p for p in (skill / "scripts").rglob("*") if p.is_file() and "__pycache__" not in p.parts and p.suffix not in (".pyc", ".pyo")) if (skill / "scripts").is_dir() else []
     for s in scripts:
         rel = s.relative_to(skill).as_posix()
         execable = os.access(s, os.X_OK)

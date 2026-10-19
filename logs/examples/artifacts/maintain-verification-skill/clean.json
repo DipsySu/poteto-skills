@@ -1,0 +1,24 @@
+{
+  "skill_dir": "/tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo",
+  "repo": "/tmp/poteto-examples-7cr39j99/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}

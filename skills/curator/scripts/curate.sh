@@ -17,7 +17,7 @@ usage: curate.sh [--propose | --apply] [--offline] [--no-fetch] [--date YYYY-MM-
               commit only if it passes. Never pushes.
               online: claude implements the best proposals; --offline: sync changed upstream files
               into research/upstream/ (a deterministic, sourced change)
-  --offline   skip every LLM step (tests use this)
+  --offline   skip network fetches and every LLM step; requires a populated local cache
   --no-fetch  don't fetch upstream; diff against the cached clone
   --date D    run date (default: today)
   --repo DIR  poteto-skills checkout (default: derived from this script)
@@ -25,7 +25,6 @@ usage: curate.sh [--propose | --apply] [--offline] [--no-fetch] [--date YYYY-MM-
 logs: logs/curator/DATE.log plus DATE.upstream.json, DATE.claude-*.json, DATE.verify.log
 env:  POTETO_CACHE (clone and worktrees, default ~/.cache/poteto-skills), POTETO_UPSTREAM_URL,
       CURATOR_MODEL (opus), CURATOR_EFFORT (max), CURATOR_TIMEOUT (3600 s),
-      CURATOR_VERIFY_CMD (bash scripts/verify.sh --run-examples)
 cron: 17 6 * * *  /path/to/poteto-skills/skills/curator/scripts/curate.sh --propose
       47 6 * * 1  /path/to/poteto-skills/skills/curator/scripts/curate.sh --apply
 EOF
@@ -68,12 +67,11 @@ command -v timeout >/dev/null 2>&1 && timeout_cmd=(timeout "${CURATOR_TIMEOUT:-3
 
 # 1. upstream diff ----------------------------------------------------------------
 diff_args=(--repo "$repo" --json)
-[[ "$nofetch" == 1 ]] && diff_args+=(--offline)
+[[ "$nofetch" == 1 || "$offline" == 1 ]] && diff_args+=(--offline)
 if "$script_dir/upstream_diff.sh" "${diff_args[@]}" > "$up_json"; then
   say "upstream: $(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["changes"], "change(s),", len(d["changed"]), "changed file(s), head", d["upstream"]["head"][:12])' "$up_json")"
 else
-  say "upstream_diff failed (exit $?); continuing without upstream changes"
-  echo '{}' > "$up_json"
+  die "upstream_diff failed (exit $?); no proposal can be grounded in this run"
 fi
 
 offline_proposals() {
@@ -168,7 +166,9 @@ PY
 
 apply_change() {
   [[ -f "$proposals" ]] || propose
-  python3 "$script_dir/check_proposals.py" "$proposals" --skills-dir "$repo/skills" >/dev/null \
+  local check_args=("$proposals" --skills-dir "$repo/skills")
+  [[ "$offline" == 0 ]] && check_args+=(--fetch)
+  python3 "$script_dir/check_proposals.py" "${check_args[@]}" >/dev/null \
     || die "$proposals fails the acceptance bar; not applying"
   local branch="curator/$date_" wt="$cache/worktrees/curator-$date_-$$"
   if git -C "$repo" rev-parse --verify --quiet "refs/heads/$branch" >/dev/null; then
@@ -205,6 +205,15 @@ for c in d.get("changed", []):
         done.append(c["file"])
         urls.append(c["url"])
 if done:
+    provenance = wt / "research" / "snapshot-syncs.json"
+    records = json.loads(provenance.read_text()) if provenance.exists() else []
+    records.append({"head": d["upstream"]["head"], "version": d["upstream"]["version"], "files": done, "sources": urls})
+    provenance.write_text(json.dumps(records, indent=2) + "\n")
+    notes = wt / "research" / "NOTES.md"
+    text = notes.read_text()
+    note = "\nSnapshot updates after the original research: see [snapshot-syncs.json](snapshot-syncs.json) for the exact head, version, files, and URLs.\n"
+    if note not in text:
+        notes.write_text(text + note)
     print(f"sync research/upstream with pstack ({len(done)} file(s): {', '.join(done)})\t{', '.join(urls)}")
 PY
 )"
@@ -234,7 +243,7 @@ skill's Sources footer and in MAPPING.md. When done, write one line describing t
     return 0
   fi
   append_changelog "$wt/CHANGELOG.md" "$date_" "$summary" "$sources"
-  local verify_cmd="${CURATOR_VERIFY_CMD:-bash scripts/verify.sh --run-examples}"
+  local verify_cmd="bash scripts/verify.sh --run-examples"
   say "verify: $verify_cmd"
   if ! (cd "$wt" && bash -c "$verify_cmd") > "$log_dir/$date_.verify.log" 2>&1; then
     git -C "$wt" add -A >/dev/null 2>&1 || true

@@ -1,0 +1,815 @@
+scratch: /tmp/poteto-examples-7cr39j99
+$ /home/box/developer/poteto-skills/examples/build-todo-app.sh /tmp/poteto-examples-7cr39j99/todo-app
+{
+  "repo": "/tmp/poteto-examples-7cr39j99/todo-app",
+  "head": "4242a5ae43587ea1ed392b15775e2e3e3acc2aa4",
+  "direct_write_commits": [
+    "570c1e91c25878c9550969a1ba4072a0e1790d27",
+    "dbd44008685859312aee6a60154fd0258c1c063b"
+  ],
+  "status_bug_commits": [
+    "41967033e461ea9fc00af5a5bb985a7bcb6149e0",
+    "2c383ecc2ce27c62d73d049228c0b2542683a1b9"
+  ]
+}
+
+[exit 0; expected 0]
+$ /home/box/developer/poteto-skills/examples/build-todo-app.sh /tmp/poteto-examples-7cr39j99/repro
+{
+  "repo": "/tmp/poteto-examples-7cr39j99/repro",
+  "head": "4242a5ae43587ea1ed392b15775e2e3e3acc2aa4",
+  "direct_write_commits": [
+    "570c1e91c25878c9550969a1ba4072a0e1790d27",
+    "dbd44008685859312aee6a60154fd0258c1c063b"
+  ],
+  "status_bug_commits": [
+    "41967033e461ea9fc00af5a5bb985a7bcb6149e0",
+    "2c383ecc2ce27c62d73d049228c0b2542683a1b9"
+  ]
+}
+
+[exit 0; expected 0]
+ASSERT PASS: two independent builds reproduce identical git HEAD
+$ /usr/bin/python3 -m unittest -q
+----------------------------------------------------------------------
+Ran 7 tests in 0.249s
+
+OK
+
+[exit 0; expected 0]
+$ git log --format=%H
+4242a5ae43587ea1ed392b15775e2e3e3acc2aa4
+8801d95dfcf3e05c53dbbff45c8db1ac79cbb3ca
+2c383ecc2ce27c62d73d049228c0b2542683a1b9
+86baa1827ce5481621192a63247c249cc5505ef5
+41967033e461ea9fc00af5a5bb985a7bcb6149e0
+2fd7988731eb03a000207e269b441daeb22d2a3e
+dbd44008685859312aee6a60154fd0258c1c063b
+97a3f3000122e373acec453f5102faa03b23cc2b
+570c1e91c25878c9550969a1ba4072a0e1790d27
+9fa88378e63cebec8beb2fa1eb7f9a571dbd9b6a
+
+[exit 0; expected 0]
+ASSERT PASS: nested repo has ten dated commits
+$ git show 570c1e91c25878c9550969a1ba4072a0e1790d27 --format= -- todo
+diff --git a/todo/__main__.py b/todo/__main__.py
+index a58a68b..84c0115 100644
+--- a/todo/__main__.py
++++ b/todo/__main__.py
+@@ -30,7 +30,10 @@ def main():
+     store = Store(args.data)
+     try:
+         if args.command == "add":
+-            result = store.add(args.title)
++            rows = store.list_all()
++            result = {"id": len(rows) + 1, "title": args.title, "status": "open"}
++            rows.append(result)
++            store.path.write_text(json.dumps(rows))
+         elif args.command == "list":
+             result = store.list_all()
+         elif args.command == "done":
+
+[exit 0; expected 0]
+ASSERT PASS: real direct-write mistake retained at 570c1e91c258
+$ git show dbd44008685859312aee6a60154fd0258c1c063b --format= -- todo
+diff --git a/todo/api.py b/todo/api.py
+index ca0a837..6f5d02b 100644
+--- a/todo/api.py
++++ b/todo/api.py
+@@ -36,7 +36,12 @@ class Handler(BaseHTTPRequestHandler):
+                 if not 0 < length <= 65536:
+                     raise ValueError("body must be 1..65536 bytes")
+                 body = json.loads(self.rfile.read(length))
+-                self.reply(201, self.server.store.add(body.get("title")))
++                store = self.server.store
++                rows = store.list_all()
++                row = {"id": len(rows) + 1, "title": body.get("title"), "status": "open"}
++                rows.append(row)
++                store.path.write_text(json.dumps(rows))
++                self.reply(201, row)
+             elif match := re.fullmatch(r"/todos/([0-9]+)/done", path):
+                 self.reply(200, self.server.store.transition(int(match[1]), "done"))
+             else:
+
+[exit 0; expected 0]
+ASSERT PASS: real direct-write mistake retained at dbd440086858
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/scan_repo.py /tmp/poteto-examples-7cr39j99/todo-app --json
+{
+  "repo": "/tmp/poteto-examples-7cr39j99/todo-app",
+  "languages": [
+    {
+      "name": "python",
+      "files": 6
+    },
+    {
+      "name": "shell",
+      "files": 1
+    }
+  ],
+  "markers": [
+    "README.md",
+    "AGENTS.md"
+  ],
+  "build_commands": [],
+  "test_commands": [
+    {
+      "cmd": "python3 -m unittest",
+      "source": "tests/test_todo.py"
+    }
+  ],
+  "launch_candidates": [
+    {
+      "kind": "server",
+      "cmd": "python3 -m todo serve",
+      "port": 8765,
+      "prog": "python3 -m todo",
+      "subcommand": "serve",
+      "port_flag": "--port",
+      "data_flag": "--data",
+      "port_flag_global": false,
+      "data_flag_global": false,
+      "source": "todo/__main__.py:12"
+    },
+    {
+      "kind": "cli",
+      "cmd": "python3 -m todo",
+      "subcommands": [
+        "add",
+        "done",
+        "list",
+        "rm"
+      ],
+      "source": "todo/__main__.py:15",
+      "port": null,
+      "port_flag": null,
+      "data_flag": "--data",
+      "data_flag_global": false
+    }
+  ],
+  "http_routes": [
+    {
+      "method": "GET",
+      "path": "/health",
+      "source": "todo/api.py:24",
+      "how": "eq",
+      "health": true
+    },
+    {
+      "method": "GET",
+      "path": "/todos",
+      "source": "todo/api.py:26",
+      "how": "eq",
+      "health": false
+    },
+    {
+      "method": "POST",
+      "path": "/todos",
+      "source": "todo/api.py:34",
+      "how": "eq",
+      "body_keys": [
+        "title"
+      ],
+      "health": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/todos/<id>",
+      "source": "todo/api.py:52",
+      "how": "regex",
+      "health": false
+    },
+    {
+      "method": "POST",
+      "path": "/todos/<id>/done",
+      "source": "todo/api.py:40",
+      "how": "regex",
+      "body_keys": [
+        "title"
+      ],
+      "health": false
+    }
+  ],
+  "health_routes": [
+    {
+      "method": "GET",
+      "path": "/health",
+      "source": "todo/api.py:24",
+      "how": "eq",
+      "health": true
+    }
+  ],
+  "cli_commands": [
+    {
+      "prog": "python3 -m todo",
+      "aliases": [
+        "python -m todo"
+      ],
+      "name": "add",
+      "options": [
+        {
+          "names": [
+            "title"
+          ],
+          "default": null,
+          "positional": true
+        },
+        {
+          "names": [
+            "--data"
+          ],
+          "default": "data",
+          "positional": false
+        }
+      ],
+      "global_options": [],
+      "source": "todo/__main__.py:15",
+      "via": "argparse",
+      "port_flag": null,
+      "data_flag": "--data",
+      "port_flag_global": false,
+      "data_flag_global": false,
+      "positionals": [
+        "title"
+      ],
+      "launch": false
+    },
+    {
+      "prog": "python3 -m todo",
+      "aliases": [
+        "python -m todo"
+      ],
+      "name": "done",
+      "options": [
+        {
+          "names": [
+            "id"
+          ],
+          "default": null,
+          "positional": true
+        },
+        {
+          "names": [
+            "--data"
+          ],
+          "default": "data",
+          "positional": false
+        }
+      ],
+      "global_options": [],
+      "source": "todo/__main__.py:20",
+      "via": "argparse",
+      "port_flag": null,
+      "data_flag": "--data",
+      "port_flag_global": false,
+      "data_flag_global": false,
+      "positionals": [
+        "id"
+      ],
+      "launch": false
+    },
+    {
+      "prog": "python3 -m todo",
+      "aliases": [
+        "python -m todo"
+      ],
+      "name": "list",
+      "options": [
+        {
+          "names": [
+            "--data"
+          ],
+          "default": "data",
+          "positional": false
+        }
+      ],
+      "global_options": [],
+      "source": "todo/__main__.py:18",
+      "via": "argparse",
+      "port_flag": null,
+      "data_flag": "--data",
+      "port_flag_global": false,
+      "data_flag_global": false,
+      "positionals": [],
+      "launch": false
+    },
+    {
+      "prog": "python3 -m todo",
+      "aliases": [
+        "python -m todo"
+      ],
+      "name": "rm",
+      "options": [
+        {
+          "names": [
+            "id"
+          ],
+          "default": null,
+          "positional": true
+        },
+        {
+          "names": [
+            "--data"
+          ],
+          "default": "data",
+          "positional": false
+        }
+      ],
+      "global_options": [],
+      "source": "todo/__main__.py:23",
+      "via": "argparse",
+      "port_flag": null,
+      "data_flag": "--data",
+      "port_flag_global": false,
+      "data_flag_global": false,
+      "positionals": [
+        "id"
+      ],
+      "launch": false
+    },
+    {
+      "prog": "python3 -m todo",
+      "aliases": [
+        "python -m todo"
+      ],
+      "name": "serve",
+      "options": [
+        {
+          "names": [
+            "--port"
+          ],
+          "default": 8765,
+          "positional": false
+        },
+        {
+          "names": [
+            "--data"
+          ],
+          "default": "data",
+          "positional": false
+        }
+      ],
+      "global_options": [],
+      "source": "todo/__main__.py:12",
+      "via": "argparse",
+      "port_flag": "--port",
+      "data_flag": "--data",
+      "port_flag_global": false,
+      "data_flag_global": false,
+      "positionals": [],
+      "launch": true
+    }
+  ],
+  "env_vars": [],
+  "skill_dirs": [],
+  "features": [
+    {
+      "id": "create-todo",
+      "title": "Create a todo",
+      "action": "create",
+      "resource": "todos",
+      "routes": [
+        {
+          "method": "POST",
+          "path": "/todos",
+          "source": "todo/api.py:34",
+          "how": "eq",
+          "body_keys": [
+            "title"
+          ],
+          "health": false
+        }
+      ],
+      "commands": [
+        {
+          "prog": "python3 -m todo",
+          "aliases": [
+            "python -m todo"
+          ],
+          "name": "add",
+          "options": [
+            {
+              "names": [
+                "title"
+              ],
+              "default": null,
+              "positional": true
+            },
+            {
+              "names": [
+                "--data"
+              ],
+              "default": "data",
+              "positional": false
+            }
+          ],
+          "global_options": [],
+          "source": "todo/__main__.py:15",
+          "via": "argparse",
+          "port_flag": null,
+          "data_flag": "--data",
+          "port_flag_global": false,
+          "data_flag_global": false,
+          "positionals": [
+            "title"
+          ],
+          "launch": false
+        }
+      ]
+    },
+    {
+      "id": "list-todos",
+      "title": "List todos",
+      "action": "list",
+      "resource": "todos",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/todos",
+          "source": "todo/api.py:26",
+          "how": "eq",
+          "health": false
+        }
+      ],
+      "commands": [
+        {
+          "prog": "python3 -m todo",
+          "aliases": [
+            "python -m todo"
+          ],
+          "name": "list",
+          "options": [
+            {
+              "names": [
+                "--data"
+              ],
+              "default": "data",
+              "positional": false
+            }
+          ],
+          "global_options": [],
+          "source": "todo/__main__.py:18",
+          "via": "argparse",
+          "port_flag": null,
+          "data_flag": "--data",
+          "port_flag_global": false,
+          "data_flag_global": false,
+          "positionals": [],
+          "launch": false
+        }
+      ]
+    },
+    {
+      "id": "done-todo",
+      "title": "Mark a todo done",
+      "action": "done",
+      "resource": "todos",
+      "routes": [
+        {
+          "method": "POST",
+          "path": "/todos/<id>/done",
+          "source": "todo/api.py:40",
+          "how": "regex",
+          "body_keys": [
+            "title"
+          ],
+          "health": false
+        }
+      ],
+      "commands": [
+        {
+          "prog": "python3 -m todo",
+          "aliases": [
+            "python -m todo"
+          ],
+          "name": "done",
+          "options": [
+            {
+              "names": [
+                "id"
+              ],
+              "default": null,
+              "positional": true
+            },
+            {
+              "names": [
+                "--data"
+              ],
+              "default": "data",
+              "positional": false
+            }
+          ],
+          "global_options": [],
+          "source": "todo/__main__.py:20",
+          "via": "argparse",
+          "port_flag": null,
+          "data_flag": "--data",
+          "port_flag_global": false,
+          "data_flag_global": false,
+          "positionals": [
+            "id"
+          ],
+          "launch": false
+        }
+      ]
+    },
+    {
+      "id": "delete-todo",
+      "title": "Delete a todo",
+      "action": "delete",
+      "resource": "todos",
+      "routes": [
+        {
+          "method": "DELETE",
+          "path": "/todos/<id>",
+          "source": "todo/api.py:52",
+          "how": "regex",
+          "health": false
+        }
+      ],
+      "commands": [
+        {
+          "prog": "python3 -m todo",
+          "aliases": [
+            "python -m todo"
+          ],
+          "name": "rm",
+          "options": [
+            {
+              "names": [
+                "id"
+              ],
+              "default": null,
+              "positional": true
+            },
+            {
+              "names": [
+                "--data"
+              ],
+              "default": "data",
+              "positional": false
+            }
+          ],
+          "global_options": [],
+          "source": "todo/__main__.py:23",
+          "via": "argparse",
+          "port_flag": null,
+          "data_flag": "--data",
+          "port_flag_global": false,
+          "data_flag_global": false,
+          "positionals": [
+            "id"
+          ],
+          "launch": false
+        }
+      ]
+    }
+  ],
+  "notes": [],
+  "ports": [
+    {
+      "port": 8765,
+      "source": "todo/__main__.py:12",
+      "flag": "--port"
+    }
+  ]
+}
+
+[exit 0; expected 0]
+ASSERT PASS: scan detects all five HTTP routes
+ASSERT PASS: scan detects CLI and serve subcommands
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/scaffold.py /tmp/poteto-examples-7cr39j99/todo-app --app todo --json
+{
+  "skill_dir": "/tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo",
+  "files": [
+    "SKILL.md",
+    "features/README.md",
+    "features/create-todo.md",
+    "features/list-todos.md",
+    "features/done-todo.md",
+    "features/delete-todo.md",
+    "scripts/control.sh"
+  ],
+  "features": [
+    "create-todo",
+    "list-todos",
+    "done-todo",
+    "delete-todo"
+  ],
+  "not_mapped": [],
+  "launch": "python3 -m todo serve --data \"$DATA_DIR\" --port \"$PORT\"",
+  "health": "/health",
+  "read_path": "/todos",
+  "cli": "python3 -m todo",
+  "todo_markers": 23,
+  "todo_locations": [
+    "features/README.md:10",
+    "features/create-todo.md:3",
+    "features/create-todo.md:22",
+    "features/create-todo.md:23",
+    "features/create-todo.md:24",
+    "features/create-todo.md:28",
+    "features/delete-todo.md:3",
+    "features/delete-todo.md:20",
+    "features/delete-todo.md:22",
+    "features/delete-todo.md:23",
+    "features/delete-todo.md:24",
+    "features/delete-todo.md:28",
+    "features/done-todo.md:3",
+    "features/done-todo.md:20",
+    "features/done-todo.md:22",
+    "features/done-todo.md:23",
+    "features/done-todo.md:24",
+    "features/done-todo.md:28",
+    "features/list-todos.md:3",
+    "features/list-todos.md:22",
+    "features/list-todos.md:23",
+    "features/list-todos.md:24",
+    "features/list-todos.md:28"
+  ],
+  "next": [
+    "replace every TODO(verify) (grep -rn 'TODO(verify)' .claude/skills/verify-todo)",
+    ".claude/skills/verify-todo/scripts/control.sh prove --feature <id> http GET /todos",
+    "python3 /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py .claude/skills/verify-todo"
+  ]
+}
+
+[exit 0; expected 0]
+ASSERT PASS: scaffold leaves unknown application facts explicit
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo
+FAIL  literal recipes delete-todo.md: placeholder(s) <id> in a drive command; write the real value
+FAIL  literal recipes done-todo.md: placeholder(s) <id> in a drive command; write the real value
+FAIL  no TODO(verify) left: 23: features/README.md:10, features/create-todo.md:3, features/create-todo.md:22, features/create-todo.md:23, features/create-todo.md:24, features/create-todo.md:28, features/delete-todo.md:3, features/delete-todo.md:20, features/delete-todo.md:22, features/delete-todo.md:23, features/delete-todo.md:24, features/delete-todo.md:28 …
+check_verify_skill: FAIL (25/28 checks) /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo
+
+[exit 1; expected 1]
+$ /home/box/developer/poteto-skills/examples/fill_verify.py /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo
+filled 4 feature recipes with the example's real commands
+
+[exit 0; expected 0]
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo
+check_verify_skill: PASS (28/28 checks) /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo
+
+[exit 0; expected 0]
+ASSERT PASS: all scaffold questions replaced by real todo recipes
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo
+check_verify_skill: PASS (32/32 checks) /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo
+
+[exit 0; expected 0]
+ASSERT PASS: generated bytecode does not invalidate the skill contract
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo
+FAIL  contract create-todo.md: H2s must be exactly ['Sub-features', 'How to get to it (user POV)', 'Driving it with <harness>', 'Gotchas'] in order, got ['Sub-features', 'How to get to it (user POV)', 'Driving it with control.sh', 'Wrong heading']
+check_verify_skill: FAIL (27/28 checks) /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo
+
+[exit 1; expected 1]
+ASSERT PASS: contract rejects damaged feature heading order
+$ /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo/scripts/control.sh launch
+{
+  "run_id": "initial",
+  "pid": 112376,
+  "port": 60547,
+  "base_url": "http://127.0.0.1:60547",
+  "data_dir": "/tmp/poteto-examples-7cr39j99/verify-state-initial/initial/data",
+  "evidence_dir": "/tmp/poteto-examples-7cr39j99/todo-app/artifacts/verify/initial",
+  "log": "/tmp/poteto-examples-7cr39j99/todo-app/artifacts/verify/initial/launch.log"
+}
+
+[exit 0; expected 0]
+ASSERT PASS: launch records a distinct owned server PID on a free port
+ASSERT PASS: launch starts with an empty data directory
+$ /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo/scripts/control.sh doctor
+{
+  "ok": true,
+  "run_id": "initial",
+  "checks": [
+    {
+      "name": "process",
+      "ok": true,
+      "detail": "pid 112376 alive, started by this run"
+    },
+    {
+      "name": "port",
+      "ok": true,
+      "detail": "60547 accepts connections"
+    },
+    {
+      "name": "GET /health",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "GET /todos",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "data dir",
+      "ok": true,
+      "detail": "/tmp/poteto-examples-7cr39j99/verify-state-initial/initial/data"
+    },
+    {
+      "name": "evidence dir",
+      "ok": true,
+      "detail": "/tmp/poteto-examples-7cr39j99/todo-app/artifacts/verify/initial"
+    }
+  ]
+}
+
+[exit 0; expected 0]
+ASSERT PASS: doctor checks owned process, health and read route
+$ /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature health http GET /health --expect 200
+evidence: /tmp/poteto-examples-7cr39j99/todo-app/artifacts/verify/initial/001-health-http.json
+GET http://127.0.0.1:60547/health -> 200
+{"ok": true}
+
+[exit 0; expected 0]
+$ /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature create-todo http POST /todos '{"title":"verify HTTP"}' --expect 201
+evidence: /tmp/poteto-examples-7cr39j99/todo-app/artifacts/verify/initial/002-create-todo-http.json
+POST http://127.0.0.1:60547/todos -> 201
+{"id": 1, "title": "verify HTTP", "status": "open"}
+
+[exit 0; expected 0]
+$ /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature create-todo cli -- /usr/bin/python3 -m todo add 'verify CLI' --data '{DATA_DIR}'
+{"id": 2, "title": "verify CLI", "status": "open"}
+exit: 0  evidence: /tmp/poteto-examples-7cr39j99/todo-app/artifacts/verify/initial/003-create-todo-cli.json
+
+[exit 0; expected 0]
+$ /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature list-todos http GET /todos --expect 200
+evidence: /tmp/poteto-examples-7cr39j99/todo-app/artifacts/verify/initial/004-list-todos-http.json
+GET http://127.0.0.1:60547/todos -> 200
+[{"id": 1, "status": "open", "title": "verify HTTP"}, {"id": 2, "status": "open", "title": "verify CLI"}]
+
+[exit 0; expected 0]
+$ /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature list-todos cli -- /usr/bin/python3 -m todo list --data '{DATA_DIR}'
+[{"id": 1, "status": "open", "title": "verify HTTP"}, {"id": 2, "status": "open", "title": "verify CLI"}]
+exit: 0  evidence: /tmp/poteto-examples-7cr39j99/todo-app/artifacts/verify/initial/005-list-todos-cli.json
+
+[exit 0; expected 0]
+$ /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo http DELETE /todos/1 --expect 409
+evidence: /tmp/poteto-examples-7cr39j99/todo-app/artifacts/verify/initial/006-delete-todo-http.json
+DELETE http://127.0.0.1:60547/todos/1 -> 409
+{"error": "cannot move open to archived"}
+
+[exit 0; expected 0]
+$ /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo http POST /todos/1/done --expect 200
+evidence: /tmp/poteto-examples-7cr39j99/todo-app/artifacts/verify/initial/007-done-todo-http.json
+POST http://127.0.0.1:60547/todos/1/done -> 200
+{"id": 1, "status": "done", "title": "verify HTTP"}
+
+[exit 0; expected 0]
+$ /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo http POST /todos/1/done --expect 409
+evidence: /tmp/poteto-examples-7cr39j99/todo-app/artifacts/verify/initial/008-done-todo-http.json
+POST http://127.0.0.1:60547/todos/1/done -> 409
+{"error": "cannot move done to done"}
+
+[exit 0; expected 0]
+$ /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo cli -- /usr/bin/python3 -m todo done 2 --data '{DATA_DIR}'
+{"id": 2, "status": "done", "title": "verify CLI"}
+exit: 0  evidence: /tmp/poteto-examples-7cr39j99/todo-app/artifacts/verify/initial/009-done-todo-cli.json
+
+[exit 0; expected 0]
+$ /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo http DELETE /todos/1 --expect 200
+evidence: /tmp/poteto-examples-7cr39j99/todo-app/artifacts/verify/initial/010-delete-todo-http.json
+DELETE http://127.0.0.1:60547/todos/1 -> 200
+{"id": 1, "status": "archived", "title": "verify HTTP"}
+
+[exit 0; expected 0]
+$ /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo cli -- /usr/bin/python3 -m todo rm 2 --data '{DATA_DIR}'
+{"id": 2, "status": "archived", "title": "verify CLI"}
+exit: 0  evidence: /tmp/poteto-examples-7cr39j99/todo-app/artifacts/verify/initial/011-delete-todo-cli.json
+
+[exit 0; expected 0]
+$ /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature list-todos http GET /todos --expect 200
+evidence: /tmp/poteto-examples-7cr39j99/todo-app/artifacts/verify/initial/012-list-todos-http.json
+GET http://127.0.0.1:60547/todos -> 200
+[{"id": 1, "status": "archived", "title": "verify HTTP"}, {"id": 2, "status": "archived", "title": "verify CLI"}]
+
+[exit 0; expected 0]
+$ /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo/scripts/control.sh evidence --copy-data
+{
+  "evidence_dir": "/tmp/poteto-examples-7cr39j99/todo-app/artifacts/verify/initial",
+  "files": 15,
+  "manifest": "/tmp/poteto-examples-7cr39j99/todo-app/artifacts/verify/initial/manifest.json"
+}
+
+[exit 0; expected 0]
+ASSERT PASS: POST evidence records the real request and created task
+ASSERT PASS: HTTP and CLI complete and archive both real records
+ASSERT PASS: stored JSON snapshot matches the API read-back
+ASSERT PASS: every evidence manifest digest matches its actual file
+$ /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo/scripts/control.sh cleanup
+{
+  "run_id": "initial",
+  "killed": true,
+  "evidence_dir": "/tmp/poteto-examples-7cr39j99/todo-app/artifacts/verify/initial",
+  "evidence_files": 16
+}
+
+[exit 0; expected 0]
+ASSERT PASS: cleanup stops its recorded server and clears run state
+ASSERT PASS: owned server no longer runs after cleanup
+ASSERT PASS: cleanup leaves an unrelated process alive
+ASSERT PASS: cleanup preserves evidence files
+$ /tmp/poteto-examples-7cr39j99/todo-app/.claude/skills/verify-todo/scripts/control.sh cleanup
+{"cleaned": false, "reason": "no active run"}
+
+[exit 0; expected 0]

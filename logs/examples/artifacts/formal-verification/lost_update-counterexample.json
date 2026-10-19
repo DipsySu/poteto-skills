@@ -1,0 +1,147 @@
+{
+  "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/lost_update.py",
+  "depth": 20,
+  "max_states": 10000,
+  "invariants": [
+    "no_lost_todo",
+    "legal_status"
+  ],
+  "ok": false,
+  "result": "violation",
+  "states": 23,
+  "transitions": 32,
+  "max_depth": 4,
+  "hit_depth_bound": false,
+  "hit_state_bound": false,
+  "violation": {
+    "kind": "invariant",
+    "name": "no_lost_todo",
+    "detail": null,
+    "trace": [
+      {
+        "step": 0,
+        "action": "init",
+        "state": {
+          "rows": [
+            "seed"
+          ],
+          "phases": [
+            0,
+            0
+          ],
+          "snapshots": [
+            [],
+            []
+          ],
+          "owner": -1,
+          "status": "open",
+          "edges": []
+        },
+        "describe": null
+      },
+      {
+        "step": 1,
+        "action": "writer 0: read snapshot",
+        "state": {
+          "rows": [
+            "seed"
+          ],
+          "phases": [
+            1,
+            0
+          ],
+          "snapshots": [
+            [
+              "seed"
+            ],
+            []
+          ],
+          "owner": -1,
+          "status": "open",
+          "edges": []
+        },
+        "describe": null
+      },
+      {
+        "step": 2,
+        "action": "writer 1: read snapshot",
+        "state": {
+          "rows": [
+            "seed"
+          ],
+          "phases": [
+            1,
+            1
+          ],
+          "snapshots": [
+            [
+              "seed"
+            ],
+            [
+              "seed"
+            ]
+          ],
+          "owner": -1,
+          "status": "open",
+          "edges": []
+        },
+        "describe": null
+      },
+      {
+        "step": 3,
+        "action": "writer 0: append + replace + unlock",
+        "state": {
+          "rows": [
+            "seed",
+            "writer-0"
+          ],
+          "phases": [
+            2,
+            1
+          ],
+          "snapshots": [
+            [
+              "seed"
+            ],
+            [
+              "seed"
+            ]
+          ],
+          "owner": -1,
+          "status": "open",
+          "edges": []
+        },
+        "describe": null
+      },
+      {
+        "step": 4,
+        "action": "writer 1: append + replace + unlock",
+        "state": {
+          "rows": [
+            "seed",
+            "writer-1"
+          ],
+          "phases": [
+            2,
+            2
+          ],
+          "snapshots": [
+            [
+              "seed"
+            ],
+            [
+              "seed"
+            ]
+          ],
+          "owner": -1,
+          "status": "open",
+          "edges": []
+        },
+        "describe": null
+      }
+    ]
+  },
+  "seconds": 0.0,
+  "mutants": {},
+  "expect_violation": null
+}

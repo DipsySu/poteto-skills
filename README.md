@@ -70,3 +70,16 @@ scripts/verify.sh             the collection's self-check; scripts/run-examples.
 ## Credits
 
 The ideas, structure, and much of the vocabulary come from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan, © 2026, MIT license ([copy](research/upstream/PSTACK_LICENSE)). Snapshots of the upstream files these skills adapt are kept verbatim in [research/upstream/](research/upstream/) under that license. Each SKILL.md ends with a Sources footer that links the upstream files it draws on. The helper scripts are new to this collection.
+
+## Reproduce the example and checks
+
+```bash
+./examples/build-todo-app.sh           # build ignored examples/todo-app/, including its dated git history
+./scripts/run-examples.sh             # fresh scratch build; exercise all eight skills serially
+./scripts/verify.sh                   # packaging, syntax, installer, app tests, saved example results
+./scripts/verify.sh --run-examples    # regenerate example results first
+```
+
+The builder uses committed source plus explicit history edits, fixed dates and identity; repeated builds produce the same commit IDs. It refuses a nonempty destination. The outer repo ignores `examples/todo-app/`; no nested `.git` files or gitlinks are stored. Pass a new destination to the builder to make another copy.
+
+Each run uses `${TMPDIR:-/tmp}/poteto-examples-<run-id>` and removes its scratch directory after copying reports to `logs/examples/`. Use `--keep-scratch` for diagnosis. `summary.json` records every skill's status and assertions; `artifacts/<skill>/` retains the generated verification skill, live evidence when available, plans, model traces, and curator proposals. The curator example uses a local fake upstream with no remote or network access. Live checks require permission to open localhost sockets; denied sockets remain failures in the summary and verification gate.

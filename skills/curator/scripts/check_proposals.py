@@ -54,9 +54,12 @@ def fetch_status(url: str) -> int:
 
 
 def check(path: Path, skills_dir: Path | None, do_fetch: bool) -> dict:
-    items = parse(path.read_text(encoding="utf-8", errors="replace"))
+    text = path.read_text(encoding="utf-8", errors="replace")
+    items = parse(text)
     skills = {p.name for p in skills_dir.iterdir() if (p / "SKILL.md").is_file()} if skills_dir and skills_dir.is_dir() else None
     problems, warnings = [], []
+    if not items and not re.search(r"^No proposals(?:[.:]|$)", text, re.M):
+        problems.append("no proposal sections and no explicit No proposals outcome")
     for n, it in enumerate(items, 1):
         f, where = it["fields"], f"#{n} \"{it['title'][:60]}\""
         if not it["urls"]:
@@ -77,9 +80,7 @@ def check(path: Path, skills_dir: Path | None, do_fetch: bool) -> dict:
             for u in it["urls"]:
                 code = fetch_status(u)
                 it["fetch"][u] = code
-                if code in (401, 403, 429):
-                    warnings.append(f"{where}: {u} answered {code} (exists, blocks bots)")
-                elif not 200 <= code < 400:
+                if not 200 <= code < 300:
                     problems.append(f"{where}: {u} is unreachable (HTTP {code or 'error'})")
     det = sum(1 for it in items if it.get("level") in DETERMINISTIC)
     return {"file": str(path), "items": len(items), "deterministic": det, "prose_or_review": len(items) - det,

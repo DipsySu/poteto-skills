@@ -1,0 +1,40 @@
+{
+  "ok": false,
+  "rules": [
+    "no-direct-json-write"
+  ],
+  "files_scanned": 3,
+  "rev": null,
+  "root": "/tmp/poteto-examples-7cr39j99/past-direct-write",
+  "failing": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/api.py",
+      "line": 43,
+      "col": 17,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence.",
+      "text": "store.path.write_text(json.dumps(rows))"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/api.py",
+      "line": 43,
+      "col": 17,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence.",
+      "text": "store.path.write_text(json.dumps(rows))"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "updated": false
+  }
+}

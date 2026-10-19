@@ -173,7 +173,7 @@ def drift(skill: Path, repo: Path) -> dict:
             res["routes"]["missing"].append({"method": r["method"], "path": r["path"], "source": r["source"]})
     for where, text in [*((f"features/{k}", v) for k, v in feat_texts.items()), ("features/README.md", readme_text)]:
         for meth, path, line in route_mentions(text):
-            if meth in ("HEAD", "OPTIONS") or not src_routes:
+            if meth in ("HEAD", "OPTIONS"):
                 continue
             if not matches(meth, path):
                 res["routes"]["dead"].append({"method": meth, "path": path, "where": f"{where}:{line}"})
@@ -193,6 +193,15 @@ def drift(skill: Path, repo: Path) -> dict:
             seq = prog_tokens(inv_)
             if seq and seq not in p["seqs"]:
                 p["seqs"].append(seq)
+    # A removed CLI still appears in the map. Recover its invocation vocabulary
+    # independently of source so deleting the final subcommand cannot look clean.
+    for text in feat_texts.values():
+        for _, code in code_lines(text):
+            for match in re.finditer(r"\b(python3?\s+-m\s+[\w.]+|python3?\s+[\w./-]+\.py|node\s+[\w./-]+\.[cm]?js)\s+", code):
+                prog = match.group(1)
+                if prog not in progs:
+                    progs[prog] = {"subs": set(), "seqs": [prog_tokens(prog)],
+                                   "value_flags": {"--data", "--port", "--data-dir"}}
     launch_subs = {(c["prog"], c["name"]) for c in inv["cli_commands"] if c.get("launch")}
     feat_cmds = {name: command_mentions(t, progs) for name, t in feat_texts.items()}
     infra_cmds = command_mentions(infra_text, progs) + [

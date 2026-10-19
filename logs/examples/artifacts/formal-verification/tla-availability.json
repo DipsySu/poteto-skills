@@ -1,0 +1,11 @@
+{
+  "available": false,
+  "java": null,
+  "java_version": null,
+  "tla2tools_jar": null,
+  "tlc_wrapper": null,
+  "run": null,
+  "fallback": "python3 /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py MODEL.py",
+  "get_tla2tools": "https://github.com/tlaplus/tlaplus/releases (tla2tools.jar), plus a JDK 11+",
+  "other_verifiers": {}
+}

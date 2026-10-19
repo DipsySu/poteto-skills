@@ -318,7 +318,6 @@ def load_baseline(path: Path | None) -> dict:
 
 def write_baseline(path: Path, counts: dict) -> None:
     clean = {r: dict(sorted((p, n) for p, n in files.items() if n > 0)) for r, files in sorted(counts.items())}
-    clean = {r: f for r, f in clean.items() if f}
     path.write_text(json.dumps({"version": 1, "tool": "patlint",
                                 "note": "Ratchet baseline: counts may only go down. Update with --update-baseline.",
                                 "counts": clean}, indent=2) + "\n", encoding="utf-8")

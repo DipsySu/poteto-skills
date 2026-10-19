@@ -1,0 +1,474 @@
+{
+  "version": 1,
+  "feedback": "/tmp/poteto-examples-7cr39j99/feedback.json",
+  "repo": "/tmp/poteto-examples-7cr39j99/todo-app",
+  "themes": [
+    {
+      "id": "T1",
+      "title": "store.py / bypassing / direct",
+      "count": 7,
+      "sources": {
+        "commit": 4,
+        "review": 2,
+        "chat": 2
+      },
+      "signature": [
+        "store.py",
+        "bypassing",
+        "direct",
+        "json",
+        "store",
+        "writes",
+        "Store.add",
+        "json.dumps"
+      ],
+      "level": "architecture",
+      "why": "the evidence describes bypassing an owner (8 owner/bypass signals) and names the supported way `Store.add`",
+      "why_not_higher": "already the highest level; keep the lint as a ratchet while call sites migrate",
+      "bad": [
+        "json.dumps",
+        "rows.append",
+        "store.list_all()",
+        "store.path.write_text"
+      ],
+      "good": [
+        "Store.add"
+      ],
+      "votes": {
+        "json.dumps": {
+          "bad": 6,
+          "good": 2
+        },
+        "rows.append": {
+          "bad": 6,
+          "good": 2
+        },
+        "self.server.store": {
+          "bad": 2,
+          "good": 2
+        },
+        "self.server.store.add": {
+          "bad": 2,
+          "good": 2
+        },
+        "Store.add": {
+          "bad": 0,
+          "good": 8
+        },
+        "store.list_all()": {
+          "bad": 6,
+          "good": 2
+        },
+        "store.path.write_text": {
+          "bad": 6,
+          "good": 2
+        }
+      },
+      "rule": {
+        "id": "no-rows-append-outside-store",
+        "regex": "(?:\\brows\\.append\\b|\\bstore\\.path\\.write_text\\b)",
+        "include": [
+          "**/*.py"
+        ],
+        "exclude": [
+          "todo/store.py",
+          "**/tests/**",
+          "**/test/**",
+          "**/test_*.py",
+          "**/*_test.py",
+          "**/*_test.go",
+          "**/*.test.*",
+          "**/*.spec.*"
+        ],
+        "message": "Use `Store.add` instead of `rows.append`, `store.path.write_text` (todo/store.py owns this). Theme T1: store.py / bypassing / direct."
+      },
+      "no_rule_reason": null,
+      "refs": "review-comments.json#102, review-comments.json#101, 2fd7988731",
+      "evidence": [
+        {
+          "id": "review:102",
+          "source": "review",
+          "kind": null,
+          "ref": "review-comments.json#102",
+          "text": "Direct JSON writes bypassing store.py repeat in the HTTP handler. Use Store.add; only store.py owns persistence and locking.",
+          "paths": [
+            "todo/api.py"
+          ],
+          "line": 1,
+          "author": "reviewer",
+          "date": "2026-10-08",
+          "url": null
+        },
+        {
+          "id": "review:101",
+          "source": "review",
+          "kind": null,
+          "ref": "review-comments.json#101",
+          "text": "Direct JSON writes bypassing store.py again: store.path.write_text(json.dumps(rows)) loses concurrent additions. Use Store.add atomic transaction.",
+          "paths": [
+            "todo/__main__.py"
+          ],
+          "line": 1,
+          "author": "reviewer",
+          "date": "2026-10-08",
+          "url": null
+        },
+        {
+          "id": "commit:2fd7988731",
+          "source": "commit",
+          "kind": "fix",
+          "ref": "2fd7988731eb03a000207e269b441daeb22d2a3e",
+          "text": "fix: remove direct JSON writes bypassing store.py; use Store.add atomic transaction",
+          "paths": [
+            "todo/api.py"
+          ],
+          "line": null,
+          "author": "example-dev",
+          "date": "2026-09-18",
+          "url": null,
+          "diff_ids": [
+            "self.reply",
+            "self.server.store.add",
+            "body.get",
+            "self.server.store",
+            "store.list_all()",
+            "rows.append",
+            "store.path.write_text",
+            "json.dumps"
+          ],
+          "diff_added": [
+            "self.reply",
+            "self.server.store.add",
+            "body.get"
+          ],
+          "diff_removed": [
+            "self.server.store",
+            "store.list_all()",
+            "body.get",
+            "rows.append",
+            "store.path.write_text",
+            "json.dumps",
+            "self.reply"
+          ]
+        },
+        {
+          "id": "commit:dbd4400868",
+          "source": "commit",
+          "kind": "fix",
+          "ref": "dbd44008685859312aee6a60154fd0258c1c063b",
+          "text": "fix: persist API additions with direct JSON writes bypassing store.py",
+          "paths": [
+            "todo/api.py"
+          ],
+          "line": null,
+          "author": "example-dev",
+          "date": "2026-09-15",
+          "url": null,
+          "diff_ids": [
+            "self.server.store",
+            "store.list_all()",
+            "body.get",
+            "rows.append",
+            "store.path.write_text",
+            "json.dumps",
+            "self.reply",
+            "self.server.store.add"
+          ],
+          "diff_added": [
+            "self.server.store",
+            "store.list_all()",
+            "body.get",
+            "rows.append",
+            "store.path.write_text",
+            "json.dumps",
+            "self.reply"
+          ],
+          "diff_removed": [
+            "self.reply",
+            "self.server.store.add",
+            "body.get"
+          ]
+        },
+        {
+          "id": "commit:97a3f30001",
+          "source": "commit",
+          "kind": "revert",
+          "ref": "97a3f3000122e373acec453f5102faa03b23cc2b",
+          "text": "Revert \"fix: persist CLI additions with direct JSON writes bypassing store.py\"",
+          "paths": [
+            "todo/__main__.py"
+          ],
+          "line": null,
+          "author": "example-dev",
+          "date": "2026-09-09",
+          "url": null,
+          "reverts": "570c1e91c25878c9550969a1ba4072a0e1790d27",
+          "diff_ids": [
+            "store.add",
+            "args.title",
+            "store.list_all()",
+            "rows.append",
+            "store.path.write_text",
+            "json.dumps"
+          ],
+          "diff_added": [
+            "store.add",
+            "args.title"
+          ],
+          "diff_removed": [
+            "store.list_all()",
+            "args.title",
+            "rows.append",
+            "store.path.write_text",
+            "json.dumps"
+          ]
+        },
+        {
+          "id": "commit:570c1e91c2",
+          "source": "commit",
+          "kind": "reverted",
+          "ref": "570c1e91c25878c9550969a1ba4072a0e1790d27",
+          "text": "fix: persist CLI additions with direct JSON writes bypassing store.py",
+          "paths": [
+            "todo/__main__.py"
+          ],
+          "line": null,
+          "author": "example-dev",
+          "date": "2026-09-07",
+          "url": null,
+          "reverted_by": "97a3f3000122e373acec453f5102faa03b23cc2b",
+          "diff_ids": [
+            "store.list_all()",
+            "args.title",
+            "rows.append",
+            "store.path.write_text",
+            "json.dumps",
+            "store.add"
+          ],
+          "diff_added": [
+            "store.list_all()",
+            "args.title",
+            "rows.append",
+            "store.path.write_text",
+            "json.dumps"
+          ],
+          "diff_removed": [
+            "store.add",
+            "args.title"
+          ]
+        },
+        {
+          "id": "chat:chat-feedback.md:4",
+          "source": "chat",
+          "kind": null,
+          "ref": "chat-feedback.md:4",
+          "text": "Direct JSON writes bypassing store.py lose concurrent updates; centralize persistence and locking.",
+          "paths": [],
+          "line": 4,
+          "author": null,
+          "date": null,
+          "url": null
+        },
+        {
+          "id": "chat:chat-feedback.md:3",
+          "source": "chat",
+          "kind": null,
+          "ref": "chat-feedback.md:3",
+          "text": "Direct JSON writes bypassing store.py happened in the CLI and HTTP handler. Use Store.add atomic transaction and a lint naming that fix.",
+          "paths": [],
+          "line": 3,
+          "author": null,
+          "date": null,
+          "url": null
+        }
+      ],
+      "proof": {
+        "replays": [
+          {
+            "commit": "2fd7988731",
+            "kind": "fix",
+            "mistake_rev": "2fd7988731eb^",
+            "fixed_rev": "2fd7988731eb",
+            "hits_at_mistake": 2,
+            "hits_at_fixed": 0,
+            "where": [
+              "todo/api.py:42",
+              "todo/api.py:43"
+            ],
+            "cmd": "python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-7cr39j99/plan/lint-rules.json --root /tmp/poteto-examples-7cr39j99/todo-app --rev '2fd7988731eb^' todo/api.py",
+            "distinguishes": true
+          },
+          {
+            "commit": "dbd4400868",
+            "kind": "fix",
+            "mistake_rev": "dbd440086858^",
+            "fixed_rev": "dbd440086858",
+            "hits_at_mistake": 0,
+            "hits_at_fixed": 2,
+            "where": [],
+            "cmd": "python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-7cr39j99/plan/lint-rules.json --root /tmp/poteto-examples-7cr39j99/todo-app --rev 'dbd440086858^' todo/api.py",
+            "distinguishes": false
+          },
+          {
+            "commit": "97a3f30001",
+            "kind": "revert",
+            "mistake_rev": "97a3f3000122^",
+            "fixed_rev": "97a3f3000122",
+            "hits_at_mistake": 2,
+            "hits_at_fixed": 0,
+            "where": [
+              "todo/__main__.py:35",
+              "todo/__main__.py:36"
+            ],
+            "cmd": "python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-7cr39j99/plan/lint-rules.json --root /tmp/poteto-examples-7cr39j99/todo-app --rev '97a3f3000122^' todo/__main__.py",
+            "distinguishes": true
+          },
+          {
+            "commit": "570c1e91c2",
+            "kind": "reverted",
+            "mistake_rev": "570c1e91c258",
+            "fixed_rev": "570c1e91c258^",
+            "hits_at_mistake": 2,
+            "hits_at_fixed": 0,
+            "where": [
+              "todo/__main__.py:35",
+              "todo/__main__.py:36"
+            ],
+            "cmd": "python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-7cr39j99/plan/lint-rules.json --root /tmp/poteto-examples-7cr39j99/todo-app --rev 570c1e91c258 todo/__main__.py",
+            "distinguishes": true
+          }
+        ],
+        "proven": true,
+        "head_hits": 0,
+        "head_cmd": "python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-7cr39j99/plan/lint-rules.json --root /tmp/poteto-examples-7cr39j99/todo-app /tmp/poteto-examples-7cr39j99/todo-app",
+        "head_where": []
+      }
+    },
+    {
+      "id": "T2",
+      "title": "done / status / transition",
+      "count": 5,
+      "sources": {
+        "commit": 2,
+        "review": 2,
+        "chat": 1
+      },
+      "signature": [
+        "done",
+        "status",
+        "transition",
+        "machine",
+        "reject",
+        "state",
+        "store.py",
+        "TRANSITIONS.get"
+      ],
+      "level": "types",
+      "why": "the evidence is about values or states that should not be writable (16 state/type signals)",
+      "why_not_higher": "no single owner or bypass is named, so moving code alone would not stop the bad state being constructed",
+      "bad": [],
+      "good": [
+        "TRANSITIONS.get"
+      ],
+      "votes": {
+        "TRANSITIONS.get": {
+          "bad": 0,
+          "good": 2
+        }
+      },
+      "rule": null,
+      "no_rule_reason": "no bad code pattern named in the evidence",
+      "refs": "review-comments.json#104, review-comments.json#103, 8801d95dfc",
+      "evidence": [
+        {
+          "id": "review:104",
+          "source": "review",
+          "kind": null,
+          "ref": "review-comments.json#104",
+          "text": "Status transition done to done accepted again. Reject repeated completion in the shared state machine.",
+          "paths": [
+            "todo/store.py"
+          ],
+          "line": 1,
+          "author": "reviewer",
+          "date": "2026-10-08",
+          "url": null
+        },
+        {
+          "id": "review:103",
+          "source": "review",
+          "kind": null,
+          "ref": "review-comments.json#103",
+          "text": "Status transition open to archived skips done. Keep the forward-only state machine.",
+          "paths": [
+            "todo/store.py"
+          ],
+          "line": 1,
+          "author": "reviewer",
+          "date": "2026-10-08",
+          "url": null
+        },
+        {
+          "id": "commit:8801d95dfc",
+          "source": "commit",
+          "kind": "fix",
+          "ref": "8801d95dfcf3e05c53dbbff45c8db1ac79cbb3ca",
+          "text": "fix: reject repeated status transition done to done; enforce forward-only state machine",
+          "paths": [
+            "todo/store.py"
+          ],
+          "line": null,
+          "author": "example-dev",
+          "date": "2026-10-06",
+          "url": null,
+          "diff_ids": [
+            "TRANSITIONS.get"
+          ],
+          "diff_added": [
+            "TRANSITIONS.get"
+          ],
+          "diff_removed": [
+            "TRANSITIONS.get"
+          ]
+        },
+        {
+          "id": "commit:86baa1827c",
+          "source": "commit",
+          "kind": "fix",
+          "ref": "86baa1827ce5481621192a63247c249cc5505ef5",
+          "text": "fix: reject status transition open to archived; cannot skip done",
+          "paths": [
+            "todo/store.py"
+          ],
+          "line": null,
+          "author": "example-dev",
+          "date": "2026-09-25",
+          "url": null,
+          "diff_ids": [
+            "TRANSITIONS.get"
+          ],
+          "diff_added": [
+            "TRANSITIONS.get"
+          ],
+          "diff_removed": []
+        },
+        {
+          "id": "chat:chat-feedback.md:5",
+          "source": "chat",
+          "kind": null,
+          "ref": "chat-feedback.md:5",
+          "text": "Status transition bugs returned twice: skipping done and accepting done to done. Reject illegal transitions in one state machine.",
+          "paths": [],
+          "line": 5,
+          "author": null,
+          "date": null,
+          "url": null
+        }
+      ],
+      "proof": null
+    }
+  ],
+  "unclassified": [],
+  "rules_file": "/tmp/poteto-examples-7cr39j99/plan/lint-rules.json",
+  "proved": true
+}

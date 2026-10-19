@@ -1,0 +1,17 @@
+{
+  "feature": "done-todo",
+  "kind": "cli",
+  "argv": [
+    "/usr/bin/python3",
+    "-m",
+    "todo",
+    "done",
+    "2",
+    "--data",
+    "/tmp/poteto-examples-7cr39j99/verify-state-maintain/maintain/data"
+  ],
+  "exit_code": 0,
+  "stdout": "{\"id\": 2, \"status\": \"done\", \"title\": \"verify CLI\"}\n",
+  "stderr": "",
+  "finished": "2026-10-19T05:58:48Z"
+}

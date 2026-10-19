@@ -1,0 +1,29 @@
+{
+  "feature": "list-todos",
+  "kind": "http",
+  "method": "GET",
+  "url": "http://127.0.0.1:50461/todos",
+  "request_body": null,
+  "status": 200,
+  "response_headers": {
+    "Server": "BaseHTTP/0.6 Python/3.13.5",
+    "Date": "Mon, 19 Oct 2026 05:58:48 GMT",
+    "Content-Type": "application/json",
+    "Content-Length": "105"
+  },
+  "response_body": [
+    {
+      "id": 1,
+      "status": "open",
+      "title": "verify HTTP"
+    },
+    {
+      "id": 2,
+      "status": "open",
+      "title": "verify CLI"
+    }
+  ],
+  "started": "2026-10-19T05:58:48Z",
+  "elapsed_ms": 2.1,
+  "expect": "200"
+}

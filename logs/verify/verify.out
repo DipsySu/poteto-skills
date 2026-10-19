@@ -1,0 +1,12 @@
+| Check | Result | Detail |
+|---|---|---|
+| skill frontmatter | PASS | 8 valid skill frontmatters with invocation and source IDs |
+| script contracts | PASS | 25 executable scripts; every --help exits 0 |
+| Python syntax | PASS | 37 Python files compiled with py_compile |
+| bash syntax | PASS | 10 shell files checked with bash -n |
+| docs and mapping | PASS | required files present; mapping lists every skill |
+| installer isolation | PASS | temp HOME dry-run; project link/copy/uninstall preserve unrelated entries |
+| example app | PASS | fresh nested repo: 7 unit tests and persistence boundary lint pass |
+| example skill results | PASS | all 8 skills have passing, nonempty assertion records and logs |
+
+8 PASS; 0 FAIL

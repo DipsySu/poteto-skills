@@ -41,3 +41,7 @@ Pyramid layers (S1): 1 codebase improvements (architecture, types, invariants) >
 | S11 `recall` | Needs harness-specific transcript paths. `feedback-to-architecture` takes recurring corrections as a markdown input instead. |
 | S12 `poteto-mode`, S14 principles | A personal router and a principle index. The principles that change outputs (build the lever, prove it works, encode lessons in structure) are folded into the skills above. |
 | S19 Claude Code adapter | Install paths are handled by `install.sh`. |
+
+## Reproducible validation
+
+`examples/build-todo-app.sh` reconstructs the nested example history from `examples/todo-app-src/` and explicit commit edits; the generated repository is ignored by the outer repo. `scripts/run-examples.sh` builds its own scratch repository and exercises every skill serially, retaining positive and negative assertion results in `logs/examples/summary.json`. `scripts/verify.sh` gates packaging and the saved results; `--run-examples` regenerates them. Live socket restrictions remain reported failures, with no simulated replacement evidence.

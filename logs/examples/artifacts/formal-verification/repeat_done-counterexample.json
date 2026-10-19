@@ -1,0 +1,103 @@
+{
+  "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/repeat_done.py",
+  "depth": 20,
+  "max_states": 10000,
+  "invariants": [
+    "no_lost_todo",
+    "legal_status"
+  ],
+  "ok": false,
+  "result": "violation",
+  "states": 10,
+  "transitions": 11,
+  "max_depth": 2,
+  "hit_depth_bound": false,
+  "hit_state_bound": false,
+  "violation": {
+    "kind": "invariant",
+    "name": "legal_status",
+    "detail": null,
+    "trace": [
+      {
+        "step": 0,
+        "action": "init",
+        "state": {
+          "rows": [
+            "seed"
+          ],
+          "phases": [
+            0,
+            0
+          ],
+          "snapshots": [
+            [],
+            []
+          ],
+          "owner": -1,
+          "status": "open",
+          "edges": []
+        },
+        "describe": null
+      },
+      {
+        "step": 1,
+        "action": "status open -> done",
+        "state": {
+          "rows": [
+            "seed"
+          ],
+          "phases": [
+            0,
+            0
+          ],
+          "snapshots": [
+            [],
+            []
+          ],
+          "owner": -1,
+          "status": "done",
+          "edges": [
+            [
+              "open",
+              "done"
+            ]
+          ]
+        },
+        "describe": null
+      },
+      {
+        "step": 2,
+        "action": "BUG: complete done todo",
+        "state": {
+          "rows": [
+            "seed"
+          ],
+          "phases": [
+            0,
+            0
+          ],
+          "snapshots": [
+            [],
+            []
+          ],
+          "owner": -1,
+          "status": "done",
+          "edges": [
+            [
+              "open",
+              "done"
+            ],
+            [
+              "done",
+              "done"
+            ]
+          ]
+        },
+        "describe": null
+      }
+    ]
+  },
+  "seconds": 0.0,
+  "mutants": {},
+  "expect_violation": null
+}

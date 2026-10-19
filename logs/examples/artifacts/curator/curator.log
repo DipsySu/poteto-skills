@@ -1,0 +1,5 @@
+[curate 05:58:51] mode=propose offline=1 no_fetch=0 repo=/tmp/poteto-examples-7cr39j99/collection cache=/tmp/poteto-examples-7cr39j99/cache
+[curate 05:58:51] upstream: 2 change(s), 1 changed file(s), head 4f352b52da1c
+[curate 05:58:52] wrote /tmp/poteto-examples-7cr39j99/collection/proposals/2026-10-19.md (offline, from the upstream diff)
+check_proposals: PASS: 2 proposal(s), 0 above prose, 2 prose/review (/tmp/poteto-examples-7cr39j99/collection/proposals/2026-10-19.md)
+[curate 05:58:52] done

@@ -28,7 +28,7 @@ Upstream snapshot used: `cursor/plugins` @ `6b78e9f4e46c75d1697d837e51f07c2692e6
 | S18 | principle-build-the-lever: https://github.com/cursor/plugins/blob/main/pstack/skills/principle-build-the-lever/SKILL.md | [fetched] |
 | S19 | Claude Code adapter: https://github.com/cursor/plugins/blob/main/pstack/docs/harness/claude-code.md | [fetched] |
 | S20 | Barnaby Robson, "On pstack" (2026-10-05): https://barnabyrobson.org/on-pstack/ | [secondary] |
-| S21 | Meng Shao's summary of S1: https://badinfluence.news/items/vz3iwsfefptsq3pc5c26imxyg | [secondary] (seen in search results only) |
+| S21 | Meng Shao's summary of S1: https://badinfluence.news/items/vz3iwsfefptsq3pc5c26imxyg | [unverified] (search snippet only; full summary not fetched) |
 | S22 | "The Complete Guide to pstack" Part 1 (2026-08-31) and Part 2 (2026-09-10), "Loops You Can Trust" (2026-06-24), the 2026-08-20 "gardener" post, and the 2026-08-16 "order of value" post | [unverified] cited by S20; I did not fetch the originals |
 | S23 | Matt Pocock interview "Poteto on shipping 1,000 PRs a month" (2026-10-03) | [unverified] cited by S20 |
 

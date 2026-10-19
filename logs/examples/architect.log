@@ -1,0 +1,129 @@
+scratch: /tmp/poteto-examples-7cr39j99
+$ /home/box/developer/poteto-skills/skills/architect/scripts/sketch_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/architect/SKETCH.md --json
+{
+  "candidates": [
+    {
+      "label": "A",
+      "title": "Locked repository",
+      "line": 7,
+      "decls": [
+        "add",
+        "todorepository",
+        "transition"
+      ],
+      "modules": [
+        "todo/store.py"
+      ],
+      "stubs": true,
+      "has_shape": false
+    },
+    {
+      "label": "B",
+      "title": "Append-only event reducer",
+      "line": 17,
+      "decls": [
+        "append_event",
+        "eventlog",
+        "reduce_events"
+      ],
+      "modules": [
+        "todo/events.py",
+        "todo/projection.py"
+      ],
+      "stubs": true,
+      "has_shape": false
+    }
+  ],
+  "pairs": [
+    {
+      "pair": "A/B",
+      "jaccard": 0.0,
+      "identical_code": false
+    }
+  ],
+  "checks": [
+    {
+      "check": "at least two candidates",
+      "ok": true,
+      "detail": "found 2: A, B"
+    },
+    {
+      "check": "candidate A has a sketch",
+      "ok": true,
+      "detail": "3 declarations, 1 modules"
+    },
+    {
+      "check": "candidate B has a sketch",
+      "ok": true,
+      "detail": "3 declarations, 2 modules"
+    },
+    {
+      "check": "A and B structurally distinct",
+      "ok": true,
+      "detail": "symbol/module overlap 0.00"
+    },
+    {
+      "check": "red-flags screen",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "synthesis decision",
+      "ok": true,
+      "detail": "chooses A, B"
+    }
+  ],
+  "warnings": [],
+  "ok": true
+}
+
+[exit 0; expected 0]
+ASSERT PASS: two distinct ownership sketches pass the design gate
+$ /home/box/developer/poteto-skills/skills/architect/scripts/sketch_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/architect/ONE-CANDIDATE.md --json
+{
+  "candidates": [
+    {
+      "label": "A",
+      "title": "Locked repository",
+      "line": 7,
+      "decls": [
+        "add",
+        "todorepository",
+        "transition"
+      ],
+      "modules": [
+        "todo/store.py"
+      ],
+      "stubs": true,
+      "has_shape": false
+    }
+  ],
+  "pairs": [],
+  "checks": [
+    {
+      "check": "at least two candidates",
+      "ok": false,
+      "detail": "found 1: A"
+    },
+    {
+      "check": "candidate A has a sketch",
+      "ok": true,
+      "detail": "3 declarations, 1 modules"
+    },
+    {
+      "check": "red-flags screen",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "check": "synthesis decision",
+      "ok": true,
+      "detail": "chooses A"
+    }
+  ],
+  "warnings": [],
+  "ok": false
+}
+
+[exit 1; expected 1]
+ASSERT PASS: one-candidate sketch fails specifically for missing alternatives

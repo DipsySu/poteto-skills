@@ -1,0 +1,13 @@
+| Check | Result | Detail |
+|---|---|---|
+| regenerate examples | FAIL | /home/box/developer/poteto-skills/scripts/run-examples.sh: exit 1 Fresh scratch: /tmp/poteto-examples-5p66fu_w FAIL create-verification-skill: /tmp/poteto-examples-5p66fu_w/todo-app/.claude/skills/verify-todo/scripts/control.sh launch: exit 1, expected 0; see create-verification-skill.log FAIL maintain-verification-skill: /tmp/poteto-examples-5p66fu_w/todo-app/.claude/skills/verify-todo/scripts/control.sh launch: exit 1, expected 0; see maintain-verification-skill.log PASS correct: 12 assertions PASS feedback-to-architecture: 7 assertions PASS architect: 2 assertions PASS sharpen: 3 assertions PASS formal-verification: 8 assertions PASS curator: 11 assertions  |
+| skill frontmatter | PASS | 8 valid skill frontmatters with invocation and source IDs |
+| script contracts | PASS | 24 executable scripts; every --help exits 0 |
+| Python syntax | PASS | 37 Python files compiled with py_compile |
+| bash syntax | PASS | 10 shell files checked with bash -n |
+| docs and mapping | PASS | required files present; mapping lists every skill |
+| installer isolation | PASS | temp HOME dry-run; project link/copy/uninstall preserve unrelated entries |
+| example app | PASS | fresh nested repo: 7 unit tests and persistence boundary lint pass |
+| example skill results | FAIL | real example checks did not pass: create-verification-skill, maintain-verification-skill |
+
+7 PASS; 2 FAIL

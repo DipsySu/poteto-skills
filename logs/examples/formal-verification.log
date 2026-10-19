@@ -1,0 +1,1047 @@
+scratch: /tmp/poteto-examples-7cr39j99
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_model.py --mutants --json
+{
+  "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_model.py",
+  "depth": 20,
+  "max_states": 10000,
+  "invariants": [
+    "no_lost_todo",
+    "legal_status"
+  ],
+  "ok": true,
+  "result": "pass",
+  "states": 27,
+  "transitions": 42,
+  "max_depth": 6,
+  "hit_depth_bound": false,
+  "hit_state_bound": false,
+  "violation": null,
+  "exhaustive": true,
+  "seconds": 0.0,
+  "mutants": {
+    "unlocked_writers": {
+      "killed": true,
+      "by": "no_lost_todo",
+      "steps": 4,
+      "trace": [
+        {
+          "step": 0,
+          "action": "init",
+          "state": {
+            "rows": [
+              "seed"
+            ],
+            "phases": [
+              0,
+              0
+            ],
+            "snapshots": [
+              [],
+              []
+            ],
+            "owner": -1,
+            "status": "open",
+            "edges": []
+          },
+          "describe": null
+        },
+        {
+          "step": 1,
+          "action": "writer 0: read snapshot",
+          "state": {
+            "rows": [
+              "seed"
+            ],
+            "phases": [
+              1,
+              0
+            ],
+            "snapshots": [
+              [
+                "seed"
+              ],
+              []
+            ],
+            "owner": -1,
+            "status": "open",
+            "edges": []
+          },
+          "describe": null
+        },
+        {
+          "step": 2,
+          "action": "writer 1: read snapshot",
+          "state": {
+            "rows": [
+              "seed"
+            ],
+            "phases": [
+              1,
+              1
+            ],
+            "snapshots": [
+              [
+                "seed"
+              ],
+              [
+                "seed"
+              ]
+            ],
+            "owner": -1,
+            "status": "open",
+            "edges": []
+          },
+          "describe": null
+        },
+        {
+          "step": 3,
+          "action": "writer 0: append + replace + unlock",
+          "state": {
+            "rows": [
+              "seed",
+              "writer-0"
+            ],
+            "phases": [
+              2,
+              1
+            ],
+            "snapshots": [
+              [
+                "seed"
+              ],
+              [
+                "seed"
+              ]
+            ],
+            "owner": -1,
+            "status": "open",
+            "edges": []
+          },
+          "describe": null
+        },
+        {
+          "step": 4,
+          "action": "writer 1: append + replace + unlock",
+          "state": {
+            "rows": [
+              "seed",
+              "writer-1"
+            ],
+            "phases": [
+              2,
+              2
+            ],
+            "snapshots": [
+              [
+                "seed"
+              ],
+              [
+                "seed"
+              ]
+            ],
+            "owner": -1,
+            "status": "open",
+            "edges": []
+          },
+          "describe": null
+        }
+      ]
+    },
+    "skip_done": {
+      "killed": true,
+      "by": "legal_status",
+      "steps": 1,
+      "trace": [
+        {
+          "step": 0,
+          "action": "init",
+          "state": {
+            "rows": [
+              "seed"
+            ],
+            "phases": [
+              0,
+              0
+            ],
+            "snapshots": [
+              [],
+              []
+            ],
+            "owner": -1,
+            "status": "open",
+            "edges": []
+          },
+          "describe": null
+        },
+        {
+          "step": 1,
+          "action": "BUG: archive open todo",
+          "state": {
+            "rows": [
+              "seed"
+            ],
+            "phases": [
+              0,
+              0
+            ],
+            "snapshots": [
+              [],
+              []
+            ],
+            "owner": -1,
+            "status": "archived",
+            "edges": [
+              [
+                "open",
+                "archived"
+              ]
+            ]
+          },
+          "describe": null
+        }
+      ]
+    },
+    "repeat_done": {
+      "killed": true,
+      "by": "legal_status",
+      "steps": 2,
+      "trace": [
+        {
+          "step": 0,
+          "action": "init",
+          "state": {
+            "rows": [
+              "seed"
+            ],
+            "phases": [
+              0,
+              0
+            ],
+            "snapshots": [
+              [],
+              []
+            ],
+            "owner": -1,
+            "status": "open",
+            "edges": []
+          },
+          "describe": null
+        },
+        {
+          "step": 1,
+          "action": "status open -> done",
+          "state": {
+            "rows": [
+              "seed"
+            ],
+            "phases": [
+              0,
+              0
+            ],
+            "snapshots": [
+              [],
+              []
+            ],
+            "owner": -1,
+            "status": "done",
+            "edges": [
+              [
+                "open",
+                "done"
+              ]
+            ]
+          },
+          "describe": null
+        },
+        {
+          "step": 2,
+          "action": "BUG: complete done todo",
+          "state": {
+            "rows": [
+              "seed"
+            ],
+            "phases": [
+              0,
+              0
+            ],
+            "snapshots": [
+              [],
+              []
+            ],
+            "owner": -1,
+            "status": "done",
+            "edges": [
+              [
+                "open",
+                "done"
+              ],
+              [
+                "done",
+                "done"
+              ]
+            ]
+          },
+          "describe": null
+        }
+      ]
+    }
+  },
+  "expect_violation": null
+}
+
+[exit 0; expected 0]
+ASSERT PASS: correct status and locked-writer model exhausts its finite reachable states without violation
+ASSERT PASS: checker kills unlocked writers, skipped done and repeated done mutants
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/lost_update.py --json
+{
+  "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/lost_update.py",
+  "depth": 20,
+  "max_states": 10000,
+  "invariants": [
+    "no_lost_todo",
+    "legal_status"
+  ],
+  "ok": false,
+  "result": "violation",
+  "states": 23,
+  "transitions": 32,
+  "max_depth": 4,
+  "hit_depth_bound": false,
+  "hit_state_bound": false,
+  "violation": {
+    "kind": "invariant",
+    "name": "no_lost_todo",
+    "detail": null,
+    "trace": [
+      {
+        "step": 0,
+        "action": "init",
+        "state": {
+          "rows": [
+            "seed"
+          ],
+          "phases": [
+            0,
+            0
+          ],
+          "snapshots": [
+            [],
+            []
+          ],
+          "owner": -1,
+          "status": "open",
+          "edges": []
+        },
+        "describe": null
+      },
+      {
+        "step": 1,
+        "action": "writer 0: read snapshot",
+        "state": {
+          "rows": [
+            "seed"
+          ],
+          "phases": [
+            1,
+            0
+          ],
+          "snapshots": [
+            [
+              "seed"
+            ],
+            []
+          ],
+          "owner": -1,
+          "status": "open",
+          "edges": []
+        },
+        "describe": null
+      },
+      {
+        "step": 2,
+        "action": "writer 1: read snapshot",
+        "state": {
+          "rows": [
+            "seed"
+          ],
+          "phases": [
+            1,
+            1
+          ],
+          "snapshots": [
+            [
+              "seed"
+            ],
+            [
+              "seed"
+            ]
+          ],
+          "owner": -1,
+          "status": "open",
+          "edges": []
+        },
+        "describe": null
+      },
+      {
+        "step": 3,
+        "action": "writer 0: append + replace + unlock",
+        "state": {
+          "rows": [
+            "seed",
+            "writer-0"
+          ],
+          "phases": [
+            2,
+            1
+          ],
+          "snapshots": [
+            [
+              "seed"
+            ],
+            [
+              "seed"
+            ]
+          ],
+          "owner": -1,
+          "status": "open",
+          "edges": []
+        },
+        "describe": null
+      },
+      {
+        "step": 4,
+        "action": "writer 1: append + replace + unlock",
+        "state": {
+          "rows": [
+            "seed",
+            "writer-1"
+          ],
+          "phases": [
+            2,
+            2
+          ],
+          "snapshots": [
+            [
+              "seed"
+            ],
+            [
+              "seed"
+            ]
+          ],
+          "owner": -1,
+          "status": "open",
+          "edges": []
+        },
+        "describe": null
+      }
+    ]
+  },
+  "seconds": 0.0,
+  "mutants": {},
+  "expect_violation": null
+}
+
+[exit 1; expected 1]
+ASSERT PASS: lost_update produces a real no_lost_todo counterexample trace
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/lost_update.py --expect-violation no_lost_todo --json
+{
+  "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/lost_update.py",
+  "depth": 20,
+  "max_states": 10000,
+  "invariants": [
+    "no_lost_todo",
+    "legal_status"
+  ],
+  "ok": true,
+  "result": "violation",
+  "states": 23,
+  "transitions": 32,
+  "max_depth": 4,
+  "hit_depth_bound": false,
+  "hit_state_bound": false,
+  "violation": {
+    "kind": "invariant",
+    "name": "no_lost_todo",
+    "detail": null,
+    "trace": [
+      {
+        "step": 0,
+        "action": "init",
+        "state": {
+          "rows": [
+            "seed"
+          ],
+          "phases": [
+            0,
+            0
+          ],
+          "snapshots": [
+            [],
+            []
+          ],
+          "owner": -1,
+          "status": "open",
+          "edges": []
+        },
+        "describe": null
+      },
+      {
+        "step": 1,
+        "action": "writer 0: read snapshot",
+        "state": {
+          "rows": [
+            "seed"
+          ],
+          "phases": [
+            1,
+            0
+          ],
+          "snapshots": [
+            [
+              "seed"
+            ],
+            []
+          ],
+          "owner": -1,
+          "status": "open",
+          "edges": []
+        },
+        "describe": null
+      },
+      {
+        "step": 2,
+        "action": "writer 1: read snapshot",
+        "state": {
+          "rows": [
+            "seed"
+          ],
+          "phases": [
+            1,
+            1
+          ],
+          "snapshots": [
+            [
+              "seed"
+            ],
+            [
+              "seed"
+            ]
+          ],
+          "owner": -1,
+          "status": "open",
+          "edges": []
+        },
+        "describe": null
+      },
+      {
+        "step": 3,
+        "action": "writer 0: append + replace + unlock",
+        "state": {
+          "rows": [
+            "seed",
+            "writer-0"
+          ],
+          "phases": [
+            2,
+            1
+          ],
+          "snapshots": [
+            [
+              "seed"
+            ],
+            [
+              "seed"
+            ]
+          ],
+          "owner": -1,
+          "status": "open",
+          "edges": []
+        },
+        "describe": null
+      },
+      {
+        "step": 4,
+        "action": "writer 1: append + replace + unlock",
+        "state": {
+          "rows": [
+            "seed",
+            "writer-1"
+          ],
+          "phases": [
+            2,
+            2
+          ],
+          "snapshots": [
+            [
+              "seed"
+            ],
+            [
+              "seed"
+            ]
+          ],
+          "owner": -1,
+          "status": "open",
+          "edges": []
+        },
+        "describe": null
+      }
+    ]
+  },
+  "seconds": 0.0,
+  "mutants": {},
+  "expect_violation": "no_lost_todo"
+}
+
+[exit 0; expected 0]
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/skip_done.py --json
+{
+  "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/skip_done.py",
+  "depth": 20,
+  "max_states": 10000,
+  "invariants": [
+    "no_lost_todo",
+    "legal_status"
+  ],
+  "ok": false,
+  "result": "violation",
+  "states": 5,
+  "transitions": 4,
+  "max_depth": 1,
+  "hit_depth_bound": false,
+  "hit_state_bound": false,
+  "violation": {
+    "kind": "invariant",
+    "name": "legal_status",
+    "detail": null,
+    "trace": [
+      {
+        "step": 0,
+        "action": "init",
+        "state": {
+          "rows": [
+            "seed"
+          ],
+          "phases": [
+            0,
+            0
+          ],
+          "snapshots": [
+            [],
+            []
+          ],
+          "owner": -1,
+          "status": "open",
+          "edges": []
+        },
+        "describe": null
+      },
+      {
+        "step": 1,
+        "action": "BUG: archive open todo",
+        "state": {
+          "rows": [
+            "seed"
+          ],
+          "phases": [
+            0,
+            0
+          ],
+          "snapshots": [
+            [],
+            []
+          ],
+          "owner": -1,
+          "status": "archived",
+          "edges": [
+            [
+              "open",
+              "archived"
+            ]
+          ]
+        },
+        "describe": null
+      }
+    ]
+  },
+  "seconds": 0.0,
+  "mutants": {},
+  "expect_violation": null
+}
+
+[exit 1; expected 1]
+ASSERT PASS: skip_done produces a real legal_status counterexample trace
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/skip_done.py --expect-violation legal_status --json
+{
+  "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/skip_done.py",
+  "depth": 20,
+  "max_states": 10000,
+  "invariants": [
+    "no_lost_todo",
+    "legal_status"
+  ],
+  "ok": true,
+  "result": "violation",
+  "states": 5,
+  "transitions": 4,
+  "max_depth": 1,
+  "hit_depth_bound": false,
+  "hit_state_bound": false,
+  "violation": {
+    "kind": "invariant",
+    "name": "legal_status",
+    "detail": null,
+    "trace": [
+      {
+        "step": 0,
+        "action": "init",
+        "state": {
+          "rows": [
+            "seed"
+          ],
+          "phases": [
+            0,
+            0
+          ],
+          "snapshots": [
+            [],
+            []
+          ],
+          "owner": -1,
+          "status": "open",
+          "edges": []
+        },
+        "describe": null
+      },
+      {
+        "step": 1,
+        "action": "BUG: archive open todo",
+        "state": {
+          "rows": [
+            "seed"
+          ],
+          "phases": [
+            0,
+            0
+          ],
+          "snapshots": [
+            [],
+            []
+          ],
+          "owner": -1,
+          "status": "archived",
+          "edges": [
+            [
+              "open",
+              "archived"
+            ]
+          ]
+        },
+        "describe": null
+      }
+    ]
+  },
+  "seconds": 0.0,
+  "mutants": {},
+  "expect_violation": "legal_status"
+}
+
+[exit 0; expected 0]
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/repeat_done.py --json
+{
+  "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/repeat_done.py",
+  "depth": 20,
+  "max_states": 10000,
+  "invariants": [
+    "no_lost_todo",
+    "legal_status"
+  ],
+  "ok": false,
+  "result": "violation",
+  "states": 10,
+  "transitions": 11,
+  "max_depth": 2,
+  "hit_depth_bound": false,
+  "hit_state_bound": false,
+  "violation": {
+    "kind": "invariant",
+    "name": "legal_status",
+    "detail": null,
+    "trace": [
+      {
+        "step": 0,
+        "action": "init",
+        "state": {
+          "rows": [
+            "seed"
+          ],
+          "phases": [
+            0,
+            0
+          ],
+          "snapshots": [
+            [],
+            []
+          ],
+          "owner": -1,
+          "status": "open",
+          "edges": []
+        },
+        "describe": null
+      },
+      {
+        "step": 1,
+        "action": "status open -> done",
+        "state": {
+          "rows": [
+            "seed"
+          ],
+          "phases": [
+            0,
+            0
+          ],
+          "snapshots": [
+            [],
+            []
+          ],
+          "owner": -1,
+          "status": "done",
+          "edges": [
+            [
+              "open",
+              "done"
+            ]
+          ]
+        },
+        "describe": null
+      },
+      {
+        "step": 2,
+        "action": "BUG: complete done todo",
+        "state": {
+          "rows": [
+            "seed"
+          ],
+          "phases": [
+            0,
+            0
+          ],
+          "snapshots": [
+            [],
+            []
+          ],
+          "owner": -1,
+          "status": "done",
+          "edges": [
+            [
+              "open",
+              "done"
+            ],
+            [
+              "done",
+              "done"
+            ]
+          ]
+        },
+        "describe": null
+      }
+    ]
+  },
+  "seconds": 0.0,
+  "mutants": {},
+  "expect_violation": null
+}
+
+[exit 1; expected 1]
+ASSERT PASS: repeat_done produces a real legal_status counterexample trace
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/repeat_done.py --expect-violation legal_status --json
+{
+  "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/repeat_done.py",
+  "depth": 20,
+  "max_states": 10000,
+  "invariants": [
+    "no_lost_todo",
+    "legal_status"
+  ],
+  "ok": true,
+  "result": "violation",
+  "states": 10,
+  "transitions": 11,
+  "max_depth": 2,
+  "hit_depth_bound": false,
+  "hit_state_bound": false,
+  "violation": {
+    "kind": "invariant",
+    "name": "legal_status",
+    "detail": null,
+    "trace": [
+      {
+        "step": 0,
+        "action": "init",
+        "state": {
+          "rows": [
+            "seed"
+          ],
+          "phases": [
+            0,
+            0
+          ],
+          "snapshots": [
+            [],
+            []
+          ],
+          "owner": -1,
+          "status": "open",
+          "edges": []
+        },
+        "describe": null
+      },
+      {
+        "step": 1,
+        "action": "status open -> done",
+        "state": {
+          "rows": [
+            "seed"
+          ],
+          "phases": [
+            0,
+            0
+          ],
+          "snapshots": [
+            [],
+            []
+          ],
+          "owner": -1,
+          "status": "done",
+          "edges": [
+            [
+              "open",
+              "done"
+            ]
+          ]
+        },
+        "describe": null
+      },
+      {
+        "step": 2,
+        "action": "BUG: complete done todo",
+        "state": {
+          "rows": [
+            "seed"
+          ],
+          "phases": [
+            0,
+            0
+          ],
+          "snapshots": [
+            [],
+            []
+          ],
+          "owner": -1,
+          "status": "done",
+          "edges": [
+            [
+              "open",
+              "done"
+            ],
+            [
+              "done",
+              "done"
+            ]
+          ]
+        },
+        "describe": null
+      }
+    ]
+  },
+  "seconds": 0.0,
+  "mutants": {},
+  "expect_violation": "legal_status"
+}
+
+[exit 0; expected 0]
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_model.py --depth 0 --json
+{
+  "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_model.py",
+  "depth": 0,
+  "max_states": 10000,
+  "invariants": [
+    "no_lost_todo",
+    "legal_status"
+  ],
+  "ok": true,
+  "result": "pass",
+  "states": 1,
+  "transitions": 0,
+  "max_depth": 0,
+  "hit_depth_bound": true,
+  "hit_state_bound": false,
+  "violation": null,
+  "exhaustive": false,
+  "seconds": 0.0,
+  "mutants": {},
+  "expect_violation": null
+}
+
+[exit 0; expected 0]
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_model.py --depth -1
+bounded_check: depth must be nonnegative and max-states must be positive
+
+[exit 2; expected 2]
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/empty.py
+bounded_check: model has no initial states
+
+[exit 2; expected 2]
+ASSERT PASS: empty initial states and invalid bounds are rejected
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/dead.py --mutants --deadlock --json
+{
+  "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/dead.py",
+  "depth": 25,
+  "max_states": 200000,
+  "invariants": [
+    "ok"
+  ],
+  "ok": false,
+  "result": "pass",
+  "states": 1,
+  "transitions": 1,
+  "max_depth": 0,
+  "hit_depth_bound": false,
+  "hit_state_bound": false,
+  "violation": null,
+  "exhaustive": true,
+  "seconds": 0.0,
+  "mutants": {
+    "dead": {
+      "killed": false,
+      "by": "deadlock",
+      "steps": 0,
+      "trace": [
+        {
+          "step": 0,
+          "action": "init",
+          "state": 0,
+          "describe": null
+        }
+      ]
+    }
+  },
+  "expect_violation": null
+}
+
+[exit 1; expected 1]
+ASSERT PASS: deadlock alone does not prove an invariant mutant was killed
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/tla_available.sh --json
+{
+  "available": false,
+  "java": null,
+  "java_version": null,
+  "tla2tools_jar": null,
+  "tlc_wrapper": null,
+  "run": null,
+  "fallback": "python3 /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py MODEL.py",
+  "get_tla2tools": "https://github.com/tlaplus/tlaplus/releases (tla2tools.jar), plus a JDK 11+",
+  "other_verifiers": {}
+}
+
+[exit 1; expected (0, 1)]
+ASSERT PASS: TLA availability exit code matches its report and advertises the stdlib fallback

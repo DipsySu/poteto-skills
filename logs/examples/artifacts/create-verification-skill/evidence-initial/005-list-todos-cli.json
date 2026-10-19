@@ -1,0 +1,16 @@
+{
+  "feature": "list-todos",
+  "kind": "cli",
+  "argv": [
+    "/usr/bin/python3",
+    "-m",
+    "todo",
+    "list",
+    "--data",
+    "/tmp/poteto-examples-7cr39j99/verify-state-initial/initial/data"
+  ],
+  "exit_code": 0,
+  "stdout": "[{\"id\": 1, \"status\": \"open\", \"title\": \"verify HTTP\"}, {\"id\": 2, \"status\": \"open\", \"title\": \"verify CLI\"}]\n",
+  "stderr": "",
+  "finished": "2026-10-19T05:58:46Z"
+}

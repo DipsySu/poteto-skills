@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "tool": "patlint",
+  "note": "Ratchet baseline: counts may only go down. Update with --update-baseline.",
+  "counts": {
+    "no-direct-json-write": {}
+  }
+}

@@ -1,0 +1,3 @@
+$ git add -A && git -c user.name=codex -c user.email=codex@local commit -m "phase B: example repo, run-examples, verify (codex)"
+fatal: Unable to create '/home/box/developer/poteto-skills/.git/index.lock': Read-only file system
+exit: 128

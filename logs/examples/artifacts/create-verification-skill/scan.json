@@ -1,0 +1,479 @@
+{
+  "repo": "/tmp/poteto-examples-7cr39j99/todo-app",
+  "languages": [
+    {
+      "name": "python",
+      "files": 6
+    },
+    {
+      "name": "shell",
+      "files": 1
+    }
+  ],
+  "markers": [
+    "README.md",
+    "AGENTS.md"
+  ],
+  "build_commands": [],
+  "test_commands": [
+    {
+      "cmd": "python3 -m unittest",
+      "source": "tests/test_todo.py"
+    }
+  ],
+  "launch_candidates": [
+    {
+      "kind": "server",
+      "cmd": "python3 -m todo serve",
+      "port": 8765,
+      "prog": "python3 -m todo",
+      "subcommand": "serve",
+      "port_flag": "--port",
+      "data_flag": "--data",
+      "port_flag_global": false,
+      "data_flag_global": false,
+      "source": "todo/__main__.py:12"
+    },
+    {
+      "kind": "cli",
+      "cmd": "python3 -m todo",
+      "subcommands": [
+        "add",
+        "done",
+        "list",
+        "rm"
+      ],
+      "source": "todo/__main__.py:15",
+      "port": null,
+      "port_flag": null,
+      "data_flag": "--data",
+      "data_flag_global": false
+    }
+  ],
+  "http_routes": [
+    {
+      "method": "GET",
+      "path": "/health",
+      "source": "todo/api.py:24",
+      "how": "eq",
+      "health": true
+    },
+    {
+      "method": "GET",
+      "path": "/todos",
+      "source": "todo/api.py:26",
+      "how": "eq",
+      "health": false
+    },
+    {
+      "method": "POST",
+      "path": "/todos",
+      "source": "todo/api.py:34",
+      "how": "eq",
+      "body_keys": [
+        "title"
+      ],
+      "health": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/todos/<id>",
+      "source": "todo/api.py:52",
+      "how": "regex",
+      "health": false
+    },
+    {
+      "method": "POST",
+      "path": "/todos/<id>/done",
+      "source": "todo/api.py:40",
+      "how": "regex",
+      "body_keys": [
+        "title"
+      ],
+      "health": false
+    }
+  ],
+  "health_routes": [
+    {
+      "method": "GET",
+      "path": "/health",
+      "source": "todo/api.py:24",
+      "how": "eq",
+      "health": true
+    }
+  ],
+  "cli_commands": [
+    {
+      "prog": "python3 -m todo",
+      "aliases": [
+        "python -m todo"
+      ],
+      "name": "add",
+      "options": [
+        {
+          "names": [
+            "title"
+          ],
+          "default": null,
+          "positional": true
+        },
+        {
+          "names": [
+            "--data"
+          ],
+          "default": "data",
+          "positional": false
+        }
+      ],
+      "global_options": [],
+      "source": "todo/__main__.py:15",
+      "via": "argparse",
+      "port_flag": null,
+      "data_flag": "--data",
+      "port_flag_global": false,
+      "data_flag_global": false,
+      "positionals": [
+        "title"
+      ],
+      "launch": false
+    },
+    {
+      "prog": "python3 -m todo",
+      "aliases": [
+        "python -m todo"
+      ],
+      "name": "done",
+      "options": [
+        {
+          "names": [
+            "id"
+          ],
+          "default": null,
+          "positional": true
+        },
+        {
+          "names": [
+            "--data"
+          ],
+          "default": "data",
+          "positional": false
+        }
+      ],
+      "global_options": [],
+      "source": "todo/__main__.py:20",
+      "via": "argparse",
+      "port_flag": null,
+      "data_flag": "--data",
+      "port_flag_global": false,
+      "data_flag_global": false,
+      "positionals": [
+        "id"
+      ],
+      "launch": false
+    },
+    {
+      "prog": "python3 -m todo",
+      "aliases": [
+        "python -m todo"
+      ],
+      "name": "list",
+      "options": [
+        {
+          "names": [
+            "--data"
+          ],
+          "default": "data",
+          "positional": false
+        }
+      ],
+      "global_options": [],
+      "source": "todo/__main__.py:18",
+      "via": "argparse",
+      "port_flag": null,
+      "data_flag": "--data",
+      "port_flag_global": false,
+      "data_flag_global": false,
+      "positionals": [],
+      "launch": false
+    },
+    {
+      "prog": "python3 -m todo",
+      "aliases": [
+        "python -m todo"
+      ],
+      "name": "rm",
+      "options": [
+        {
+          "names": [
+            "id"
+          ],
+          "default": null,
+          "positional": true
+        },
+        {
+          "names": [
+            "--data"
+          ],
+          "default": "data",
+          "positional": false
+        }
+      ],
+      "global_options": [],
+      "source": "todo/__main__.py:23",
+      "via": "argparse",
+      "port_flag": null,
+      "data_flag": "--data",
+      "port_flag_global": false,
+      "data_flag_global": false,
+      "positionals": [
+        "id"
+      ],
+      "launch": false
+    },
+    {
+      "prog": "python3 -m todo",
+      "aliases": [
+        "python -m todo"
+      ],
+      "name": "serve",
+      "options": [
+        {
+          "names": [
+            "--port"
+          ],
+          "default": 8765,
+          "positional": false
+        },
+        {
+          "names": [
+            "--data"
+          ],
+          "default": "data",
+          "positional": false
+        }
+      ],
+      "global_options": [],
+      "source": "todo/__main__.py:12",
+      "via": "argparse",
+      "port_flag": "--port",
+      "data_flag": "--data",
+      "port_flag_global": false,
+      "data_flag_global": false,
+      "positionals": [],
+      "launch": true
+    }
+  ],
+  "env_vars": [],
+  "skill_dirs": [],
+  "features": [
+    {
+      "id": "create-todo",
+      "title": "Create a todo",
+      "action": "create",
+      "resource": "todos",
+      "routes": [
+        {
+          "method": "POST",
+          "path": "/todos",
+          "source": "todo/api.py:34",
+          "how": "eq",
+          "body_keys": [
+            "title"
+          ],
+          "health": false
+        }
+      ],
+      "commands": [
+        {
+          "prog": "python3 -m todo",
+          "aliases": [
+            "python -m todo"
+          ],
+          "name": "add",
+          "options": [
+            {
+              "names": [
+                "title"
+              ],
+              "default": null,
+              "positional": true
+            },
+            {
+              "names": [
+                "--data"
+              ],
+              "default": "data",
+              "positional": false
+            }
+          ],
+          "global_options": [],
+          "source": "todo/__main__.py:15",
+          "via": "argparse",
+          "port_flag": null,
+          "data_flag": "--data",
+          "port_flag_global": false,
+          "data_flag_global": false,
+          "positionals": [
+            "title"
+          ],
+          "launch": false
+        }
+      ]
+    },
+    {
+      "id": "list-todos",
+      "title": "List todos",
+      "action": "list",
+      "resource": "todos",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/todos",
+          "source": "todo/api.py:26",
+          "how": "eq",
+          "health": false
+        }
+      ],
+      "commands": [
+        {
+          "prog": "python3 -m todo",
+          "aliases": [
+            "python -m todo"
+          ],
+          "name": "list",
+          "options": [
+            {
+              "names": [
+                "--data"
+              ],
+              "default": "data",
+              "positional": false
+            }
+          ],
+          "global_options": [],
+          "source": "todo/__main__.py:18",
+          "via": "argparse",
+          "port_flag": null,
+          "data_flag": "--data",
+          "port_flag_global": false,
+          "data_flag_global": false,
+          "positionals": [],
+          "launch": false
+        }
+      ]
+    },
+    {
+      "id": "done-todo",
+      "title": "Mark a todo done",
+      "action": "done",
+      "resource": "todos",
+      "routes": [
+        {
+          "method": "POST",
+          "path": "/todos/<id>/done",
+          "source": "todo/api.py:40",
+          "how": "regex",
+          "body_keys": [
+            "title"
+          ],
+          "health": false
+        }
+      ],
+      "commands": [
+        {
+          "prog": "python3 -m todo",
+          "aliases": [
+            "python -m todo"
+          ],
+          "name": "done",
+          "options": [
+            {
+              "names": [
+                "id"
+              ],
+              "default": null,
+              "positional": true
+            },
+            {
+              "names": [
+                "--data"
+              ],
+              "default": "data",
+              "positional": false
+            }
+          ],
+          "global_options": [],
+          "source": "todo/__main__.py:20",
+          "via": "argparse",
+          "port_flag": null,
+          "data_flag": "--data",
+          "port_flag_global": false,
+          "data_flag_global": false,
+          "positionals": [
+            "id"
+          ],
+          "launch": false
+        }
+      ]
+    },
+    {
+      "id": "delete-todo",
+      "title": "Delete a todo",
+      "action": "delete",
+      "resource": "todos",
+      "routes": [
+        {
+          "method": "DELETE",
+          "path": "/todos/<id>",
+          "source": "todo/api.py:52",
+          "how": "regex",
+          "health": false
+        }
+      ],
+      "commands": [
+        {
+          "prog": "python3 -m todo",
+          "aliases": [
+            "python -m todo"
+          ],
+          "name": "rm",
+          "options": [
+            {
+              "names": [
+                "id"
+              ],
+              "default": null,
+              "positional": true
+            },
+            {
+              "names": [
+                "--data"
+              ],
+              "default": "data",
+              "positional": false
+            }
+          ],
+          "global_options": [],
+          "source": "todo/__main__.py:23",
+          "via": "argparse",
+          "port_flag": null,
+          "data_flag": "--data",
+          "port_flag_global": false,
+          "data_flag_global": false,
+          "positionals": [
+            "id"
+          ],
+          "launch": false
+        }
+      ]
+    }
+  ],
+  "notes": [],
+  "ports": [
+    {
+      "port": 8765,
+      "source": "todo/__main__.py:12",
+      "flag": "--port"
+    }
+  ]
+}

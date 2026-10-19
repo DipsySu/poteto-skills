@@ -1,0 +1,840 @@
+scratch: /tmp/poteto-examples-7cr39j99
+$ /home/box/developer/poteto-skills/skills/correct/scripts/mine_mistakes.py /tmp/poteto-examples-7cr39j99/todo-app --since 2026-09-01 --feedback /tmp/poteto-examples-7cr39j99/todo-app/review-comments.json /tmp/poteto-examples-7cr39j99/todo-app/chat-feedback.md --json
+{
+  "repo": "/tmp/poteto-examples-7cr39j99/todo-app",
+  "since": "2026-09-01",
+  "items": 13,
+  "counts": {
+    "commit": 6,
+    "review": 4,
+    "chat": 3
+  },
+  "min_count": 2,
+  "classes": [
+    {
+      "count": 7,
+      "items": 8,
+      "sources": {
+        "commit": 4,
+        "review": 2,
+        "chat": 2
+      },
+      "signature": [
+        "store.py",
+        "bypassing",
+        "direct",
+        "json",
+        "store",
+        "writes",
+        "Store.add",
+        "json.dumps"
+      ],
+      "signature_keys": [
+        "file:store.py",
+        "bypass",
+        "direct",
+        "json",
+        "stor",
+        "writ",
+        "id:store.add",
+        "id:json.dumps"
+      ],
+      "evidence": [
+        {
+          "id": "review:102",
+          "source": "review",
+          "kind": null,
+          "ref": "review-comments.json#102",
+          "text": "Direct JSON writes bypassing store.py repeat in the HTTP handler. Use Store.add; only store.py owns persistence and locking.",
+          "paths": [
+            "todo/api.py"
+          ],
+          "line": 1,
+          "author": "reviewer",
+          "date": "2026-10-08",
+          "url": null
+        },
+        {
+          "id": "review:101",
+          "source": "review",
+          "kind": null,
+          "ref": "review-comments.json#101",
+          "text": "Direct JSON writes bypassing store.py again: store.path.write_text(json.dumps(rows)) loses concurrent additions. Use Store.add atomic transaction.",
+          "paths": [
+            "todo/__main__.py"
+          ],
+          "line": 1,
+          "author": "reviewer",
+          "date": "2026-10-08",
+          "url": null
+        },
+        {
+          "id": "commit:2fd7988731",
+          "source": "commit",
+          "kind": "fix",
+          "ref": "2fd7988731eb03a000207e269b441daeb22d2a3e",
+          "text": "fix: remove direct JSON writes bypassing store.py; use Store.add atomic transaction",
+          "paths": [
+            "todo/api.py"
+          ],
+          "line": null,
+          "author": "example-dev",
+          "date": "2026-09-18",
+          "url": null,
+          "diff_ids": [
+            "self.reply",
+            "self.server.store.add",
+            "body.get",
+            "self.server.store",
+            "store.list_all()",
+            "rows.append",
+            "store.path.write_text",
+            "json.dumps"
+          ],
+          "diff_added": [
+            "self.reply",
+            "self.server.store.add",
+            "body.get"
+          ],
+          "diff_removed": [
+            "self.server.store",
+            "store.list_all()",
+            "body.get",
+            "rows.append",
+            "store.path.write_text",
+            "json.dumps",
+            "self.reply"
+          ]
+        },
+        {
+          "id": "commit:dbd4400868",
+          "source": "commit",
+          "kind": "fix",
+          "ref": "dbd44008685859312aee6a60154fd0258c1c063b",
+          "text": "fix: persist API additions with direct JSON writes bypassing store.py",
+          "paths": [
+            "todo/api.py"
+          ],
+          "line": null,
+          "author": "example-dev",
+          "date": "2026-09-15",
+          "url": null,
+          "diff_ids": [
+            "self.server.store",
+            "store.list_all()",
+            "body.get",
+            "rows.append",
+            "store.path.write_text",
+            "json.dumps",
+            "self.reply",
+            "self.server.store.add"
+          ],
+          "diff_added": [
+            "self.server.store",
+            "store.list_all()",
+            "body.get",
+            "rows.append",
+            "store.path.write_text",
+            "json.dumps",
+            "self.reply"
+          ],
+          "diff_removed": [
+            "self.reply",
+            "self.server.store.add",
+            "body.get"
+          ]
+        },
+        {
+          "id": "commit:97a3f30001",
+          "source": "commit",
+          "kind": "revert",
+          "ref": "97a3f3000122e373acec453f5102faa03b23cc2b",
+          "text": "Revert \"fix: persist CLI additions with direct JSON writes bypassing store.py\"",
+          "paths": [
+            "todo/__main__.py"
+          ],
+          "line": null,
+          "author": "example-dev",
+          "date": "2026-09-09",
+          "url": null,
+          "diff_ids": [
+            "store.add",
+            "args.title",
+            "store.list_all()",
+            "rows.append",
+            "store.path.write_text",
+            "json.dumps"
+          ],
+          "diff_added": [
+            "store.add",
+            "args.title"
+          ],
+          "diff_removed": [
+            "store.list_all()",
+            "args.title",
+            "rows.append",
+            "store.path.write_text",
+            "json.dumps"
+          ],
+          "reverts": "570c1e91c25878c9550969a1ba4072a0e1790d27"
+        },
+        {
+          "id": "commit:570c1e91c2",
+          "source": "commit",
+          "kind": "reverted",
+          "ref": "570c1e91c25878c9550969a1ba4072a0e1790d27",
+          "text": "fix: persist CLI additions with direct JSON writes bypassing store.py",
+          "paths": [
+            "todo/__main__.py"
+          ],
+          "line": null,
+          "author": "example-dev",
+          "date": "2026-09-07",
+          "url": null,
+          "diff_ids": [
+            "store.list_all()",
+            "args.title",
+            "rows.append",
+            "store.path.write_text",
+            "json.dumps",
+            "store.add"
+          ],
+          "diff_added": [
+            "store.list_all()",
+            "args.title",
+            "rows.append",
+            "store.path.write_text",
+            "json.dumps"
+          ],
+          "diff_removed": [
+            "store.add",
+            "args.title"
+          ],
+          "reverted_by": "97a3f3000122e373acec453f5102faa03b23cc2b"
+        },
+        {
+          "id": "chat:chat-feedback.md:4",
+          "source": "chat",
+          "kind": null,
+          "ref": "chat-feedback.md:4",
+          "text": "Direct JSON writes bypassing store.py lose concurrent updates; centralize persistence and locking.",
+          "paths": [],
+          "line": 4,
+          "author": null,
+          "date": null,
+          "url": null
+        },
+        {
+          "id": "chat:chat-feedback.md:3",
+          "source": "chat",
+          "kind": null,
+          "ref": "chat-feedback.md:3",
+          "text": "Direct JSON writes bypassing store.py happened in the CLI and HTTP handler. Use Store.add atomic transaction and a lint naming that fix.",
+          "paths": [],
+          "line": 3,
+          "author": null,
+          "date": null,
+          "url": null
+        }
+      ],
+      "rules": [
+        {
+          "file": "AGENTS.md",
+          "line": 5,
+          "text": "Persist JSON only through store.py; use Store.add or Store.transition",
+          "enforced_by": "scripts/lint.sh",
+          "status": "enforced"
+        }
+      ],
+      "repeat": false,
+      "id": "C1"
+    },
+    {
+      "count": 5,
+      "items": 5,
+      "sources": {
+        "commit": 2,
+        "review": 2,
+        "chat": 1
+      },
+      "signature": [
+        "done",
+        "status",
+        "transition",
+        "machine",
+        "reject",
+        "state",
+        "store.py",
+        "TRANSITIONS.get"
+      ],
+      "signature_keys": [
+        "done",
+        "status",
+        "transition",
+        "machin",
+        "reject",
+        "stat",
+        "file:store.py",
+        "id:transitions.get"
+      ],
+      "evidence": [
+        {
+          "id": "review:104",
+          "source": "review",
+          "kind": null,
+          "ref": "review-comments.json#104",
+          "text": "Status transition done to done accepted again. Reject repeated completion in the shared state machine.",
+          "paths": [
+            "todo/store.py"
+          ],
+          "line": 1,
+          "author": "reviewer",
+          "date": "2026-10-08",
+          "url": null
+        },
+        {
+          "id": "review:103",
+          "source": "review",
+          "kind": null,
+          "ref": "review-comments.json#103",
+          "text": "Status transition open to archived skips done. Keep the forward-only state machine.",
+          "paths": [
+            "todo/store.py"
+          ],
+          "line": 1,
+          "author": "reviewer",
+          "date": "2026-10-08",
+          "url": null
+        },
+        {
+          "id": "commit:8801d95dfc",
+          "source": "commit",
+          "kind": "fix",
+          "ref": "8801d95dfcf3e05c53dbbff45c8db1ac79cbb3ca",
+          "text": "fix: reject repeated status transition done to done; enforce forward-only state machine",
+          "paths": [
+            "todo/store.py"
+          ],
+          "line": null,
+          "author": "example-dev",
+          "date": "2026-10-06",
+          "url": null,
+          "diff_ids": [
+            "TRANSITIONS.get"
+          ],
+          "diff_added": [
+            "TRANSITIONS.get"
+          ],
+          "diff_removed": [
+            "TRANSITIONS.get"
+          ]
+        },
+        {
+          "id": "commit:86baa1827c",
+          "source": "commit",
+          "kind": "fix",
+          "ref": "86baa1827ce5481621192a63247c249cc5505ef5",
+          "text": "fix: reject status transition open to archived; cannot skip done",
+          "paths": [
+            "todo/store.py"
+          ],
+          "line": null,
+          "author": "example-dev",
+          "date": "2026-09-25",
+          "url": null,
+          "diff_ids": [
+            "TRANSITIONS.get"
+          ],
+          "diff_added": [
+            "TRANSITIONS.get"
+          ],
+          "diff_removed": []
+        },
+        {
+          "id": "chat:chat-feedback.md:5",
+          "source": "chat",
+          "kind": null,
+          "ref": "chat-feedback.md:5",
+          "text": "Status transition bugs returned twice: skipping done and accepting done to done. Reject illegal transitions in one state machine.",
+          "paths": [],
+          "line": 5,
+          "author": null,
+          "date": null,
+          "url": null
+        }
+      ],
+      "rules": [
+        {
+          "file": "AGENTS.md",
+          "line": 5,
+          "text": "Persist JSON only through store.py; use Store.add or Store.transition",
+          "enforced_by": "scripts/lint.sh",
+          "status": "enforced"
+        },
+        {
+          "file": "AGENTS.md",
+          "line": 6,
+          "text": "Status changes follow open -> done -> archived",
+          "enforced_by": "tests/test_todo.py",
+          "status": "enforced"
+        }
+      ],
+      "repeat": false,
+      "id": "C2"
+    }
+  ],
+  "unclassified": [],
+  "rules_read": 3
+}
+
+[exit 0; expected 0]
+ASSERT PASS: direct-JSON class contains both real mistake commit SHAs
+ASSERT PASS: status-transition class contains both fix commits
+$ git worktree add --detach /tmp/poteto-examples-7cr39j99/past-direct-write dbd44008685859312aee6a60154fd0258c1c063b
+Preparing worktree (detached HEAD dbd4400)
+HEAD is now at dbd4400 fix: persist API additions with direct JSON writes bypassing store.py
+
+[exit 0; expected 0]
+$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-7cr39j99/past-direct-write --json /tmp/poteto-examples-7cr39j99/past-direct-write/todo
+{
+  "ok": false,
+  "rules": [
+    "no-direct-json-write"
+  ],
+  "files_scanned": 3,
+  "rev": null,
+  "root": "/tmp/poteto-examples-7cr39j99/past-direct-write",
+  "failing": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/api.py",
+      "line": 43,
+      "col": 17,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence.",
+      "text": "store.path.write_text(json.dumps(rows))"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/api.py",
+      "line": 43,
+      "col": 17,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence.",
+      "text": "store.path.write_text(json.dumps(rows))"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "updated": false
+  }
+}
+
+[exit 1; expected 1]
+ASSERT PASS: patlint fails on a real past mistake checked out in a worktree
+$ git worktree remove --force /tmp/poteto-examples-7cr39j99/past-direct-write
+
+[exit 0; expected 0]
+$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-7cr39j99/todo-app --json /tmp/poteto-examples-7cr39j99/todo-app/todo
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write"
+  ],
+  "files_scanned": 3,
+  "rev": null,
+  "root": "/tmp/poteto-examples-7cr39j99/todo-app",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "updated": false
+  }
+}
+
+[exit 0; expected 0]
+ASSERT PASS: same persistence lint passes on HEAD
+$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-7cr39j99/ratchet --json --baseline /tmp/poteto-examples-7cr39j99/ratchet/baseline.json --update-baseline /tmp/poteto-examples-7cr39j99/ratchet/todo/legacy.py
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write"
+  ],
+  "files_scanned": 1,
+  "rev": null,
+  "root": "/tmp/poteto-examples-7cr39j99/ratchet",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/legacy.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/tmp/poteto-examples-7cr39j99/ratchet/baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "updated": true
+  }
+}
+
+[exit 0; expected 0]
+$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-7cr39j99/ratchet --json --baseline /tmp/poteto-examples-7cr39j99/ratchet/baseline.json /tmp/poteto-examples-7cr39j99/ratchet/todo/legacy.py
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write"
+  ],
+  "files_scanned": 1,
+  "rev": null,
+  "root": "/tmp/poteto-examples-7cr39j99/ratchet",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/legacy.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/tmp/poteto-examples-7cr39j99/ratchet/baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "updated": false
+  }
+}
+
+[exit 0; expected 0]
+ASSERT PASS: ratchet permits an adopted existing violation
+$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-7cr39j99/ratchet --json --baseline /tmp/poteto-examples-7cr39j99/ratchet/baseline.json --update-baseline /tmp/poteto-examples-7cr39j99/ratchet/todo/legacy.py
+{
+  "ok": false,
+  "rules": [
+    "no-direct-json-write"
+  ],
+  "files_scanned": 1,
+  "rev": null,
+  "root": "/tmp/poteto-examples-7cr39j99/ratchet",
+  "failing": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/legacy.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence.",
+      "text": "store.path.write_text(payload)"
+    },
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/legacy.py",
+      "line": 2,
+      "col": 1,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/legacy.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence.",
+      "text": "store.path.write_text(payload)"
+    },
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/legacy.py",
+      "line": 2,
+      "col": 1,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/tmp/poteto-examples-7cr39j99/ratchet/baseline.json",
+    "over": [
+      {
+        "rule": "no-direct-json-write",
+        "path": "todo/legacy.py",
+        "count": 2,
+        "baseline": 1
+      }
+    ],
+    "improved": [],
+    "refused": [
+      {
+        "rule": "no-direct-json-write",
+        "path": "todo/legacy.py",
+        "count": 2,
+        "baseline": 1
+      }
+    ],
+    "updated": true
+  }
+}
+
+[exit 1; expected 1]
+ASSERT PASS: ratchet refuses increasing a known violation count
+$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-7cr39j99/ratchet --json --baseline /tmp/poteto-examples-7cr39j99/ratchet/baseline.json --update-baseline /tmp/poteto-examples-7cr39j99/ratchet/todo/legacy.py
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write"
+  ],
+  "files_scanned": 1,
+  "rev": null,
+  "root": "/tmp/poteto-examples-7cr39j99/ratchet",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/tmp/poteto-examples-7cr39j99/ratchet/baseline.json",
+    "over": [],
+    "improved": [
+      {
+        "rule": "no-direct-json-write",
+        "path": "todo/legacy.py",
+        "count": 0,
+        "baseline": 1
+      }
+    ],
+    "refused": [],
+    "updated": true
+  }
+}
+
+[exit 0; expected 0]
+ASSERT PASS: zero-count adopted rules remain in the baseline
+$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-7cr39j99/ratchet --json --baseline /tmp/poteto-examples-7cr39j99/ratchet/baseline.json --update-baseline /tmp/poteto-examples-7cr39j99/ratchet/todo/legacy.py
+{
+  "ok": false,
+  "rules": [
+    "no-direct-json-write"
+  ],
+  "files_scanned": 1,
+  "rev": null,
+  "root": "/tmp/poteto-examples-7cr39j99/ratchet",
+  "failing": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/legacy.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/legacy.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/tmp/poteto-examples-7cr39j99/ratchet/baseline.json",
+    "over": [
+      {
+        "rule": "no-direct-json-write",
+        "path": "todo/legacy.py",
+        "count": 1,
+        "baseline": 0
+      }
+    ],
+    "improved": [],
+    "refused": [
+      {
+        "rule": "no-direct-json-write",
+        "path": "todo/legacy.py",
+        "count": 1,
+        "baseline": 0
+      }
+    ],
+    "updated": true
+  }
+}
+
+[exit 1; expected 1]
+ASSERT PASS: ratchet cannot re-adopt violations after reaching zero
+$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-7cr39j99/ratchet --json --baseline /tmp/poteto-examples-7cr39j99/ratchet/baseline.json --today 2026-10-19 /tmp/poteto-examples-7cr39j99/ratchet/todo/legacy.py
+{
+  "ok": false,
+  "rules": [
+    "no-direct-json-write"
+  ],
+  "files_scanned": 1,
+  "rev": null,
+  "root": "/tmp/poteto-examples-7cr39j99/ratchet",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/legacy.py",
+      "line": 2,
+      "col": 1,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence.",
+      "text": "store.path.write_text(payload)",
+      "reason": "legacy-import",
+      "expires": "2026-10-18",
+      "approved_by": "reviewer",
+      "exception": "line 1: expired 2026-10-18"
+    }
+  ],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/tmp/poteto-examples-7cr39j99/ratchet/baseline.json",
+    "over": [
+      {
+        "rule": "no-direct-json-write",
+        "path": "todo/legacy.py",
+        "count": 1,
+        "baseline": 0
+      }
+    ],
+    "improved": [],
+    "refused": [],
+    "updated": false
+  }
+}
+
+[exit 1; expected 1]
+ASSERT PASS: expired exception fails even in ratchet mode
+$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-7cr39j99/ratchet --json --today 2026-10-19 /tmp/poteto-examples-7cr39j99/ratchet/todo/legacy.py
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write"
+  ],
+  "files_scanned": 1,
+  "rev": null,
+  "root": "/tmp/poteto-examples-7cr39j99/ratchet",
+  "failing": [],
+  "violations": [],
+  "allowed": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/legacy.py",
+      "line": 2,
+      "col": 1,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence.",
+      "text": "store.path.write_text(payload)",
+      "reason": "legacy-import",
+      "expires": "2026-10-20",
+      "approved_by": "reviewer"
+    }
+  ],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "updated": false
+  }
+}
+
+[exit 0; expected 0]
+ASSERT PASS: unexpired exception with reason and approver allows the intended violation
+$ /home/box/developer/poteto-skills/skills/correct/scripts/rule_table.py check /tmp/poteto-examples-7cr39j99/todo-app/AGENTS.md --json
+{
+  "file": "/tmp/poteto-examples-7cr39j99/todo-app/AGENTS.md",
+  "tables": 1,
+  "rules": [
+    {
+      "line": 5,
+      "rule": "Persist JSON only through store.py; use Store.add or Store.transition",
+      "enforced_by": "scripts/lint.sh",
+      "status": "enforced",
+      "reason": "names a check that runs"
+    },
+    {
+      "line": 6,
+      "rule": "Status changes follow open -> done -> archived",
+      "enforced_by": "tests/test_todo.py",
+      "status": "enforced",
+      "reason": "names a check that runs"
+    },
+    {
+      "line": 7,
+      "rule": "Keep error messages concise and useful",
+      "enforced_by": "prose in this document",
+      "status": "prose",
+      "reason": "enforced only by prose or human attention"
+    }
+  ],
+  "flagged": 1,
+  "ok": false
+}
+
+[exit 1; expected 1]
+ASSERT PASS: rule table flags exactly the prose-only example rule
+$ /home/box/developer/poteto-skills/skills/correct/scripts/rule_table.py check /tmp/poteto-examples-7cr39j99/ratchet/AGENTS.md --json
+{
+  "file": "/tmp/poteto-examples-7cr39j99/ratchet/AGENTS.md",
+  "tables": 1,
+  "rules": [
+    {
+      "line": 3,
+      "rule": "Lock writes",
+      "enforced_by": "README documents the tests",
+      "status": "prose",
+      "reason": "enforced only by prose or human attention"
+    }
+  ],
+  "flagged": 1,
+  "ok": false
+}
+
+[exit 1; expected 1]
+ASSERT PASS: mentioning tests in README prose does not qualify as enforcement

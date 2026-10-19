@@ -1,0 +1,73 @@
+{
+  "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/skip_done.py",
+  "depth": 20,
+  "max_states": 10000,
+  "invariants": [
+    "no_lost_todo",
+    "legal_status"
+  ],
+  "ok": false,
+  "result": "violation",
+  "states": 5,
+  "transitions": 4,
+  "max_depth": 1,
+  "hit_depth_bound": false,
+  "hit_state_bound": false,
+  "violation": {
+    "kind": "invariant",
+    "name": "legal_status",
+    "detail": null,
+    "trace": [
+      {
+        "step": 0,
+        "action": "init",
+        "state": {
+          "rows": [
+            "seed"
+          ],
+          "phases": [
+            0,
+            0
+          ],
+          "snapshots": [
+            [],
+            []
+          ],
+          "owner": -1,
+          "status": "open",
+          "edges": []
+        },
+        "describe": null
+      },
+      {
+        "step": 1,
+        "action": "BUG: archive open todo",
+        "state": {
+          "rows": [
+            "seed"
+          ],
+          "phases": [
+            0,
+            0
+          ],
+          "snapshots": [
+            [],
+            []
+          ],
+          "owner": -1,
+          "status": "archived",
+          "edges": [
+            [
+              "open",
+              "archived"
+            ]
+          ]
+        },
+        "describe": null
+      }
+    ]
+  },
+  "seconds": 0.0,
+  "mutants": {},
+  "expect_violation": null
+}

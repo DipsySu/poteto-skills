@@ -73,6 +73,7 @@ def load_model(path: Path):
     sys.path.insert(0, str(path.resolve().parent))
     spec = importlib.util.spec_from_file_location(f"bounded_model_{path.stem}", path)
     mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod
     try:
         spec.loader.exec_module(mod)
     except Exception as e:  # noqa: BLE001 - report any import-time failure of the model
@@ -128,7 +129,10 @@ def explore(mod, actions_fn, invariants: dict, depth: int, max_states: int, dead
                 return bad(k, "invariant", name)
         return None
 
-    for s in initial_states(mod):
+    starts = initial_states(mod)
+    if not starts:
+        raise ModelError("model has no initial states")
+    for s in starts:
         k = freeze(s)
         if k in states:
             continue
@@ -214,8 +218,10 @@ def main(argv: list[str] | None = None) -> int:
             invariants = {n: invariants[n] for n in args.invariant}
         if args.expect_violation and args.expect_violation not in invariants:
             raise ModelError(f"--expect-violation {args.expect_violation}: no such invariant; known: {', '.join(invariants)}")
-        depth = args.depth or getattr(mod, "DEPTH", 25)
-        max_states = args.max_states or getattr(mod, "MAX_STATES", 200_000)
+        depth = args.depth if args.depth is not None else getattr(mod, "DEPTH", 25)
+        max_states = args.max_states if args.max_states is not None else getattr(mod, "MAX_STATES", 200_000)
+        if depth < 0 or max_states < 1:
+            raise ModelError("depth must be nonnegative and max-states must be positive")
         t0 = time.time()
         main_res = explore(mod, mod.actions, invariants, depth, max_states, args.deadlock)
         main_res["seconds"] = round(time.time() - t0, 3)
@@ -226,7 +232,7 @@ def main(argv: list[str] | None = None) -> int:
                 raise ModelError("--mutants needs MODEL.mutants = {name: broken_actions_fn}")
             for name, fn in muts.items():
                 r = explore(mod, fn, invariants, depth, max_states, args.deadlock)
-                mutant_res[name] = {"killed": r["result"] == "violation", "by": (r["violation"] or {}).get("name"),
+                mutant_res[name] = {"killed": r["result"] == "violation" and r["violation"]["kind"] == "invariant", "by": (r["violation"] or {}).get("name"),
                                     "steps": len((r["violation"] or {}).get("trace", [])) - 1 if r["violation"] else None,
                                     "result": r}
     except ModelError as e:

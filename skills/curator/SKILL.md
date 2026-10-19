@@ -25,12 +25,14 @@ For a scheduled cloud agent instead of cron, use `references/curator-prompt.md` 
 
 ```bash
 $SKILL_DIR/scripts/upstream_diff.sh                     # changed, new, and removed upstream pstack files and skills
-$SKILL_DIR/scripts/curate.sh --propose --offline        # no LLM: proposals from the upstream diff alone
+$SKILL_DIR/scripts/curate.sh --propose --offline        # no network or LLM: requires a populated local cache
 python3 $SKILL_DIR/scripts/check_proposals.py proposals/2026-10-19.md --fetch --skills-dir skills
 $SKILL_DIR/scripts/curate.sh --apply --offline          # deterministic apply: sync changed upstream files into research/upstream/
 ```
 
 Tests and dry runs should set `POTETO_CACHE` to a scratch dir and `POTETO_UPSTREAM_URL` to a local git repo, which keeps them off the network and out of `~/.cache`.
+
+Offline proposals record cached diff evidence and source URLs; they do not claim fresh web research. Snapshot syncs retain their exact source head and version in `research/snapshot-syncs.json`.
 
 ## Sources to watch
 

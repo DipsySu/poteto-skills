@@ -1,0 +1,288 @@
+{
+  "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_model.py",
+  "depth": 20,
+  "max_states": 10000,
+  "invariants": [
+    "no_lost_todo",
+    "legal_status"
+  ],
+  "ok": true,
+  "result": "pass",
+  "states": 27,
+  "transitions": 42,
+  "max_depth": 6,
+  "hit_depth_bound": false,
+  "hit_state_bound": false,
+  "violation": null,
+  "exhaustive": true,
+  "seconds": 0.0,
+  "mutants": {
+    "unlocked_writers": {
+      "killed": true,
+      "by": "no_lost_todo",
+      "steps": 4,
+      "trace": [
+        {
+          "step": 0,
+          "action": "init",
+          "state": {
+            "rows": [
+              "seed"
+            ],
+            "phases": [
+              0,
+              0
+            ],
+            "snapshots": [
+              [],
+              []
+            ],
+            "owner": -1,
+            "status": "open",
+            "edges": []
+          },
+          "describe": null
+        },
+        {
+          "step": 1,
+          "action": "writer 0: read snapshot",
+          "state": {
+            "rows": [
+              "seed"
+            ],
+            "phases": [
+              1,
+              0
+            ],
+            "snapshots": [
+              [
+                "seed"
+              ],
+              []
+            ],
+            "owner": -1,
+            "status": "open",
+            "edges": []
+          },
+          "describe": null
+        },
+        {
+          "step": 2,
+          "action": "writer 1: read snapshot",
+          "state": {
+            "rows": [
+              "seed"
+            ],
+            "phases": [
+              1,
+              1
+            ],
+            "snapshots": [
+              [
+                "seed"
+              ],
+              [
+                "seed"
+              ]
+            ],
+            "owner": -1,
+            "status": "open",
+            "edges": []
+          },
+          "describe": null
+        },
+        {
+          "step": 3,
+          "action": "writer 0: append + replace + unlock",
+          "state": {
+            "rows": [
+              "seed",
+              "writer-0"
+            ],
+            "phases": [
+              2,
+              1
+            ],
+            "snapshots": [
+              [
+                "seed"
+              ],
+              [
+                "seed"
+              ]
+            ],
+            "owner": -1,
+            "status": "open",
+            "edges": []
+          },
+          "describe": null
+        },
+        {
+          "step": 4,
+          "action": "writer 1: append + replace + unlock",
+          "state": {
+            "rows": [
+              "seed",
+              "writer-1"
+            ],
+            "phases": [
+              2,
+              2
+            ],
+            "snapshots": [
+              [
+                "seed"
+              ],
+              [
+                "seed"
+              ]
+            ],
+            "owner": -1,
+            "status": "open",
+            "edges": []
+          },
+          "describe": null
+        }
+      ]
+    },
+    "skip_done": {
+      "killed": true,
+      "by": "legal_status",
+      "steps": 1,
+      "trace": [
+        {
+          "step": 0,
+          "action": "init",
+          "state": {
+            "rows": [
+              "seed"
+            ],
+            "phases": [
+              0,
+              0
+            ],
+            "snapshots": [
+              [],
+              []
+            ],
+            "owner": -1,
+            "status": "open",
+            "edges": []
+          },
+          "describe": null
+        },
+        {
+          "step": 1,
+          "action": "BUG: archive open todo",
+          "state": {
+            "rows": [
+              "seed"
+            ],
+            "phases": [
+              0,
+              0
+            ],
+            "snapshots": [
+              [],
+              []
+            ],
+            "owner": -1,
+            "status": "archived",
+            "edges": [
+              [
+                "open",
+                "archived"
+              ]
+            ]
+          },
+          "describe": null
+        }
+      ]
+    },
+    "repeat_done": {
+      "killed": true,
+      "by": "legal_status",
+      "steps": 2,
+      "trace": [
+        {
+          "step": 0,
+          "action": "init",
+          "state": {
+            "rows": [
+              "seed"
+            ],
+            "phases": [
+              0,
+              0
+            ],
+            "snapshots": [
+              [],
+              []
+            ],
+            "owner": -1,
+            "status": "open",
+            "edges": []
+          },
+          "describe": null
+        },
+        {
+          "step": 1,
+          "action": "status open -> done",
+          "state": {
+            "rows": [
+              "seed"
+            ],
+            "phases": [
+              0,
+              0
+            ],
+            "snapshots": [
+              [],
+              []
+            ],
+            "owner": -1,
+            "status": "done",
+            "edges": [
+              [
+                "open",
+                "done"
+              ]
+            ]
+          },
+          "describe": null
+        },
+        {
+          "step": 2,
+          "action": "BUG: complete done todo",
+          "state": {
+            "rows": [
+              "seed"
+            ],
+            "phases": [
+              0,
+              0
+            ],
+            "snapshots": [
+              [],
+              []
+            ],
+            "owner": -1,
+            "status": "done",
+            "edges": [
+              [
+                "open",
+                "done"
+              ],
+              [
+                "done",
+                "done"
+              ]
+            ]
+          },
+          "describe": null
+        }
+      ]
+    }
+  },
+  "expect_violation": null
+}

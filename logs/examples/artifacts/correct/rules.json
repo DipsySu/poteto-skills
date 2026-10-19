@@ -1,0 +1,15 @@
+{
+  "rules": [
+    {
+      "id": "no-direct-json-write",
+      "regex": "\\b\\w+\\.path\\.write_text\\s*\\(",
+      "include": [
+        "todo/*.py"
+      ],
+      "exclude": [
+        "todo/store.py"
+      ],
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence."
+    }
+  ]
+}

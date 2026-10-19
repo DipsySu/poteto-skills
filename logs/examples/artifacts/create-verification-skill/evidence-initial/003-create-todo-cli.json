@@ -1,0 +1,17 @@
+{
+  "feature": "create-todo",
+  "kind": "cli",
+  "argv": [
+    "/usr/bin/python3",
+    "-m",
+    "todo",
+    "add",
+    "verify CLI",
+    "--data",
+    "/tmp/poteto-examples-7cr39j99/verify-state-initial/initial/data"
+  ],
+  "exit_code": 0,
+  "stdout": "{\"id\": 2, \"title\": \"verify CLI\", \"status\": \"open\"}\n",
+  "stderr": "",
+  "finished": "2026-10-19T05:58:46Z"
+}

@@ -9,7 +9,7 @@ Writes REPO/<skills-dir>/verify-NAME/:
   features/<id>.md       one per detected feature, four H2s in order:
                          Sub-features / How to get to it (user POV) / Driving it with control.sh / Gotchas
   scripts/control.sh     launch | doctor | drive | evidence | cleanup | status | prove
-                         (pid file, kills only its own process group, evidence in artifacts/verify/<run-id>/)
+                         (pid file, kills only its own process, evidence in artifacts/verify/<run-id>/)
 
 Every value the scan could not establish becomes a `TODO(verify): ...` marker.
 check_verify_skill.py fails until each one is replaced with a real command or fact.
@@ -260,7 +260,7 @@ def skill_md(app: str, inv: dict, C: str, skill_rel: str, launch: str, port_mode
               "resulting state, read back through a second view; side effects checked, not inferred; mocks only at "
               "production boundaries. If a dry-run or test mode is used, observe what it really skips.", "",
               "## Cleanup", "",
-              f"`{C} cleanup` stops only the process group this run started (pid file plus recorded start time, never "
+              f"`{C} cleanup` stops only the process this run started (pid file plus recorded start time, never "
               "by name), deletes the scratch state and data dir, and keeps `artifacts/verify/<run-id>/`. It prints "
               "the evidence path and fails if the evidence is gone.", "",
               "## Helpers", "",
@@ -312,7 +312,7 @@ Drive $APP for verification. Run from anywhere; paths resolve to the repo root.
                                  run a command in the repo root; {DATA_DIR} {PORT} {BASE_URL} {RUN_ID}
                                  in ARGS become this run's values; evidence saved as NNN-ID-cli.json
   evidence [--copy-data]         write manifest.json (sha256 per file); --copy-data snapshots the data dir
-  cleanup                        stop only the process group this run started, delete scratch state, keep evidence
+  cleanup                        stop only the process this run started, delete scratch state, keep evidence
   status                         print the current run's state (read-only)
   prove [--feature ID] http|cli ...
                                  launch, doctor, drive once, evidence --copy-data, cleanup, check evidence survived
@@ -328,8 +328,18 @@ case "$LAUNCH_CMD$CLI_CHECK" in
   *TODO\(verify\)*) [[ "${1:-}" =~ ^(-h|--help|help|status)$ ]] || die "CONFIG still has unresolved TODO markers; edit $SCRIPT_DIR/control.sh first" ;;
 esac
 
-pid_alive() { [[ -n "${1:-}" ]] && kill -0 "$1" 2>/dev/null; }
-proc_started() { ps -o lstart= -p "$1" 2>/dev/null | sed 's/^ *//' || true; }
+pid_alive() { [[ -n "${1:-}" ]] && kill -0 "$1" 2>/dev/null && [[ "$(ps -o stat= -p "$1" 2>/dev/null)" != Z* ]]; }
+proc_started() {
+  python3 - "$1" <<'PYID'
+from pathlib import Path
+import sys
+try:
+    stat = Path(f"/proc/{int(sys.argv[1])}/stat").read_text().rsplit(")", 1)[1].split()
+    print(Path("/proc/sys/kernel/random/boot_id").read_text().strip() + ":" + stat[19])
+except (OSError, ValueError, IndexError):
+    pass
+PYID
+}
 
 free_port() {
   python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()'
@@ -421,7 +431,7 @@ cmd_launch() {
   if port_open "$PORT"; then
     die "port $PORT is already taken by a process this run did not start; pick another with VERIFY_PORT (never kill it)"
   fi
-  # Start the app as the leader of a new process group, so cleanup can stop exactly what this run started.
+  # Keep the launched command isolated; cleanup signals only its recorded PID.
   local starter=() pid
   if command -v setsid >/dev/null 2>&1; then starter=(setsid); else set -m; fi
   (
@@ -453,7 +463,7 @@ cmd_doctor() {
   local checks=() ok=1 pid=""
   [[ -f "$RUN_STATE/pid" ]] && pid="$(cat "$RUN_STATE/pid")"
   if [[ -n "$LAUNCH_CMD" ]]; then
-    if pid_alive "$pid" && [[ "$(proc_started "$pid")" == "$(cat "$RUN_STATE/started" 2>/dev/null)" ]]; then
+    if pid_alive "$pid" && [[ -s "$RUN_STATE/started" ]] && [[ "$(proc_started "$pid")" == "$(cat "$RUN_STATE/started" 2>/dev/null)" ]]; then
       checks+=("process|1|pid $pid alive, started by this run")
     else
       checks+=("process|0|pid ${pid:-none} is not running (or is no longer this run's process)"); ok=0
@@ -612,14 +622,11 @@ cmd_cleanup() {
   local killed=false pid=""
   [[ -f "$RUN_STATE/pid" ]] && pid="$(cat "$RUN_STATE/pid")"
   if pid_alive "$pid"; then
-    if [[ "$(proc_started "$pid")" == "$(cat "$RUN_STATE/started" 2>/dev/null)" ]]; then
-      local target="$pid" pgid
-      pgid="$(ps -o pgid= -p "$pid" 2>/dev/null | tr -d ' ' || true)"
-      [[ "$pgid" == "$pid" ]] && target="-$pid"   # we made it a group leader: stop the whole group we started
-      kill -TERM -- "$target" 2>/dev/null || true
+    if [[ -s "$RUN_STATE/started" && "$(proc_started "$pid")" == "$(cat "$RUN_STATE/started" 2>/dev/null)" ]]; then
+      kill -TERM -- "$pid" 2>/dev/null || true
       local i
       for i in $(seq 1 50); do pid_alive "$pid" || break; sleep 0.1; done
-      if pid_alive "$pid"; then kill -KILL -- "$target" 2>/dev/null || true; fi
+      if pid_alive "$pid"; then kill -KILL -- "$pid" 2>/dev/null || true; fi
       killed=true
     else
       echo "control.sh: pid $pid is alive but was not started by run $RUN_ID (start time differs); leaving it alone" >&2

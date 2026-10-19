@@ -1,6 +1,6 @@
 ---
 name: feedback-to-architecture
-description: "Turn accumulated PR review comments, chat complaints, and fix/revert history into an agent-friendly re-architecture plan: themes with evidence, the pyramid level for each, a draft target design, and patlint rules already proven against the repo's own past mistakes. Use for /feedback-to-architecture, when the same review feedback keeps coming back, or before planning a refactor meant to stop a class of agent mistakes."
+description: "Turn accumulated PR review comments, chat complaints, and fix/revert history into an agent-friendly re-architecture plan: themes with evidence, the pyramid level for each, a draft target design, and patlint rules with replay evidence against the repo's own past mistakes. Use for /feedback-to-architecture, when the same review feedback keeps coming back, or before planning a refactor meant to stop a class of agent mistakes."
 ---
 
 # Feedback to architecture
@@ -45,7 +45,7 @@ Writes `refactor/REFACTOR_PLAN.md`, `refactor/lint-rules.json` (patlint format),
 
 ## 3. Prove each rule on the real past mistake
 
-`plan.py` already replays every rule against history. `proven` means more hits at the mistake revision than at the fix. Re-run by hand after you edit a rule:
+`plan.py` already replays every rule against history. `proven` means hits at the mistake revision and zero at the fix; both replays must succeed. Generic diff tokens that also match the fixed code are discarded. Existing HEAD violations need an explicit ratchet baseline. Re-run by hand after you edit a rule:
 
 ```bash
 P="python3 $SKILL_DIR/../correct/scripts/patlint.py --rules refactor/lint-rules.json"

@@ -132,6 +132,8 @@ def classify(enforced_by: str, bases: list[Path]) -> tuple[str, str]:
         return "missing-enforcer", "enforcer not found: " + ", ".join(missing)
     spans = CODE_SPAN.findall(text)
     runnable_span = any(TOOL_PREFIX.match(s.strip()) or PATHLIKE.match(s.strip()) for s in spans)
+    if PROSE_WORDS.search(text) and not runnable_span:
+        return "prose", "enforced only by prose or human attention"
     if paths or runnable_span or CHECK_WORDS.search(text):
         return "enforced", "names a check that runs" if not paths else "runs " + ", ".join(paths)
     if PROSE_WORDS.search(text):
