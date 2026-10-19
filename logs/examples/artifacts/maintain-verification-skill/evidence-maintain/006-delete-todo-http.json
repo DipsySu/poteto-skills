@@ -2,19 +2,19 @@
   "feature": "delete-todo",
   "kind": "http",
   "method": "DELETE",
-  "url": "http://127.0.0.1:55493/todos/1",
+  "url": "http://127.0.0.1:40499/todos/1",
   "request_body": null,
   "status": 409,
   "response_headers": {
     "Server": "BaseHTTP/0.6 Python/3.13.5",
-    "Date": "Mon, 19 Oct 2026 06:46:27 GMT",
+    "Date": "Mon, 19 Oct 2026 06:51:54 GMT",
     "Content-Type": "application/json",
     "Content-Length": "41"
   },
   "response_body": {
     "error": "cannot move open to archived"
   },
-  "started": "2026-10-19T06:46:27Z",
-  "elapsed_ms": 2.8,
+  "started": "2026-10-19T06:51:54Z",
+  "elapsed_ms": 2.7,
   "expect": "409"
 }

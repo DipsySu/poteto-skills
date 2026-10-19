@@ -7,10 +7,10 @@
     "todo",
     "list",
     "--data",
-    "/tmp/poteto-examples-1b66nnil/verify-state-maintain/maintain/data"
+    "/tmp/poteto-examples-d3hcsm2h/verify-state-maintain/maintain/data"
   ],
   "exit_code": 0,
   "stdout": "[{\"id\": 1, \"status\": \"open\", \"title\": \"verify HTTP\"}, {\"id\": 2, \"status\": \"open\", \"title\": \"verify CLI\"}]\n",
   "stderr": "",
-  "finished": "2026-10-19T06:46:27Z"
+  "finished": "2026-10-19T06:51:54Z"
 }

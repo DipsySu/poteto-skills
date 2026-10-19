@@ -1,7 +1,7 @@
-scratch: /tmp/poteto-examples-1b66nnil
-$ /home/box/developer/poteto-skills/skills/correct/scripts/mine_mistakes.py /tmp/poteto-examples-1b66nnil/todo-app --since 2026-09-01 --feedback /tmp/poteto-examples-1b66nnil/todo-app/review-comments.json /tmp/poteto-examples-1b66nnil/todo-app/chat-feedback.md --json
+scratch: /tmp/poteto-examples-d3hcsm2h
+$ /home/box/developer/poteto-skills/skills/correct/scripts/mine_mistakes.py /tmp/poteto-examples-d3hcsm2h/todo-app --since 2026-09-01 --feedback /tmp/poteto-examples-d3hcsm2h/todo-app/review-comments.json /tmp/poteto-examples-d3hcsm2h/todo-app/chat-feedback.md --json
 {
-  "repo": "/tmp/poteto-examples-1b66nnil/todo-app",
+  "repo": "/tmp/poteto-examples-d3hcsm2h/todo-app",
   "since": "2026-09-01",
   "items": 13,
   "counts": {
@@ -390,12 +390,12 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/mine_mistakes.py /tmp
 [exit 0; expected 0]
 ASSERT PASS: direct-JSON class contains both real mistake commit SHAs
 ASSERT PASS: status-transition class contains both fix commits
-$ git worktree add --detach /tmp/poteto-examples-1b66nnil/past-direct-write dbd44008685859312aee6a60154fd0258c1c063b
+$ git worktree add --detach /tmp/poteto-examples-d3hcsm2h/past-direct-write dbd44008685859312aee6a60154fd0258c1c063b
 Preparing worktree (detached HEAD dbd4400)
 HEAD is now at dbd4400 fix: persist API additions with direct JSON writes bypassing store.py
 
 [exit 0; expected 0]
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-1b66nnil/past-direct-write --json /tmp/poteto-examples-1b66nnil/past-direct-write/todo
+$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-d3hcsm2h/past-direct-write --json /tmp/poteto-examples-d3hcsm2h/past-direct-write/todo
 {
   "ok": false,
   "rules": [
@@ -403,7 +403,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
   ],
   "files_scanned": 3,
   "rev": null,
-  "root": "/tmp/poteto-examples-1b66nnil/past-direct-write",
+  "root": "/tmp/poteto-examples-d3hcsm2h/past-direct-write",
   "failing": [
     {
       "rule": "no-direct-json-write",
@@ -439,10 +439,10 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
 
 [exit 1; expected 1]
 ASSERT PASS: patlint fails on a real past mistake checked out in a worktree
-$ git worktree remove --force /tmp/poteto-examples-1b66nnil/past-direct-write
+$ git worktree remove --force /tmp/poteto-examples-d3hcsm2h/past-direct-write
 
 [exit 0; expected 0]
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-1b66nnil/todo-app --json /tmp/poteto-examples-1b66nnil/todo-app/todo
+$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-d3hcsm2h/todo-app --json /tmp/poteto-examples-d3hcsm2h/todo-app/todo
 {
   "ok": true,
   "rules": [
@@ -450,7 +450,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
   ],
   "files_scanned": 3,
   "rev": null,
-  "root": "/tmp/poteto-examples-1b66nnil/todo-app",
+  "root": "/tmp/poteto-examples-d3hcsm2h/todo-app",
   "failing": [],
   "violations": [],
   "allowed": [],
@@ -468,7 +468,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
 
 [exit 0; expected 0]
 ASSERT PASS: same persistence lint passes on HEAD
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-1b66nnil/ratchet --json --baseline /tmp/poteto-examples-1b66nnil/ratchet/baseline.json --update-baseline /tmp/poteto-examples-1b66nnil/ratchet/todo/legacy.py
+$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-d3hcsm2h/ratchet --json --baseline /tmp/poteto-examples-d3hcsm2h/ratchet/baseline.json --update-baseline /tmp/poteto-examples-d3hcsm2h/ratchet/todo/legacy.py
 {
   "ok": true,
   "rules": [
@@ -476,7 +476,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
   ],
   "files_scanned": 1,
   "rev": null,
-  "root": "/tmp/poteto-examples-1b66nnil/ratchet",
+  "root": "/tmp/poteto-examples-d3hcsm2h/ratchet",
   "failing": [],
   "violations": [
     {
@@ -493,7 +493,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
   "invalid_exceptions": [],
   "stale_exceptions": [],
   "baseline": {
-    "path": "/tmp/poteto-examples-1b66nnil/ratchet/baseline.json",
+    "path": "/tmp/poteto-examples-d3hcsm2h/ratchet/baseline.json",
     "over": [],
     "improved": [],
     "refused": [],
@@ -502,7 +502,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
 }
 
 [exit 0; expected 0]
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-1b66nnil/ratchet --json --baseline /tmp/poteto-examples-1b66nnil/ratchet/baseline.json /tmp/poteto-examples-1b66nnil/ratchet/todo/legacy.py
+$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-d3hcsm2h/ratchet --json --baseline /tmp/poteto-examples-d3hcsm2h/ratchet/baseline.json /tmp/poteto-examples-d3hcsm2h/ratchet/todo/legacy.py
 {
   "ok": true,
   "rules": [
@@ -510,7 +510,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
   ],
   "files_scanned": 1,
   "rev": null,
-  "root": "/tmp/poteto-examples-1b66nnil/ratchet",
+  "root": "/tmp/poteto-examples-d3hcsm2h/ratchet",
   "failing": [],
   "violations": [
     {
@@ -527,7 +527,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
   "invalid_exceptions": [],
   "stale_exceptions": [],
   "baseline": {
-    "path": "/tmp/poteto-examples-1b66nnil/ratchet/baseline.json",
+    "path": "/tmp/poteto-examples-d3hcsm2h/ratchet/baseline.json",
     "over": [],
     "improved": [],
     "refused": [],
@@ -537,7 +537,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
 
 [exit 0; expected 0]
 ASSERT PASS: ratchet permits an adopted existing violation
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-1b66nnil/ratchet --json --baseline /tmp/poteto-examples-1b66nnil/ratchet/baseline.json --update-baseline /tmp/poteto-examples-1b66nnil/ratchet/todo/legacy.py
+$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-d3hcsm2h/ratchet --json --baseline /tmp/poteto-examples-d3hcsm2h/ratchet/baseline.json --update-baseline /tmp/poteto-examples-d3hcsm2h/ratchet/todo/legacy.py
 {
   "ok": false,
   "rules": [
@@ -545,7 +545,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
   ],
   "files_scanned": 1,
   "rev": null,
-  "root": "/tmp/poteto-examples-1b66nnil/ratchet",
+  "root": "/tmp/poteto-examples-d3hcsm2h/ratchet",
   "failing": [
     {
       "rule": "no-direct-json-write",
@@ -587,7 +587,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
   "invalid_exceptions": [],
   "stale_exceptions": [],
   "baseline": {
-    "path": "/tmp/poteto-examples-1b66nnil/ratchet/baseline.json",
+    "path": "/tmp/poteto-examples-d3hcsm2h/ratchet/baseline.json",
     "over": [
       {
         "rule": "no-direct-json-write",
@@ -611,7 +611,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
 
 [exit 1; expected 1]
 ASSERT PASS: ratchet refuses increasing a known violation count
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-1b66nnil/ratchet --json --baseline /tmp/poteto-examples-1b66nnil/ratchet/baseline.json --update-baseline /tmp/poteto-examples-1b66nnil/ratchet/todo/legacy.py
+$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-d3hcsm2h/ratchet --json --baseline /tmp/poteto-examples-d3hcsm2h/ratchet/baseline.json --update-baseline /tmp/poteto-examples-d3hcsm2h/ratchet/todo/legacy.py
 {
   "ok": true,
   "rules": [
@@ -619,7 +619,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
   ],
   "files_scanned": 1,
   "rev": null,
-  "root": "/tmp/poteto-examples-1b66nnil/ratchet",
+  "root": "/tmp/poteto-examples-d3hcsm2h/ratchet",
   "failing": [],
   "violations": [],
   "allowed": [],
@@ -627,7 +627,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
   "invalid_exceptions": [],
   "stale_exceptions": [],
   "baseline": {
-    "path": "/tmp/poteto-examples-1b66nnil/ratchet/baseline.json",
+    "path": "/tmp/poteto-examples-d3hcsm2h/ratchet/baseline.json",
     "over": [],
     "improved": [
       {
@@ -644,7 +644,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
 
 [exit 0; expected 0]
 ASSERT PASS: zero-count adopted rules remain in the baseline
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-1b66nnil/ratchet --json --baseline /tmp/poteto-examples-1b66nnil/ratchet/baseline.json --update-baseline /tmp/poteto-examples-1b66nnil/ratchet/todo/legacy.py
+$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-d3hcsm2h/ratchet --json --baseline /tmp/poteto-examples-d3hcsm2h/ratchet/baseline.json --update-baseline /tmp/poteto-examples-d3hcsm2h/ratchet/todo/legacy.py
 {
   "ok": false,
   "rules": [
@@ -652,7 +652,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
   ],
   "files_scanned": 1,
   "rev": null,
-  "root": "/tmp/poteto-examples-1b66nnil/ratchet",
+  "root": "/tmp/poteto-examples-d3hcsm2h/ratchet",
   "failing": [
     {
       "rule": "no-direct-json-write",
@@ -678,7 +678,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
   "invalid_exceptions": [],
   "stale_exceptions": [],
   "baseline": {
-    "path": "/tmp/poteto-examples-1b66nnil/ratchet/baseline.json",
+    "path": "/tmp/poteto-examples-d3hcsm2h/ratchet/baseline.json",
     "over": [
       {
         "rule": "no-direct-json-write",
@@ -702,7 +702,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
 
 [exit 1; expected 1]
 ASSERT PASS: ratchet cannot re-adopt violations after reaching zero
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-1b66nnil/ratchet --json --baseline /tmp/poteto-examples-1b66nnil/ratchet/baseline.json --today 2026-10-19 /tmp/poteto-examples-1b66nnil/ratchet/todo/legacy.py
+$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-d3hcsm2h/ratchet --json --baseline /tmp/poteto-examples-d3hcsm2h/ratchet/baseline.json --today 2026-10-19 /tmp/poteto-examples-d3hcsm2h/ratchet/todo/legacy.py
 {
   "ok": false,
   "rules": [
@@ -710,7 +710,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
   ],
   "files_scanned": 1,
   "rev": null,
-  "root": "/tmp/poteto-examples-1b66nnil/ratchet",
+  "root": "/tmp/poteto-examples-d3hcsm2h/ratchet",
   "failing": [],
   "violations": [],
   "allowed": [],
@@ -731,7 +731,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
   "invalid_exceptions": [],
   "stale_exceptions": [],
   "baseline": {
-    "path": "/tmp/poteto-examples-1b66nnil/ratchet/baseline.json",
+    "path": "/tmp/poteto-examples-d3hcsm2h/ratchet/baseline.json",
     "over": [
       {
         "rule": "no-direct-json-write",
@@ -748,7 +748,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
 
 [exit 1; expected 1]
 ASSERT PASS: expired exception fails even in ratchet mode
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-1b66nnil/ratchet --json --today 2026-10-19 /tmp/poteto-examples-1b66nnil/ratchet/todo/legacy.py
+$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-d3hcsm2h/ratchet --json --today 2026-10-19 /tmp/poteto-examples-d3hcsm2h/ratchet/todo/legacy.py
 {
   "ok": true,
   "rules": [
@@ -756,7 +756,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
   ],
   "files_scanned": 1,
   "rev": null,
-  "root": "/tmp/poteto-examples-1b66nnil/ratchet",
+  "root": "/tmp/poteto-examples-d3hcsm2h/ratchet",
   "failing": [],
   "violations": [],
   "allowed": [
@@ -786,9 +786,9 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
 
 [exit 0; expected 0]
 ASSERT PASS: unexpired exception with reason and approver allows the intended violation
-$ /home/box/developer/poteto-skills/skills/correct/scripts/rule_table.py check /tmp/poteto-examples-1b66nnil/todo-app/AGENTS.md --json
+$ /home/box/developer/poteto-skills/skills/correct/scripts/rule_table.py check /tmp/poteto-examples-d3hcsm2h/todo-app/AGENTS.md --json
 {
-  "file": "/tmp/poteto-examples-1b66nnil/todo-app/AGENTS.md",
+  "file": "/tmp/poteto-examples-d3hcsm2h/todo-app/AGENTS.md",
   "tables": 1,
   "rules": [
     {
@@ -819,9 +819,9 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/rule_table.py check /
 
 [exit 1; expected 1]
 ASSERT PASS: rule table flags exactly the prose-only example rule
-$ /home/box/developer/poteto-skills/skills/correct/scripts/rule_table.py check /tmp/poteto-examples-1b66nnil/ratchet/AGENTS.md --json
+$ /home/box/developer/poteto-skills/skills/correct/scripts/rule_table.py check /tmp/poteto-examples-d3hcsm2h/ratchet/AGENTS.md --json
 {
-  "file": "/tmp/poteto-examples-1b66nnil/ratchet/AGENTS.md",
+  "file": "/tmp/poteto-examples-d3hcsm2h/ratchet/AGENTS.md",
   "tables": 1,
   "rules": [
     {
