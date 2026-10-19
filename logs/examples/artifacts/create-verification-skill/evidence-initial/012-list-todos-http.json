@@ -2,12 +2,12 @@
   "feature": "list-todos",
   "kind": "http",
   "method": "GET",
-  "url": "http://127.0.0.1:60547/todos",
+  "url": "http://127.0.0.1:42593/todos",
   "request_body": null,
   "status": 200,
   "response_headers": {
     "Server": "BaseHTTP/0.6 Python/3.13.5",
-    "Date": "Mon, 19 Oct 2026 05:58:47 GMT",
+    "Date": "Mon, 19 Oct 2026 06:10:38 GMT",
     "Content-Type": "application/json",
     "Content-Length": "113"
   },
@@ -23,7 +23,7 @@
       "title": "verify CLI"
     }
   ],
-  "started": "2026-10-19T05:58:47Z",
-  "elapsed_ms": 1.9,
+  "started": "2026-10-19T06:10:38Z",
+  "elapsed_ms": 2.2,
   "expect": "200"
 }

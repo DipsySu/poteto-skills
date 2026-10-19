@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "feedback": "/tmp/poteto-examples-7cr39j99/feedback.json",
-  "repo": "/tmp/poteto-examples-7cr39j99/todo-app",
+  "feedback": "/tmp/poteto-examples-ps5wtrlv/feedback.json",
+  "repo": "/tmp/poteto-examples-ps5wtrlv/todo-app",
   "themes": [
     {
       "id": "T1",
@@ -295,7 +295,7 @@
               "todo/api.py:42",
               "todo/api.py:43"
             ],
-            "cmd": "python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-7cr39j99/plan/lint-rules.json --root /tmp/poteto-examples-7cr39j99/todo-app --rev '2fd7988731eb^' todo/api.py",
+            "cmd": "python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-ps5wtrlv/plan/lint-rules.json --root /tmp/poteto-examples-ps5wtrlv/todo-app --rev '2fd7988731eb^' todo/api.py",
             "distinguishes": true
           },
           {
@@ -306,7 +306,7 @@
             "hits_at_mistake": 0,
             "hits_at_fixed": 2,
             "where": [],
-            "cmd": "python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-7cr39j99/plan/lint-rules.json --root /tmp/poteto-examples-7cr39j99/todo-app --rev 'dbd440086858^' todo/api.py",
+            "cmd": "python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-ps5wtrlv/plan/lint-rules.json --root /tmp/poteto-examples-ps5wtrlv/todo-app --rev 'dbd440086858^' todo/api.py",
             "distinguishes": false
           },
           {
@@ -320,7 +320,7 @@
               "todo/__main__.py:35",
               "todo/__main__.py:36"
             ],
-            "cmd": "python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-7cr39j99/plan/lint-rules.json --root /tmp/poteto-examples-7cr39j99/todo-app --rev '97a3f3000122^' todo/__main__.py",
+            "cmd": "python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-ps5wtrlv/plan/lint-rules.json --root /tmp/poteto-examples-ps5wtrlv/todo-app --rev '97a3f3000122^' todo/__main__.py",
             "distinguishes": true
           },
           {
@@ -334,13 +334,13 @@
               "todo/__main__.py:35",
               "todo/__main__.py:36"
             ],
-            "cmd": "python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-7cr39j99/plan/lint-rules.json --root /tmp/poteto-examples-7cr39j99/todo-app --rev 570c1e91c258 todo/__main__.py",
+            "cmd": "python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-ps5wtrlv/plan/lint-rules.json --root /tmp/poteto-examples-ps5wtrlv/todo-app --rev 570c1e91c258 todo/__main__.py",
             "distinguishes": true
           }
         ],
         "proven": true,
         "head_hits": 0,
-        "head_cmd": "python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-7cr39j99/plan/lint-rules.json --root /tmp/poteto-examples-7cr39j99/todo-app /tmp/poteto-examples-7cr39j99/todo-app",
+        "head_cmd": "python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-ps5wtrlv/plan/lint-rules.json --root /tmp/poteto-examples-ps5wtrlv/todo-app /tmp/poteto-examples-ps5wtrlv/todo-app",
         "head_where": []
       }
     },
@@ -469,6 +469,6 @@
     }
   ],
   "unclassified": [],
-  "rules_file": "/tmp/poteto-examples-7cr39j99/plan/lint-rules.json",
+  "rules_file": "/tmp/poteto-examples-ps5wtrlv/plan/lint-rules.json",
   "proved": true
 }

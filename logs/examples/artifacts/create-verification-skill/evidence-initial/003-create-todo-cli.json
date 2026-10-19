@@ -8,10 +8,10 @@
     "add",
     "verify CLI",
     "--data",
-    "/tmp/poteto-examples-7cr39j99/verify-state-initial/initial/data"
+    "/tmp/poteto-examples-ps5wtrlv/verify-state-initial/initial/data"
   ],
   "exit_code": 0,
   "stdout": "{\"id\": 2, \"title\": \"verify CLI\", \"status\": \"open\"}\n",
   "stderr": "",
-  "finished": "2026-10-19T05:58:46Z"
+  "finished": "2026-10-19T06:10:38Z"
 }

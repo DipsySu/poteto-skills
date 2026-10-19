@@ -2,19 +2,19 @@
   "feature": "health",
   "kind": "http",
   "method": "GET",
-  "url": "http://127.0.0.1:60547/health",
+  "url": "http://127.0.0.1:42593/health",
   "request_body": null,
   "status": 200,
   "response_headers": {
     "Server": "BaseHTTP/0.6 Python/3.13.5",
-    "Date": "Mon, 19 Oct 2026 05:58:46 GMT",
+    "Date": "Mon, 19 Oct 2026 06:10:37 GMT",
     "Content-Type": "application/json",
     "Content-Length": "12"
   },
   "response_body": {
     "ok": true
   },
-  "started": "2026-10-19T05:58:46Z",
-  "elapsed_ms": 2.0,
+  "started": "2026-10-19T06:10:37Z",
+  "elapsed_ms": 2.7,
   "expect": "200"
 }
