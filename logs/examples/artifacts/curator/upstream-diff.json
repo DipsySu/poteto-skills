@@ -1,12 +1,12 @@
 {
   "upstream": {
-    "url": "/tmp/poteto-examples-ps5wtrlv/cache/cursor-plugins",
+    "url": "/tmp/poteto-examples-1b66nnil/cache/cursor-plugins",
     "branch": "main",
-    "head": "f8e0b0c95b216cf22eb80e42515990e370aedc81",
-    "head_date": "2026-10-19T06:10:44Z",
+    "head": "fa38778cf7fca0d84fc11d881cd3b085add52771",
+    "head_date": "2026-10-19T06:46:31Z",
     "version": null,
     "fetch": "skipped",
-    "clone": "/tmp/poteto-examples-ps5wtrlv/cache/cursor-plugins"
+    "clone": "/tmp/poteto-examples-1b66nnil/cache/cursor-plugins"
   },
   "snapshot": {
     "dir": "/home/box/developer/poteto-skills/research/upstream",

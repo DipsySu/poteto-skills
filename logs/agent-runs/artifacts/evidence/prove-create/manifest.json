@@ -1,0 +1,27 @@
+{
+  "app": "todo",
+  "run_id": "prove-create",
+  "written": "2026-10-19T06:36:16Z",
+  "files": [
+    {
+      "path": "001-create-todo-http.json",
+      "bytes": 542,
+      "sha256": "59161c220fdcf57a86f603b609e706600c97d14eb8ab5af7cc89e7fcdf61c6db"
+    },
+    {
+      "path": "002-data-snapshot/todos.json",
+      "bytes": 60,
+      "sha256": "f182030a088b4d5b7214b19b4db733dcdfffebef8885ee2210a2ee4d3b069a46"
+    },
+    {
+      "path": "002-data-snapshot/todos.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "launch.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

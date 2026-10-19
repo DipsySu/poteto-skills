@@ -193,11 +193,12 @@ def drift(skill: Path, repo: Path) -> dict:
             seq = prog_tokens(inv_)
             if seq and seq not in p["seqs"]:
                 p["seqs"].append(seq)
-    # A removed CLI still appears in the map. Recover its invocation vocabulary
-    # independently of source so deleting the final subcommand cannot look clean.
+    # A removed CLI still appears in the map. Recover its invocation vocabulary from the
+    # recipes' `drive ... cli -- PROG` commands (not incidental ones like `python3 -m unittest`)
+    # so deleting the final subcommand cannot look clean.
     for text in feat_texts.values():
         for _, code in code_lines(text):
-            for match in re.finditer(r"\b(python3?\s+-m\s+[\w.]+|python3?\s+[\w./-]+\.py|node\s+[\w./-]+\.[cm]?js)\s+", code):
+            for match in re.finditer(r"\bcli\s+--\s+(python3?\s+-m\s+[\w.]+|python3?\s+[\w./-]+\.py|node\s+[\w./-]+\.[cm]?js)\s+", code):
                 prog = match.group(1)
                 if prog not in progs:
                     progs[prog] = {"subs": set(), "seqs": [prog_tokens(prog)],
@@ -226,8 +227,10 @@ def drift(skill: Path, repo: Path) -> dict:
         if not feat_mentions[name] and not feat_cmds[name]:
             res["unanchored_features"].append(f"features/{name}")
     if not inv["http_routes"] and not inv["cli_commands"]:
-        res["notes"].append("no routes or CLI commands detected in source; drift is limited to index and contract, "
-                            "so the live pass carries the whole check")
+        res["notes"].append("no routes or CLI commands detected in source, so every route the map names and every "
+                            "command its recipes drive (`cli -- PROG`) is reported dead; confirm each in source before "
+                            "deleting a recipe (the scanner may not know this framework). The live pass carries the "
+                            "whole check")
     idx = res["index"]
     res["drift"] = bool(any(idx.get(k) for k in ("missing", "dead", "duplicate", "extra", "missing_readme"))
                         or res["contract"] or res["routes"]["missing"] or res["routes"]["dead"]

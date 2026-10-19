@@ -35,7 +35,7 @@ Drive $APP for verification. Run from anywhere; paths resolve to the repo root.
                                  run a command in the repo root; {DATA_DIR} {PORT} {BASE_URL} {RUN_ID}
                                  in ARGS become this run's values; evidence saved as NNN-ID-cli.json
   evidence [--copy-data]         write manifest.json (sha256 per file); --copy-data snapshots the data dir
-  cleanup                        stop only the process this run started, delete scratch state, keep evidence
+  cleanup                        stop only the process group this run started, delete scratch state, keep evidence
   status                         print the current run's state (read-only)
   prove [--feature ID] http|cli ...
                                  launch, doctor, drive once, evidence --copy-data, cleanup, check evidence survived
@@ -52,7 +52,8 @@ case "$LAUNCH_CMD$CLI_CHECK" in
 esac
 
 pid_alive() { [[ -n "${1:-}" ]] && kill -0 "$1" 2>/dev/null && [[ "$(ps -o stat= -p "$1" 2>/dev/null)" != Z* ]]; }
-proc_started() {
+proc_started() {  # start identity: Linux boot id + start ticks; elsewhere (macOS) ps start time
+  if [[ ! -r "/proc/${1:-x}/stat" ]]; then ps -o lstart= -p "$1" 2>/dev/null | sed 's/^ *//' || true; return 0; fi
   python3 - "$1" <<'PYID'
 from pathlib import Path
 import sys
@@ -138,7 +139,7 @@ cmd_launch() {
   RUN_STATE="$STATE_ROOT/$RUN_ID"
   DATA_DIR="$RUN_STATE/data"
   EVIDENCE_DIR="$ARTIFACTS_ROOT/$RUN_ID"
-  [[ ! -e "$RUN_STATE" ]] || die "run id $RUN_ID already exists in $STATE_ROOT"
+  [[ ! -e "$RUN_STATE" && ! -e "$EVIDENCE_DIR" ]] || die "run id $RUN_ID already has state or kept evidence; pick a new VERIFY_RUN_ID"
   mkdir -p "$DATA_DIR" "$EVIDENCE_DIR"
   if [[ "$PORT_MODE" == fixed ]]; then PORT="${VERIFY_PORT:-$DEFAULT_PORT}"; else PORT="${VERIFY_PORT:-$(free_port)}"; fi
   BASE_URL="http://127.0.0.1:$PORT"
@@ -154,7 +155,7 @@ cmd_launch() {
   if port_open "$PORT"; then
     die "port $PORT is already taken by a process this run did not start; pick another with VERIFY_PORT (never kill it)"
   fi
-  # Keep the launched command isolated; cleanup signals only its recorded PID.
+  # Start the app as the leader of a new process group, so cleanup stops exactly what this run started.
   local starter=() pid
   if command -v setsid >/dev/null 2>&1; then starter=(setsid); else set -m; fi
   (
@@ -346,10 +347,13 @@ cmd_cleanup() {
   [[ -f "$RUN_STATE/pid" ]] && pid="$(cat "$RUN_STATE/pid")"
   if pid_alive "$pid"; then
     if [[ -s "$RUN_STATE/started" && "$(proc_started "$pid")" == "$(cat "$RUN_STATE/started" 2>/dev/null)" ]]; then
-      kill -TERM -- "$pid" 2>/dev/null || true
-      local i
+      # launch made the pid a new process-group leader; signal that group so a wrapper's server child
+      # (sh -c, npm, make) stops too. Nothing outside the group is touched.
+      local target="$pid" i
+      [[ "$(ps -o pgid= -p "$pid" 2>/dev/null | tr -d ' ')" == "$pid" ]] && target="-$pid"
+      kill -TERM -- "$target" 2>/dev/null || true
       for i in $(seq 1 50); do pid_alive "$pid" || break; sleep 0.1; done
-      if pid_alive "$pid"; then kill -KILL -- "$pid" 2>/dev/null || true; fi
+      if pid_alive "$pid"; then kill -KILL -- "$target" 2>/dev/null || true; fi
       killed=true
     else
       echo "control.sh: pid $pid is alive but was not started by run $RUN_ID (start time differs); leaving it alone" >&2

@@ -9,11 +9,11 @@ Each proposal is an H2 section (`## 1. Title`) with these bullet fields:
   - Skill: <existing skill name> | new:<name> | collection
   - Change: <the concrete change, preferably a script, lint, test, or type>
   - Why: <one sentence>                                   (optional)
-A file with no H2 sections is valid: nothing to propose.
+A file with no H2 sections is valid only with an explicit `No proposals` line.
 
 --fetch re-requests every source URL with curl (the curator is the one skill allowed to use
-the network). 2xx/3xx pass; 401/403/429 count as reachable-but-blocked (a warning); anything
-else fails. Exit 0 valid, 1 invalid, 2 usage error.
+the network), following redirects. Only a final 2xx passes; 401/403/429 and anything else
+fail, since a source must be fetched, not just exist. Exit 0 valid, 1 invalid, 2 usage error.
 """
 from __future__ import annotations
 

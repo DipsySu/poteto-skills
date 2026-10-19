@@ -33,7 +33,7 @@ Prove behavior on the running app, not a proxy. Every step goes through `.claude
 
 ## Cleanup
 
-`.claude/skills/verify-todo/scripts/control.sh cleanup` stops only the process this run started (pid file plus recorded start time, never by name), deletes the scratch state and data dir, and keeps `artifacts/verify/<run-id>/`. It prints the evidence path and fails if the evidence is gone.
+`.claude/skills/verify-todo/scripts/control.sh cleanup` stops only the process group this run started (pid file plus recorded start identity, never by name), deletes the scratch state and data dir, and keeps `artifacts/verify/<run-id>/`. It prints the evidence path and fails if the evidence is gone.
 
 ## Helpers
 

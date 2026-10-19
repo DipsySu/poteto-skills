@@ -1,15 +1,15 @@
 {
   "upstream": {
-    "url": "/tmp/poteto-examples-ps5wtrlv/cache/cursor-plugins",
+    "url": "/tmp/poteto-examples-1b66nnil/cache/cursor-plugins",
     "branch": "main",
-    "head": "f8e0b0c95b216cf22eb80e42515990e370aedc81",
-    "head_date": "2026-10-19T06:10:44Z",
+    "head": "e91d3cfb97145a6e6411bf0bd0ed4b7d9c1351a5",
+    "head_date": "2026-10-19T06:46:31Z",
     "version": null,
     "fetch": "skipped",
-    "clone": "/tmp/poteto-examples-ps5wtrlv/cache/cursor-plugins"
+    "clone": "/tmp/poteto-examples-1b66nnil/cache/cursor-plugins"
   },
   "snapshot": {
-    "dir": "/tmp/poteto-examples-ps5wtrlv/collection/research/upstream",
+    "dir": "/tmp/poteto-examples-1b66nnil/collection/research/upstream",
     "pinned_sha": "6b78e9f4e46c75d1697d837e51f07c2692e60b24",
     "files_same": 17,
     "commits_since": []
@@ -24,12 +24,13 @@
   "missing_upstream": [],
   "new_skills": [
     {
-      "name": "local-new",
-      "url": "https://github.com/cursor/plugins/tree/main/pstack/skills/local-new"
+      "name": "local-added",
+      "url": "https://github.com/cursor/plugins/tree/main/pstack/skills/local-added"
     }
   ],
   "removed_skills": [],
   "untracked_skills": [
+    "local-added",
     "local-new"
   ],
   "first_run": false,

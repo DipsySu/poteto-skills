@@ -46,7 +46,11 @@
       "cleanup stops its recorded server and clears run state",
       "owned server no longer runs after cleanup",
       "cleanup leaves an unrelated process alive",
-      "cleanup preserves evidence files"
+      "cleanup preserves evidence files",
+      "wrapper variant reuses the generated launch command",
+      "wrapper launch runs the server as a child of the recorded PID",
+      "cleanup stops the recorded wrapper",
+      "cleanup also stops the server child of a wrapper launch command"
     ]
   },
   "curator": {
@@ -57,6 +61,7 @@
       "fake upstream maps every snapshotted source path correctly",
       "offline curate writes a proposal and execution log",
       "proposal includes changed and new upstream evidence with source URLs",
+      "a later run proposes only skills new since the previous run, not every untracked skill again",
       "failed upstream diff cannot produce a false clean proposal",
       "unstructured proposal text cannot pass as an empty proposal list",
       "HTTP 401 fails the fetched-source acceptance gate (stubbed transport, no network)",
@@ -98,6 +103,7 @@
       "adding an application route reports it unmapped",
       "removing the last source route still reports dead mapped routes",
       "removing the entire CLI still reports dead mapped commands",
+      "an incidental python command in a recipe is not a dead app command",
       "launch records a distinct owned server PID on a free port",
       "launch starts with an empty data directory",
       "doctor checks owned process, health and read route",

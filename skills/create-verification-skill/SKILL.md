@@ -35,7 +35,7 @@ This writes `.claude/skills/verify-<name>/`:
 
 - `SKILL.md` with Launch, Doctor, Drive, Evidence, Cleanup, and Helpers sections.
 - `features/README.md` plus one file per detected feature, each with four H2s in order: `Sub-features`, `How to get to it (user POV)`, `Driving it with control.sh`, `Gotchas`.
-- `scripts/control.sh` with `launch | doctor | drive | evidence | cleanup | status | prove`. It keeps a pid file, kills only its recorded PID after checking the process start identity, and writes evidence to `artifacts/verify/<run-id>/`.
+- `scripts/control.sh` with `launch | doctor | drive | evidence | cleanup | status | prove`. It keeps a pid file, kills only the process group it started after checking the leader's recorded start identity, and writes evidence to `artifacts/verify/<run-id>/`.
 
 Anything the scan couldn't establish is a `TODO(verify):` marker. [`references/feature-example.md`](references/feature-example.md) shows a finished recipe.
 

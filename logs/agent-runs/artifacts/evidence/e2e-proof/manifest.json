@@ -1,0 +1,22 @@
+{
+  "app": "todo",
+  "run_id": "e2e-proof",
+  "written": "2026-10-19T06:36:09Z",
+  "files": [
+    {
+      "path": "001-list-todos-http.json",
+      "bytes": 432,
+      "sha256": "76d75ccd51e8dd15b7c6de336e0982bc15023e27d9ca01f9d0c8c7bf2c2a7371"
+    },
+    {
+      "path": "002-data-snapshot/todos.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "launch.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

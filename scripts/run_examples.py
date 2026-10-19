@@ -8,11 +8,15 @@ import json
 import os
 from pathlib import Path
 import py_compile
+import re
 import shlex
 import shutil
+import signal
+import socket
 import subprocess
 import sys
 import tempfile
+import time
 import traceback
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -145,6 +149,39 @@ class Examples:
                 feature.write_text(original)
             self.ensure(True, 'contract rejects damaged feature heading order')
             self.live_pass('initial')
+            self.wrapped_cleanup()
+
+    def wrapped_cleanup(self):
+        # A wrapper launch command (sh -c, npm, make) forks the real server; cleanup must stop that child too.
+        wrapped = self.repo / '.claude/skills/verify-wrapped'
+        shutil.copytree(self.skill, wrapped)
+        control = wrapped / 'scripts/control.sh'
+        text, n = re.subn(r"^LAUNCH_CMD='(.+)'$", r"LAUNCH_CMD='\1; echo server exited'", control.read_text(), flags=re.M)
+        self.ensure(n == 1, 'wrapper variant reuses the generated launch command')
+        control.write_text(text)
+        env = dict(self.env, VERIFY_STATE_DIR=str(self.scratch / 'verify-state-wrapped'),
+                   VERIFY_ARTIFACTS_DIR=str(self.scratch / 'evidence-wrapped'))
+        launch, closed = None, False
+        try:
+            launch = self.json(control, 'launch', env=env)
+            self.ensure(self.run('ps', '-o', 'pid=', '--ppid', launch['pid']).split(), 'wrapper launch runs the server as a child of the recorded PID')
+            self.ensure(self.json(control, 'cleanup', env=env)['killed'], 'cleanup stops the recorded wrapper')
+            for _ in range(30):
+                with socket.socket() as s:
+                    s.settimeout(0.2)
+                    closed = s.connect_ex(('127.0.0.1', launch['port'])) != 0
+                if closed:
+                    break
+                time.sleep(0.1)
+            self.ensure(closed, 'cleanup also stops the server child of a wrapper launch command')
+        finally:
+            if launch and not closed:  # leaked: stop only the process group this launch created
+                try:
+                    os.killpg(launch['pid'], signal.SIGTERM)
+                except ProcessLookupError:
+                    pass
+            self.run(control, 'cleanup', env=env)
+            shutil.rmtree(wrapped)
 
     def live_pass(self, label):
         control = self.skill / 'scripts/control.sh'
@@ -238,6 +275,13 @@ class Examples:
                 self.ensure(any(r['name'] == 'add' for r in drift['commands']['dead']), 'removing the entire CLI still reports dead mapped commands')
             finally:
                 cli.write_text(original)
+            feature = self.skill / 'features/list-todos.md'
+            original = feature.read_text()
+            try:
+                feature.write_text(original + '- Run the unit tests first: `python3 -m unittest discover -s tests`.\n')
+                self.ensure(not self.json(*command)['drift'], 'an incidental python command in a recipe is not a dead app command')
+            finally:
+                feature.write_text(original)
             self.run(*command)
             self.live_pass('maintain')
 
@@ -418,6 +462,13 @@ class Examples:
             self.ensure(any(c['name']=='local-new' for c in diff['new_skills']), 'first offline diff reports a new skill absent from the snapshot')
             self.ensure(not diff['missing_upstream'], 'fake upstream maps every snapshotted source path correctly')
             self.save('upstream-diff.json',diff)
+            # A skill reported by the first run is not new again; one added between runs is.
+            added = upstream/'pstack/skills/local-added/SKILL.md'
+            added.parent.mkdir()
+            added.write_text('---\nname: local-added\ndescription: Use for a skill added between runs.\n---\nAdded after the first diff.\n')
+            self.run('git','-C',upstream,'add','-A')
+            self.run('git','-C',upstream,'-c','user.name=example-dev','-c','user.email=dev@example.local',
+                     '-c','commit.gpgsign=false','commit','-qm','add a skill between curator runs')
             # Redirect curator outputs to a disposable collection, including its log.
             collection = self.scratch/'collection'
             shutil.copytree(ROOT/'research',collection/'research')
@@ -426,7 +477,11 @@ class Examples:
             proposal = collection/'proposals/2026-10-19.md'
             log = collection/'logs/curator/2026-10-19.log'
             self.ensure(proposal.is_file() and log.is_file(), 'offline curate writes a proposal and execution log')
-            self.ensure('correct/SKILL.md' in proposal.read_text() and 'local-new' in proposal.read_text(), 'proposal includes changed and new upstream evidence with source URLs')
+            self.ensure('correct/SKILL.md' in proposal.read_text() and 'local-added' in proposal.read_text(), 'proposal includes changed and new upstream evidence with source URLs')
+            rerun = json.loads((collection/'logs/curator/2026-10-19.upstream.json').read_text())
+            self.ensure([n['name'] for n in rerun['new_skills']] == ['local-added'] and 'local-new' in rerun['untracked_skills']
+                        and 'New upstream skill: local-new' not in proposal.read_text(),
+                        'a later run proposes only skills new since the previous run, not every untracked skill again')
             self.json(self.script(self.name,'check_proposals.py'),proposal,'--skills-dir',collection/'skills','--json')
             self.copy(proposal)
             self.copy(log,'curator.log')

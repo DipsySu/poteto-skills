@@ -1,8 +1,8 @@
-scratch: /tmp/poteto-examples-ps5wtrlv
-$ /home/box/developer/poteto-skills/skills/maintain-verification-skill/scripts/drift_check.py /tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo --repo /tmp/poteto-examples-ps5wtrlv/todo-app --json
+scratch: /tmp/poteto-examples-1b66nnil
+$ /home/box/developer/poteto-skills/skills/maintain-verification-skill/scripts/drift_check.py /tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo --repo /tmp/poteto-examples-1b66nnil/todo-app --json
 {
-  "skill_dir": "/tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo",
-  "repo": "/tmp/poteto-examples-ps5wtrlv/todo-app",
+  "skill_dir": "/tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo",
+  "repo": "/tmp/poteto-examples-1b66nnil/todo-app",
   "index": {
     "missing": [],
     "dead": [],
@@ -27,10 +27,10 @@ $ /home/box/developer/poteto-skills/skills/maintain-verification-skill/scripts/d
 
 [exit 0; expected 0]
 ASSERT PASS: complete good feature map has no drift
-$ /home/box/developer/poteto-skills/skills/maintain-verification-skill/scripts/drift_check.py /tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo --repo /tmp/poteto-examples-ps5wtrlv/todo-app --json
+$ /home/box/developer/poteto-skills/skills/maintain-verification-skill/scripts/drift_check.py /tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo --repo /tmp/poteto-examples-1b66nnil/todo-app --json
 {
-  "skill_dir": "/tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo",
-  "repo": "/tmp/poteto-examples-ps5wtrlv/todo-app",
+  "skill_dir": "/tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo",
+  "repo": "/tmp/poteto-examples-1b66nnil/todo-app",
   "index": {
     "missing": [],
     "dead": [],
@@ -61,10 +61,10 @@ $ /home/box/developer/poteto-skills/skills/maintain-verification-skill/scripts/d
 
 [exit 1; expected 1]
 ASSERT PASS: deleting a route from the map reports it missing
-$ /home/box/developer/poteto-skills/skills/maintain-verification-skill/scripts/drift_check.py /tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo --repo /tmp/poteto-examples-ps5wtrlv/todo-app --json
+$ /home/box/developer/poteto-skills/skills/maintain-verification-skill/scripts/drift_check.py /tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo --repo /tmp/poteto-examples-1b66nnil/todo-app --json
 {
-  "skill_dir": "/tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo",
-  "repo": "/tmp/poteto-examples-ps5wtrlv/todo-app",
+  "skill_dir": "/tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo",
+  "repo": "/tmp/poteto-examples-1b66nnil/todo-app",
   "index": {
     "missing": [],
     "dead": [],
@@ -95,10 +95,10 @@ $ /home/box/developer/poteto-skills/skills/maintain-verification-skill/scripts/d
 
 [exit 1; expected 1]
 ASSERT PASS: adding an application route reports it unmapped
-$ /home/box/developer/poteto-skills/skills/maintain-verification-skill/scripts/drift_check.py /tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo --repo /tmp/poteto-examples-ps5wtrlv/todo-app --json
+$ /home/box/developer/poteto-skills/skills/maintain-verification-skill/scripts/drift_check.py /tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo --repo /tmp/poteto-examples-1b66nnil/todo-app --json
 {
-  "skill_dir": "/tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo",
-  "repo": "/tmp/poteto-examples-ps5wtrlv/todo-app",
+  "skill_dir": "/tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo",
+  "repo": "/tmp/poteto-examples-1b66nnil/todo-app",
   "index": {
     "missing": [],
     "dead": [],
@@ -204,10 +204,10 @@ $ /home/box/developer/poteto-skills/skills/maintain-verification-skill/scripts/d
 
 [exit 1; expected 1]
 ASSERT PASS: removing the last source route still reports dead mapped routes
-$ /home/box/developer/poteto-skills/skills/maintain-verification-skill/scripts/drift_check.py /tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo --repo /tmp/poteto-examples-ps5wtrlv/todo-app --json
+$ /home/box/developer/poteto-skills/skills/maintain-verification-skill/scripts/drift_check.py /tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo --repo /tmp/poteto-examples-1b66nnil/todo-app --json
 {
-  "skill_dir": "/tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo",
-  "repo": "/tmp/poteto-examples-ps5wtrlv/todo-app",
+  "skill_dir": "/tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo",
+  "repo": "/tmp/poteto-examples-1b66nnil/todo-app",
   "index": {
     "missing": [],
     "dead": [],
@@ -293,10 +293,10 @@ $ /home/box/developer/poteto-skills/skills/maintain-verification-skill/scripts/d
 
 [exit 1; expected 1]
 ASSERT PASS: removing the entire CLI still reports dead mapped commands
-$ /home/box/developer/poteto-skills/skills/maintain-verification-skill/scripts/drift_check.py /tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo --repo /tmp/poteto-examples-ps5wtrlv/todo-app --json
+$ /home/box/developer/poteto-skills/skills/maintain-verification-skill/scripts/drift_check.py /tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo --repo /tmp/poteto-examples-1b66nnil/todo-app --json
 {
-  "skill_dir": "/tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo",
-  "repo": "/tmp/poteto-examples-ps5wtrlv/todo-app",
+  "skill_dir": "/tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo",
+  "repo": "/tmp/poteto-examples-1b66nnil/todo-app",
   "index": {
     "missing": [],
     "dead": [],
@@ -320,21 +320,49 @@ $ /home/box/developer/poteto-skills/skills/maintain-verification-skill/scripts/d
 }
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo/scripts/control.sh launch
+ASSERT PASS: an incidental python command in a recipe is not a dead app command
+$ /home/box/developer/poteto-skills/skills/maintain-verification-skill/scripts/drift_check.py /tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo --repo /tmp/poteto-examples-1b66nnil/todo-app --json
+{
+  "skill_dir": "/tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo",
+  "repo": "/tmp/poteto-examples-1b66nnil/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 0; expected 0]
+$ /tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo/scripts/control.sh launch
 {
   "run_id": "maintain",
-  "pid": 117350,
-  "port": 41029,
-  "base_url": "http://127.0.0.1:41029",
-  "data_dir": "/tmp/poteto-examples-ps5wtrlv/verify-state-maintain/maintain/data",
-  "evidence_dir": "/tmp/poteto-examples-ps5wtrlv/todo-app/artifacts/verify/maintain",
-  "log": "/tmp/poteto-examples-ps5wtrlv/todo-app/artifacts/verify/maintain/launch.log"
+  "pid": 133367,
+  "port": 55493,
+  "base_url": "http://127.0.0.1:55493",
+  "data_dir": "/tmp/poteto-examples-1b66nnil/verify-state-maintain/maintain/data",
+  "evidence_dir": "/tmp/poteto-examples-1b66nnil/todo-app/artifacts/verify/maintain",
+  "log": "/tmp/poteto-examples-1b66nnil/todo-app/artifacts/verify/maintain/launch.log"
 }
 
 [exit 0; expected 0]
 ASSERT PASS: launch records a distinct owned server PID on a free port
 ASSERT PASS: launch starts with an empty data directory
-$ /tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo/scripts/control.sh doctor
+$ /tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo/scripts/control.sh doctor
 {
   "ok": true,
   "run_id": "maintain",
@@ -342,12 +370,12 @@ $ /tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo/scripts/cont
     {
       "name": "process",
       "ok": true,
-      "detail": "pid 117350 alive, started by this run"
+      "detail": "pid 133367 alive, started by this run"
     },
     {
       "name": "port",
       "ok": true,
-      "detail": "41029 accepts connections"
+      "detail": "55493 accepts connections"
     },
     {
       "name": "GET /health",
@@ -362,91 +390,91 @@ $ /tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo/scripts/cont
     {
       "name": "data dir",
       "ok": true,
-      "detail": "/tmp/poteto-examples-ps5wtrlv/verify-state-maintain/maintain/data"
+      "detail": "/tmp/poteto-examples-1b66nnil/verify-state-maintain/maintain/data"
     },
     {
       "name": "evidence dir",
       "ok": true,
-      "detail": "/tmp/poteto-examples-ps5wtrlv/todo-app/artifacts/verify/maintain"
+      "detail": "/tmp/poteto-examples-1b66nnil/todo-app/artifacts/verify/maintain"
     }
   ]
 }
 
 [exit 0; expected 0]
 ASSERT PASS: doctor checks owned process, health and read route
-$ /tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature health http GET /health --expect 200
-evidence: /tmp/poteto-examples-ps5wtrlv/todo-app/artifacts/verify/maintain/001-health-http.json
-GET http://127.0.0.1:41029/health -> 200
+$ /tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature health http GET /health --expect 200
+evidence: /tmp/poteto-examples-1b66nnil/todo-app/artifacts/verify/maintain/001-health-http.json
+GET http://127.0.0.1:55493/health -> 200
 {"ok": true}
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature create-todo http POST /todos '{"title":"verify HTTP"}' --expect 201
-evidence: /tmp/poteto-examples-ps5wtrlv/todo-app/artifacts/verify/maintain/002-create-todo-http.json
-POST http://127.0.0.1:41029/todos -> 201
+$ /tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature create-todo http POST /todos '{"title":"verify HTTP"}' --expect 201
+evidence: /tmp/poteto-examples-1b66nnil/todo-app/artifacts/verify/maintain/002-create-todo-http.json
+POST http://127.0.0.1:55493/todos -> 201
 {"id": 1, "title": "verify HTTP", "status": "open"}
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature create-todo cli -- /usr/bin/python3 -m todo add 'verify CLI' --data '{DATA_DIR}'
+$ /tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature create-todo cli -- /usr/bin/python3 -m todo add 'verify CLI' --data '{DATA_DIR}'
 {"id": 2, "title": "verify CLI", "status": "open"}
-exit: 0  evidence: /tmp/poteto-examples-ps5wtrlv/todo-app/artifacts/verify/maintain/003-create-todo-cli.json
+exit: 0  evidence: /tmp/poteto-examples-1b66nnil/todo-app/artifacts/verify/maintain/003-create-todo-cli.json
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature list-todos http GET /todos --expect 200
-evidence: /tmp/poteto-examples-ps5wtrlv/todo-app/artifacts/verify/maintain/004-list-todos-http.json
-GET http://127.0.0.1:41029/todos -> 200
+$ /tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature list-todos http GET /todos --expect 200
+evidence: /tmp/poteto-examples-1b66nnil/todo-app/artifacts/verify/maintain/004-list-todos-http.json
+GET http://127.0.0.1:55493/todos -> 200
 [{"id": 1, "status": "open", "title": "verify HTTP"}, {"id": 2, "status": "open", "title": "verify CLI"}]
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature list-todos cli -- /usr/bin/python3 -m todo list --data '{DATA_DIR}'
+$ /tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature list-todos cli -- /usr/bin/python3 -m todo list --data '{DATA_DIR}'
 [{"id": 1, "status": "open", "title": "verify HTTP"}, {"id": 2, "status": "open", "title": "verify CLI"}]
-exit: 0  evidence: /tmp/poteto-examples-ps5wtrlv/todo-app/artifacts/verify/maintain/005-list-todos-cli.json
+exit: 0  evidence: /tmp/poteto-examples-1b66nnil/todo-app/artifacts/verify/maintain/005-list-todos-cli.json
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo http DELETE /todos/1 --expect 409
-evidence: /tmp/poteto-examples-ps5wtrlv/todo-app/artifacts/verify/maintain/006-delete-todo-http.json
-DELETE http://127.0.0.1:41029/todos/1 -> 409
+$ /tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo http DELETE /todos/1 --expect 409
+evidence: /tmp/poteto-examples-1b66nnil/todo-app/artifacts/verify/maintain/006-delete-todo-http.json
+DELETE http://127.0.0.1:55493/todos/1 -> 409
 {"error": "cannot move open to archived"}
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo http POST /todos/1/done --expect 200
-evidence: /tmp/poteto-examples-ps5wtrlv/todo-app/artifacts/verify/maintain/007-done-todo-http.json
-POST http://127.0.0.1:41029/todos/1/done -> 200
+$ /tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo http POST /todos/1/done --expect 200
+evidence: /tmp/poteto-examples-1b66nnil/todo-app/artifacts/verify/maintain/007-done-todo-http.json
+POST http://127.0.0.1:55493/todos/1/done -> 200
 {"id": 1, "status": "done", "title": "verify HTTP"}
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo http POST /todos/1/done --expect 409
-evidence: /tmp/poteto-examples-ps5wtrlv/todo-app/artifacts/verify/maintain/008-done-todo-http.json
-POST http://127.0.0.1:41029/todos/1/done -> 409
+$ /tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo http POST /todos/1/done --expect 409
+evidence: /tmp/poteto-examples-1b66nnil/todo-app/artifacts/verify/maintain/008-done-todo-http.json
+POST http://127.0.0.1:55493/todos/1/done -> 409
 {"error": "cannot move done to done"}
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo cli -- /usr/bin/python3 -m todo done 2 --data '{DATA_DIR}'
+$ /tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo cli -- /usr/bin/python3 -m todo done 2 --data '{DATA_DIR}'
 {"id": 2, "status": "done", "title": "verify CLI"}
-exit: 0  evidence: /tmp/poteto-examples-ps5wtrlv/todo-app/artifacts/verify/maintain/009-done-todo-cli.json
+exit: 0  evidence: /tmp/poteto-examples-1b66nnil/todo-app/artifacts/verify/maintain/009-done-todo-cli.json
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo http DELETE /todos/1 --expect 200
-evidence: /tmp/poteto-examples-ps5wtrlv/todo-app/artifacts/verify/maintain/010-delete-todo-http.json
-DELETE http://127.0.0.1:41029/todos/1 -> 200
+$ /tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo http DELETE /todos/1 --expect 200
+evidence: /tmp/poteto-examples-1b66nnil/todo-app/artifacts/verify/maintain/010-delete-todo-http.json
+DELETE http://127.0.0.1:55493/todos/1 -> 200
 {"id": 1, "status": "archived", "title": "verify HTTP"}
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo cli -- /usr/bin/python3 -m todo rm 2 --data '{DATA_DIR}'
+$ /tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo cli -- /usr/bin/python3 -m todo rm 2 --data '{DATA_DIR}'
 {"id": 2, "status": "archived", "title": "verify CLI"}
-exit: 0  evidence: /tmp/poteto-examples-ps5wtrlv/todo-app/artifacts/verify/maintain/011-delete-todo-cli.json
+exit: 0  evidence: /tmp/poteto-examples-1b66nnil/todo-app/artifacts/verify/maintain/011-delete-todo-cli.json
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature list-todos http GET /todos --expect 200
-evidence: /tmp/poteto-examples-ps5wtrlv/todo-app/artifacts/verify/maintain/012-list-todos-http.json
-GET http://127.0.0.1:41029/todos -> 200
+$ /tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature list-todos http GET /todos --expect 200
+evidence: /tmp/poteto-examples-1b66nnil/todo-app/artifacts/verify/maintain/012-list-todos-http.json
+GET http://127.0.0.1:55493/todos -> 200
 [{"id": 1, "status": "archived", "title": "verify HTTP"}, {"id": 2, "status": "archived", "title": "verify CLI"}]
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo/scripts/control.sh evidence --copy-data
+$ /tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo/scripts/control.sh evidence --copy-data
 {
-  "evidence_dir": "/tmp/poteto-examples-ps5wtrlv/todo-app/artifacts/verify/maintain",
+  "evidence_dir": "/tmp/poteto-examples-1b66nnil/todo-app/artifacts/verify/maintain",
   "files": 15,
-  "manifest": "/tmp/poteto-examples-ps5wtrlv/todo-app/artifacts/verify/maintain/manifest.json"
+  "manifest": "/tmp/poteto-examples-1b66nnil/todo-app/artifacts/verify/maintain/manifest.json"
 }
 
 [exit 0; expected 0]
@@ -454,11 +482,11 @@ ASSERT PASS: POST evidence records the real request and created task
 ASSERT PASS: HTTP and CLI complete and archive both real records
 ASSERT PASS: stored JSON snapshot matches the API read-back
 ASSERT PASS: every evidence manifest digest matches its actual file
-$ /tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo/scripts/control.sh cleanup
+$ /tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo/scripts/control.sh cleanup
 {
   "run_id": "maintain",
   "killed": true,
-  "evidence_dir": "/tmp/poteto-examples-ps5wtrlv/todo-app/artifacts/verify/maintain",
+  "evidence_dir": "/tmp/poteto-examples-1b66nnil/todo-app/artifacts/verify/maintain",
   "evidence_files": 16
 }
 
@@ -467,7 +495,7 @@ ASSERT PASS: cleanup stops its recorded server and clears run state
 ASSERT PASS: owned server no longer runs after cleanup
 ASSERT PASS: cleanup leaves an unrelated process alive
 ASSERT PASS: cleanup preserves evidence files
-$ /tmp/poteto-examples-ps5wtrlv/todo-app/.claude/skills/verify-todo/scripts/control.sh cleanup
+$ /tmp/poteto-examples-1b66nnil/todo-app/.claude/skills/verify-todo/scripts/control.sh cleanup
 {"cleaned": false, "reason": "no active run"}
 
 [exit 0; expected 0]

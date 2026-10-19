@@ -96,7 +96,7 @@ for n in d.get("new_skills", []):
     items.append((f"New upstream skill: {n['name']}", n["url"], "collection",
                   f"Read pstack skill {n['name']}; if it pushes output up the pyramid, propose a poteto-skills skill with a "
                   "deterministic helper script, otherwise record it in MAPPING.md as not adopted.",
-                  "A new pstack skill appeared since the last curator run."))
+                  "pstack has a skill with no snapshot in research/upstream/ that no earlier curator run reported."))
 for m in d.get("missing_upstream", []):
     items.append((f"Upstream moved or removed: {m['file']}", "https://github.com/cursor/plugins/tree/main/pstack", "collection",
                   f"Find where {m['file']} went upstream (renamed or deleted), update research/upstream and MAPPING.md, "

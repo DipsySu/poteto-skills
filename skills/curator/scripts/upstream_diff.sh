@@ -12,7 +12,8 @@ Keeps a sparse, blob-filtered clone of cursor/plugins (pstack/ only) in $POTETO_
 and reports:
   changed           snapshot files whose upstream copy differs (with GitHub URLs)
   missing_upstream  snapshot files upstream no longer has at the expected path
-  new_skills        upstream skills absent from research/upstream/ (including the first run)
+  new_skills        upstream skills absent from research/upstream/ that the previous run had not
+                    seen (on the first run: all of them)
   removed_skills    upstream skills gone since the previous run
   untracked_skills  upstream skills this collection has no snapshot of (informational)
   commits_since     upstream commits touching pstack/ since the sha pinned in research/NOTES.md
@@ -142,7 +143,8 @@ try:
 except (OSError, ValueError):
     pass
 skill_url = lambda n: f"https://github.com/cursor/plugins/tree/{branch}/pstack/skills/{n}"
-new = [{"name": n, "url": skill_url(n)} for n in current if n not in tracked]
+seen = set((prev or {}).get("skills", []))  # reported by an earlier run: not new again
+new = [{"name": n, "url": skill_url(n)} for n in current if n not in tracked and n not in seen]
 removed = [{"name": n} for n in (prev or {}).get("skills", []) if n not in current]
 state_file.write_text(json.dumps({"skills": current, "head": head,
                                   "checked": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")}, indent=2))

@@ -1,13 +1,9 @@
-Fresh scratch: /tmp/poteto-examples-7cr39j99
-PASS create-verification-skill: 21 assertions
-PASS maintain-verification-skill: 16 assertions
+Fresh scratch: /tmp/poteto-examples-1b66nnil
+PASS create-verification-skill: 25 assertions
+PASS maintain-verification-skill: 17 assertions
 PASS correct: 12 assertions
 PASS feedback-to-architecture: 7 assertions
 PASS architect: 2 assertions
 PASS sharpen: 3 assertions
 PASS formal-verification: 8 assertions
-PASS curator: 11 assertions
-
-real	0m6.672s
-user	0m5.380s
-sys	0m1.195s
+PASS curator: 12 assertions

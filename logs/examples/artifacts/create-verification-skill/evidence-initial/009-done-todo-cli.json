@@ -8,10 +8,10 @@
     "done",
     "2",
     "--data",
-    "/tmp/poteto-examples-ps5wtrlv/verify-state-initial/initial/data"
+    "/tmp/poteto-examples-1b66nnil/verify-state-initial/initial/data"
   ],
   "exit_code": 0,
   "stdout": "{\"id\": 2, \"status\": \"done\", \"title\": \"verify CLI\"}\n",
   "stderr": "",
-  "finished": "2026-10-19T06:10:38Z"
+  "finished": "2026-10-19T06:46:25Z"
 }
