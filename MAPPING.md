@@ -1,0 +1,43 @@
+# Skill to source mapping
+
+Every skill traces back to source IDs in [research/NOTES.md](research/NOTES.md). Upstream pstack is MIT-licensed, © 2026 Lauren Tan. Verbatim snapshots of the files these skills adapt are in [research/upstream/](research/upstream/) (cursor/plugins @ `6b78e9f`, pstack 0.15.27), with the license at [research/upstream/PSTACK_LICENSE](research/upstream/PSTACK_LICENSE).
+
+Pyramid layers (S1): 1 codebase improvements (architecture, types, invariants) > 2 static analysis (lint, tests, CI, verification) > 3 prose (rules, docs, skills) > 4 human review. Skills are layer 3. The last column says which higher layer each skill's output lands on.
+
+| Skill | What it does | Upstream sources | Pyramid layer it pushes toward |
+|---|---|---|---|
+| `create-verification-skill` | Scans the repo (`scan_repo.py`), scaffolds `verify-<app>` with a feature map and a `control.sh` harness (`scaffold.py`), proves it once end to end, and gates it (`check_verify_skill.py`). | S4 [create-verification-skill](https://github.com/cursor/plugins/blob/main/pstack/skills/create-verification-skill/SKILL.md), S13 [guide 06](https://github.com/cursor/plugins/blob/main/pstack/docs/guide/06-verify-and-ship.md), S17 [prove-it-works](https://github.com/cursor/plugins/blob/main/pstack/skills/principle-prove-it-works/SKILL.md), S18 [build-the-lever](https://github.com/cursor/plugins/blob/main/pstack/skills/principle-build-the-lever/SKILL.md), S1 [post](https://x.com/poteto/status/2111133080526495985) | 2: a committed, rerunnable verification harness with evidence, instead of ad hoc clicking |
+| `maintain-verification-skill` | Deterministic drift check between the feature map and the source (`drift_check.py`: index, H2 contract, missing and dead routes and commands), then a required live pass and triage. | S5 [maintain-verification-skill](https://github.com/cursor/plugins/blob/main/pstack/skills/maintain-verification-skill/SKILL.md), S13 [guide 06](https://github.com/cursor/plugins/blob/main/pstack/docs/guide/06-verify-and-ship.md), S20 [On pstack](https://barnabyrobson.org/on-pstack/) (secondary) | 2: map drift becomes an exit code; the live pass keeps the harness true |
+| `correct` | Mines reverts, fix commits, and feedback into mistake classes (`mine_mistakes.py`), fixes each at the highest level, ships a rule-file lint with ratchet and expiring exceptions (`patlint.py`), and audits the rule table (`rule_table.py`). | S7 [correct](https://github.com/cursor/plugins/blob/main/pstack/skills/correct/SKILL.md), S15 [guide 09](https://github.com/cursor/plugins/blob/main/pstack/docs/guide/09-make-it-yours.md), S16 [encode-lessons-in-structure](https://github.com/cursor/plugins/blob/main/pstack/skills/principle-encode-lessons-in-structure/SKILL.md), S1 [post](https://x.com/poteto/status/2111133080526495985) | 1 and 2: architecture and types first, then a lint whose message names the fix, proven on a real past mistake |
+| `feedback-to-architecture` | Normalizes PR comments, commit signals, and chat notes (`collect_feedback.py`), clusters them into themes, and writes `REFACTOR_PLAN.md` plus patlint rules replayed against history (`plan.py`). | S1 [post](https://x.com/poteto/status/2111133080526495985) (project prompt), S7 [correct](https://github.com/cursor/plugins/blob/main/pstack/skills/correct/SKILL.md), S8 [architect](https://github.com/cursor/plugins/blob/main/pstack/skills/architect/SKILL.md) | 1: an agent-friendly re-architecture backed by data, with lint rules (2) as the backstop |
+| `architect` | Ground, then sketch at least two structurally distinct candidates, screen them against red flags, decide, implement against the sketch, and scrap on a pattern. `sketch_check.py` gates the sketch. | S8 [architect](https://github.com/cursor/plugins/blob/main/pstack/skills/architect/SKILL.md), S14 [guide 08](https://github.com/cursor/plugins/blob/main/pstack/docs/guide/08-principles.md), S1 [post](https://x.com/poteto/status/2111133080526495985) | 1: types, signatures, and module boundaries decided before code |
+| `sharpen` | Restates the goal in your own words, the expert approach, over- and under-specification, and one outside check. `brief.py` writes and checks the brief. Covers in-your-own-words. | S9 [sharpen](https://github.com/cursor/plugins/blob/main/pstack/skills/sharpen/SKILL.md), S10 [in-your-own-words](https://github.com/cursor/plugins/blob/main/pstack/skills/in-your-own-words/SKILL.md), S1 [post](https://x.com/poteto/status/2111133080526495985) | 2: a runnable outside check fixed before the work, instead of a human judging it afterwards |
+| `formal-verification` | Picks the costliest, least-tested promise, chooses the tool (TLA+, Kani, generated inputs), shows the check failing on broken variants, keeps findings as findings, and leaves a project skill. Ships `bounded_check.py` and `tla_available.sh`. | S6 [create-formal-verification-skill](https://github.com/cursor/plugins/blob/main/pstack/skills/create-formal-verification-skill/SKILL.md), S2 [launch post](https://x.com/poteto/status/2111926622278521253), S13 [guide 06](https://github.com/cursor/plugins/blob/main/pstack/docs/guide/06-verify-and-ship.md) | 2: model checking and bounded verification with able-to-fail mutants |
+| `curator` | Diffs upstream pstack (`upstream_diff.sh`), writes sourced proposals daily, and weekly applies them on a local branch that is committed only if `scripts/verify.sh` passes (`curate.sh`, `check_proposals.py`). | NOTES §6, S3 [pstack README](https://github.com/cursor/plugins/blob/main/pstack/README.md), S18 [build-the-lever](https://github.com/cursor/plugins/blob/main/pstack/skills/principle-build-the-lever/SKILL.md), S20 [On pstack](https://barnabyrobson.org/on-pstack/) (secondary) | keeps layer 3 sourced; every change is gated by layer 2 (`verify.sh`) |
+
+## Helper scripts
+
+| Skill | Script | Output |
+|---|---|---|
+| create-verification-skill | `scan_repo.py REPO [--json]` | inventory: languages, build/test commands, launch candidates, routes, CLI subcommands, skill dirs, features |
+| create-verification-skill | `scaffold.py REPO --app NAME [--skills-dir DIR]` | `verify-NAME/` with SKILL.md, `features/`, `scripts/control.sh`; unknowns as `TODO(verify)` |
+| create-verification-skill | `check_verify_skill.py SKILL_DIR` | contract gate, exit 1 on any failure |
+| maintain-verification-skill | `drift_check.py SKILL_DIR --repo REPO [--json]` | index, contract, missing and dead routes and commands; exit 1 on drift |
+| correct | `mine_mistakes.py REPO [--since DATE] [--feedback FILE...] [--json]` | mistake classes (count >= 2) with commit shas and comment ids |
+| correct | `patlint.py --rules RULES.json [--baseline FILE] [--update-baseline] PATHS...` | lint with ratchet and expiring inline exceptions; `--rev` replays history |
+| correct | `rule_table.py check AGENTS.md` | flags rules enforced only by prose |
+| feedback-to-architecture | `collect_feedback.py --repo REPO [--pr-comments JSON] [--chat MD] [--out FILE]` | `feedback.json`, every item with a source ref |
+| feedback-to-architecture | `plan.py feedback.json --out-dir DIR` | `REFACTOR_PLAN.md`, `lint-rules.json`, `plan.json` |
+| architect | `sketch_check.py SKETCH.md` | candidates, distinctness, red-flags screen, synthesis decision |
+| sharpen | `brief.py "task"` / `brief.py --check BRIEF.md` | the brief, with candidate raw sources from the repo |
+| formal-verification | `bounded_check.py MODEL.py [--mutants]` | BFS model check, shortest counterexample, mutant kill table |
+| formal-verification | `tla_available.sh [--json]` | whether java and tla2tools.jar are present |
+| curator | `upstream_diff.sh [--json]`, `curate.sh [--propose\|--apply] [--offline]`, `check_proposals.py FILE` | upstream report, proposals, local curator branch |
+
+## Upstream material not adopted as skills
+
+| Source | Why not, for now |
+|---|---|
+| S11 `recall` | Needs harness-specific transcript paths. `feedback-to-architecture` takes recurring corrections as a markdown input instead. |
+| S12 `poteto-mode`, S14 principles | A personal router and a principle index. The principles that change outputs (build the lever, prove it works, encode lessons in structure) are folded into the skills above. |
+| S19 Claude Code adapter | Install paths are handled by `install.sh`. |

@@ -1,0 +1,7 @@
+You are building the poteto-skills collection in the current directory (/home/box/developer/poteto-skills). Read SPEC.md and research/NOTES.md fully, and read the upstream skills in research/upstream/ before writing.
+
+Your task (Phase A): implement ALL 8 skills under skills/ exactly per SPEC.md (SKILL.md with frontmatter + every listed script, executable, `--help` works, stdlib only), plus install.sh, README.md, MAPPING.md (table: skill | what it does | upstream source IDs + URLs from NOTES.md | pyramid layer it pushes toward), CHANGELOG.md (entry 0.1.0 dated 2026-10-19), and skills/curator/references/curator-prompt.md. Each SKILL.md: cite sources in a short "Sources" footer with URLs. Credit upstream pstack (MIT, Lauren Tan); don't copy upstream text wholesale — adapt and add the deterministic helper scripts.
+
+Do NOT build examples/todo-app, scripts/run-examples.sh or scripts/verify.sh — a second agent does that next. But do smoke-test each of your scripts yourself on a tiny throwaway repo under /tmp (create it with git init), and fix bugs. Run `chmod +x` on scripts. Keep memory use low; run nothing in parallel; kill any server you start. Don't touch anything outside this directory and /tmp. Don't push. Don't run install.sh for real (only `--dry-run` with HOME set to a temp dir).
+
+At the end, `git add -A && git commit -m "phase A: skills (claude)"` with -c user.name=claude-code -c user.email=claude@local, and print a short summary of files and smoke-test results.

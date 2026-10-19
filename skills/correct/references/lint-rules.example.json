@@ -1,0 +1,18 @@
+{
+  "rules": [
+    {
+      "id": "no-direct-json-write",
+      "regex": "\\bjson\\.dump\\(",
+      "include": ["**/*.py"],
+      "exclude": ["todo/store.py", "**/tests/**"],
+      "message": "Write todos through `store.save()` in todo/store.py; json.dump on the data file skips its atomic write and lock."
+    },
+    {
+      "id": "no-raw-status-strings",
+      "regex": "status\\s*==\\s*[\"'](open|done|archived)[\"']",
+      "include": ["todo/**/*.py"],
+      "exclude": ["todo/states.py"],
+      "message": "Compare statuses with the `Status` enum from todo/states.py and move them with `states.transition()`."
+    }
+  ]
+}
