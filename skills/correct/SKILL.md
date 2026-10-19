@@ -15,13 +15,16 @@ Design for the worst-case contributor: an agent that sees only the files it open
 
 ```bash
 gh api repos/OWNER/REPO/pulls/comments --paginate > review-comments.json   # optional, read-only
-python3 $SKILL_DIR/scripts/mine_mistakes.py . --since "90 days ago" --feedback review-comments.json chat-notes.md
+python3 $SKILL_DIR/scripts/mine_mistakes.py . --feedback review-comments.json chat-notes.md   # whole history first
 ```
 
 - Reads reverts and the commits they revert, fix commits (message + changed identifiers), HACK/FIXME/WORKAROUND comments, review comments, and AGENTS.md/CLAUDE.md rules.
 - A class counts once it happened twice (`--min-count 2`; a revert and its target are one occurrence). Leave "seen once" items alone.
 - `REPEAT` = a rule already exists and nothing that runs enforces it. Those go first, fixed higher up, in the same change.
 - The clustering is a start, not a verdict. Read the evidence; split or merge classes and say why.
+- Mine the whole history first. A `--since` window narrows a long-lived class to the part that fits, and can drop the top class entirely; use it only to compare against an earlier pass.
+- Clustering is lexical. The same mistake under different words (for example `let-chain` versus `1.85 compatibility`) lands in separate classes, so merge those by reading the diffs.
+- When a regex cannot express the invariant (geometry, pixels, cross-file ordering), the lint level is out. Write the test that reads the real source, and replay it on the offending commit the same way `patlint --rev` would.
 
 ## 2. Pick the highest level that works
 

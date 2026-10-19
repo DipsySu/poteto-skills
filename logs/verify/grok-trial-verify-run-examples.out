@@ -1,0 +1,13 @@
+| Check | Result | Detail |
+|---|---|---|
+| regenerate examples | PASS | Fresh scratch: /tmp/poteto-examples-25d2flg6 PASS create-verification-skill: 33 assertions PASS maintain-verification-skill: 17 assertions PASS correct: 16 assertions PASS feedback-to-architecture: 7 assertions PASS architect: 2 assertions PASS sharpen: 3 assertions PASS formal-verification: 8 assertions PASS curator: 12 assertions  |
+| skill frontmatter | PASS | 8 valid skill frontmatters with invocation and source IDs |
+| script contracts | PASS | 25 executable scripts; every --help exits 0 |
+| Python syntax | PASS | 37 Python files compiled with py_compile |
+| bash syntax | PASS | 12 shell files checked with bash -n |
+| docs and mapping | PASS | required files present; mapping lists every skill |
+| installer isolation | PASS | temp HOME dry-run; project link/copy/uninstall preserve unrelated entries |
+| example app | PASS | fresh nested repo: 7 unit tests and persistence boundary lint pass |
+| example skill results | PASS | all 8 skills have passing, nonempty assertion records and logs |
+
+9 PASS; 0 FAIL

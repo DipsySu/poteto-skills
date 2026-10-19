@@ -11,6 +11,10 @@
     "checks": [
       "direct-JSON class contains both real mistake commit SHAs",
       "status-transition class contains both fix commits",
+      "feat commits that mention \"fix\" only in the body are not counted as fixes",
+      "a typed feat subject that names its fixes still counts",
+      "a test: subject with a weak word (\"again\") is not a fix",
+      "an orientation bullet sharing a file name does not mark a class as repeat",
       "patlint fails on a real past mistake checked out in a worktree",
       "same persistence lint passes on HEAD",
       "ratchet permits an adopted existing violation",

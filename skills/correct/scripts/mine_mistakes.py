@@ -45,6 +45,13 @@ FIX_RE = re.compile(
     r"\b(fix(?:es|ed|ing|up)?|bug ?fix|hotfix|regression|broke(?:n)?|oops|typo|forgot|"
     r"wrong|incorrect|repair|correct(?:ed|s)?|again|mistake)\b", re.I)
 CONVENTIONAL_FIX = re.compile(r"^(fix|bugfix|hotfix)(\([^)]*\))?!?:", re.I)
+# A typed non-fix subject (`feat: ... and fix the drawer`) says what the commit is; don't let body words override it.
+CONVENTIONAL_NONFIX = re.compile(r"^(feat|docs|chore|test|tests|refactor|style|ci|build|perf|release)(\([^)]*\))?!?:", re.I)
+# In a typed non-fix subject only an explicit fix word counts ("feat: X, plus 3 layout-audit fixes"), not "again".
+STRONG_FIX_RE = re.compile(r"\b(fix(?:es|ed)?|bug ?fix|hotfix|regression|broken)\b", re.I)
+# A bullet is a rule only when it states one; "Read CHANGELOG.md first" is orientation, not a broken rule.
+NORMATIVE = re.compile(r"\b(must|never|always|do not|don't|should(?:n't)?|only|avoid|required?|forbid(?:den)?|"
+                       r"no longer|not allowed|instead of|prefer)\b|^no\b", re.I)
 REVERT_SUBJECT = re.compile(r'^Revert\s+"', re.I)
 REVERTS_SHA = re.compile(r"This reverts commit ([0-9a-f]{7,40})", re.I)
 TRAILER = re.compile(r"^\s*(Co-Authored-By|Signed-off-by|Reviewed-by|Change-Id|Acked-by|Tested-by)\s*:", re.I)
@@ -221,7 +228,9 @@ def git_items(repo: Path, since: str | None = None, max_commits: int = 2000) -> 
             if m:
                 c["reverts"] = m.group(1)
                 reverted[m.group(1)] = c["sha"]
-        elif CONVENTIONAL_FIX.match(c["subject"]) or FIX_RE.search(c["subject"]) or FIX_RE.search(clean_message(c["body"])):
+        elif CONVENTIONAL_FIX.match(c["subject"]) or (
+                STRONG_FIX_RE.search(c["subject"]) if CONVENTIONAL_NONFIX.match(c["subject"])
+                else (FIX_RE.search(c["subject"]) or FIX_RE.search(clean_message(c["body"])))):
             c["kind"] = "fix"
     for c in commits:
         for short, by in reverted.items():
@@ -404,7 +413,7 @@ def agents_rules(repo: Path, files: list[Path] | None = None) -> list[dict]:
             table_lines.add(r["line"])
         for n, ln in enumerate(lines, 1):
             m = re.match(r"^\s*(?:[-*+]|\d+[.)])\s+(.{8,})$", ln)
-            if m and n not in table_lines:
+            if m and n not in table_lines and NORMATIVE.search(m.group(1)):
                 rules.append({"file": f.name, "line": n, "text": m.group(1).strip(), "enforced_by": None, "status": "prose"})
     return rules
 
@@ -594,7 +603,9 @@ def cluster_items(items: list[dict], threshold: float = 0.3, min_count: int = 2,
             for r in rules:
                 rk = tokens(r["text"])
                 rv = _normalize({k: idf.get(k, 0.0) for k in rk if k in idf})
-                strong_overlap = any(k.startswith(STRONG_PREFIXES) and k in rk for k in shared)
+                # a shared file name alone ties a class to a rule-table row, never to a prose bullet
+                strong_overlap = r.get("enforced_by") is not None and any(
+                    k.startswith(STRONG_PREFIXES) and k in rk for k in shared)
                 if strong_overlap or _cos(rv, centroid) >= 0.25:
                     cls["rules"].append(r)
             cls["repeat"] = any(r.get("status") != "enforced" for r in cls["rules"])

@@ -1,13 +1,13 @@
-scratch: /tmp/poteto-examples-0gv9ole0
-$ /home/box/developer/poteto-skills/skills/feedback-to-architecture/scripts/collect_feedback.py --repo /tmp/poteto-examples-0gv9ole0/todo-app --pr-comments /tmp/poteto-examples-0gv9ole0/todo-app/review-comments.json --chat /tmp/poteto-examples-0gv9ole0/todo-app/chat-feedback.md --out /tmp/poteto-examples-0gv9ole0/feedback.json
-collect_feedback: wrote /tmp/poteto-examples-0gv9ole0/feedback.json (3 chat, 6 commit, 4 review)
+scratch: /tmp/poteto-examples-25d2flg6
+$ /home/box/developer/poteto-skills/skills/feedback-to-architecture/scripts/collect_feedback.py --repo /tmp/poteto-examples-25d2flg6/todo-app --pr-comments /tmp/poteto-examples-25d2flg6/todo-app/review-comments.json --chat /tmp/poteto-examples-25d2flg6/todo-app/chat-feedback.md --out /tmp/poteto-examples-25d2flg6/feedback.json
+collect_feedback: wrote /tmp/poteto-examples-25d2flg6/feedback.json (3 chat, 6 commit, 4 review)
 
 [exit 0; expected 0]
 ASSERT PASS: every normalized feedback item has source provenance
 ASSERT PASS: collection includes commit, review and chat evidence
-$ /home/box/developer/poteto-skills/skills/feedback-to-architecture/scripts/plan.py /tmp/poteto-examples-0gv9ole0/feedback.json --out-dir /tmp/poteto-examples-0gv9ole0/plan
+$ /home/box/developer/poteto-skills/skills/feedback-to-architecture/scripts/plan.py /tmp/poteto-examples-25d2flg6/feedback.json --out-dir /tmp/poteto-examples-25d2flg6/plan
 {
-  "out_dir": "/tmp/poteto-examples-0gv9ole0/plan",
+  "out_dir": "/tmp/poteto-examples-25d2flg6/plan",
   "themes": 2,
   "rules": [
     "no-rows-append-outside-store"
@@ -20,16 +20,16 @@ $ /home/box/developer/poteto-skills/skills/feedback-to-architecture/scripts/plan
     "T2": "types"
   },
   "files": [
-    "/tmp/poteto-examples-0gv9ole0/plan/REFACTOR_PLAN.md",
-    "/tmp/poteto-examples-0gv9ole0/plan/lint-rules.json",
-    "/tmp/poteto-examples-0gv9ole0/plan/plan.json"
+    "/tmp/poteto-examples-25d2flg6/plan/REFACTOR_PLAN.md",
+    "/tmp/poteto-examples-25d2flg6/plan/lint-rules.json",
+    "/tmp/poteto-examples-25d2flg6/plan/plan.json"
   ]
 }
 
 [exit 0; expected 0]
 ASSERT PASS: generated lint is proven against history
 ASSERT PASS: planner writes refactor plan and machine-readable lint rules
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-0gv9ole0/plan/lint-rules.json --root /tmp/poteto-examples-0gv9ole0/todo-app --json --rev dbd44008685859312aee6a60154fd0258c1c063b /tmp/poteto-examples-0gv9ole0/todo-app/todo
+$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-25d2flg6/plan/lint-rules.json --root /tmp/poteto-examples-25d2flg6/todo-app --json --rev dbd44008685859312aee6a60154fd0258c1c063b /tmp/poteto-examples-25d2flg6/todo-app/todo
 {
   "ok": false,
   "rules": [
@@ -37,7 +37,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /t
   ],
   "files_scanned": 3,
   "rev": "dbd44008685859312aee6a60154fd0258c1c063b",
-  "root": "/tmp/poteto-examples-0gv9ole0/todo-app",
+  "root": "/tmp/poteto-examples-25d2flg6/todo-app",
   "failing": [
     {
       "rule": "no-rows-append-outside-store",
@@ -89,7 +89,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /t
 
 [exit 1; expected 1]
 ASSERT PASS: generated lint fires on the real direct-write mistake
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-0gv9ole0/plan/lint-rules.json --root /tmp/poteto-examples-0gv9ole0/todo-app --json /tmp/poteto-examples-0gv9ole0/todo-app/todo
+$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-25d2flg6/plan/lint-rules.json --root /tmp/poteto-examples-25d2flg6/todo-app --json /tmp/poteto-examples-25d2flg6/todo-app/todo
 {
   "ok": true,
   "rules": [
@@ -97,7 +97,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /t
   ],
   "files_scanned": 3,
   "rev": null,
-  "root": "/tmp/poteto-examples-0gv9ole0/todo-app",
+  "root": "/tmp/poteto-examples-25d2flg6/todo-app",
   "failing": [],
   "violations": [],
   "allowed": [],

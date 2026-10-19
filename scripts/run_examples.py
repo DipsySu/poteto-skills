@@ -328,6 +328,32 @@ class Examples:
             self.run(*command)
             self.live_pass('maintain')
 
+    def correct_grok_regressions(self):
+        """mine_mistakes false positives seen on pixel-agent-garden (logs/grok-trial/)."""
+        repo = self.scratch / 'mine-fixture'
+        repo.mkdir()
+        git = lambda *a: self.run('git', '-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', *a, cwd=repo)
+        git('init', '-q')
+        (repo / 'AGENTS.md').write_text('# Agents\n\n- Read CHANGELOG.md before you start work here.\n')
+        steps = [('drawer.js', 'feat(web): add the data drawer', 'Also fix the toggle and the drawer focus.'),
+                 ('drawer.js', 'feat(web): add the share drawer', 'Fixes drawer focus on open.'),
+                 ('CHANGELOG.md', 'feat: layout pass, plus 3 layout-audit fixes', ''),
+                 ('CHANGELOG.md', 'fix: layout overlap in the changelog renderer again', ''),
+                 ('CHANGELOG.md', 'test: keep the layout from overlapping again', '')]
+        for n, (path, subject, body) in enumerate(steps):
+            (repo / path).write_text(f'v{n}\n')
+            git('add', '-A')
+            git('commit', '-qm', subject, *(['-m', body] if body else []))
+        mined = self.json(self.script(self.name, 'mine_mistakes.py'), repo, '--json', cwd=repo)
+        self.save('mine-fixture.json', mined)
+        refs = {e.get('text', '').split('\n')[0] for c in mined['classes'] for e in c['evidence']}
+        texts = ' '.join(json.dumps(c['evidence']) for c in mined['classes'])
+        self.ensure('add the data drawer' not in texts and 'add the share drawer' not in texts,
+                    'feat commits that mention "fix" only in the body are not counted as fixes')
+        self.ensure('layout-audit fixes' in texts, 'a typed feat subject that names its fixes still counts')
+        self.ensure('keep the layout from overlapping again' not in texts, 'a test: subject with a weak word ("again") is not a fix')
+        self.ensure(not any(c['repeat'] for c in mined['classes']), 'an orientation bullet sharing a file name does not mark a class as repeat')
+
     def lint(self, rules, path, *, root=None, expected=0, extra=()):
         return self.json(self.script('correct', 'patlint.py'), '--rules', rules, '--root', root or self.repo,
                          '--json', *extra, path, expected=expected)
@@ -342,6 +368,7 @@ class Examples:
                             for c in mined['classes']), 'direct-JSON class contains both real mistake commit SHAs')
             self.ensure(any('status' in ' '.join(c['signature']).lower() and c['sources'].get('commit',0)>=2
                             for c in mined['classes']), 'status-transition class contains both fix commits')
+            self.correct_grok_regressions()
             rules = self.save('rules.json', {'rules':[{'id':'no-direct-json-write','regex':r'\b\w+\.path\.write_text\s*\(',
                 'include':['todo/*.py'], 'exclude':['todo/store.py'],
                 'message':'Use Store.add or Store.transition in todo/store.py for atomic persistence.'}]})

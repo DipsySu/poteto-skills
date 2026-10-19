@@ -1,0 +1,67 @@
+{
+  "repo": "/tmp/poteto-examples-25d2flg6/mine-fixture",
+  "since": null,
+  "items": 2,
+  "counts": {
+    "commit": 2
+  },
+  "min_count": 2,
+  "classes": [
+    {
+      "count": 2,
+      "items": 2,
+      "sources": {
+        "commit": 2
+      },
+      "signature": [
+        "CHANGELOG.md",
+        "layout"
+      ],
+      "signature_keys": [
+        "file:changelog.md",
+        "layout"
+      ],
+      "evidence": [
+        {
+          "id": "commit:a654591a06",
+          "source": "commit",
+          "kind": "fix",
+          "ref": "a654591a06582f91a5ce51448ac6911e1128ef68",
+          "text": "fix: layout overlap in the changelog renderer again",
+          "paths": [
+            "CHANGELOG.md"
+          ],
+          "line": null,
+          "author": "t",
+          "date": "2026-10-19",
+          "url": null,
+          "diff_ids": [],
+          "diff_added": [],
+          "diff_removed": []
+        },
+        {
+          "id": "commit:7c33f84397",
+          "source": "commit",
+          "kind": "fix",
+          "ref": "7c33f84397056b31650cfd234db4d386ab8a0cea",
+          "text": "feat: layout pass, plus 3 layout-audit fixes",
+          "paths": [
+            "CHANGELOG.md"
+          ],
+          "line": null,
+          "author": "t",
+          "date": "2026-10-19",
+          "url": null,
+          "diff_ids": [],
+          "diff_added": [],
+          "diff_removed": []
+        }
+      ],
+      "rules": [],
+      "repeat": false,
+      "id": "C1"
+    }
+  ],
+  "unclassified": [],
+  "rules_read": 0
+}

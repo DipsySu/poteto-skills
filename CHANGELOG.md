@@ -12,6 +12,13 @@ All notable changes to this project are documented in this file. The format is b
 - `scaffold.py` now writes `FEATURE_MAP.md`, the entry point that links every feature file.
 - `check_verify_skill.py --require-proof EVIDENCE_ROOT`: fails until a proof run has left a manifest with a drive record. The structural checks alone passed on a skill that had never run. SKILL.md step 5 uses it.
 - `scripts/run_examples.py`: regression assertions for all of the above.
+- `mine_mistakes.py` (from the Grok `/correct` run): on pixel-agent-garden it reported 11 classes, 6 of them false `repeat`s. It now reports 8 classes and 0 false repeats, and the top class is the same 6 commits Grok picked by hand. Changes: a typed non-fix subject (`feat:`, `test:` and similar) counts as a fix only when the subject names a fix, and body words no longer turn a `feat` into a fix. A bullet in AGENTS.md or CLAUDE.md counts as a rule only when it is normative ("must", "never", and so on). A shared file name ties a class to a rule-table row, never to a prose bullet. Before/after output is in `logs/grok-trial/mine_mistakes.*.json`, and the new run_examples assertions fail on the old script (`logs/grok-trial/regression-fails-on-old-mine_mistakes.out`).
+- `correct/SKILL.md`: mine the whole history by default. The old `--since "90 days ago"` example dropped the top class on a repo whose mistakes are four months old. The skill also notes that clustering is lexical, and that a test is the level to use when a regex cannot express the invariant.
+
+### Known, not changed
+
+- `rule_table.py add` appends a `## Rules` section at the end of the file. In bilingual AGENTS.md files, move it into the right language section by hand.
+- `patlint.py` is regex-only by design. Geometric and pixel invariants go to a test, as Grok did.
 
 ## [0.1.0] - 2026-10-19
 

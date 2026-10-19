@@ -1,0 +1,1 @@
+FAIL correct: feat commits that mention "fix" only in the body are not counted as fixes
