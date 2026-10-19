@@ -195,6 +195,22 @@ def check(skill: Path) -> list[dict]:
     return results
 
 
+def proof_result(root: Path) -> dict:
+    """A proof run left a manifest whose files include a drive record (NNN-<feature>-http|cli.json)."""
+    runs = []
+    for m in sorted(root.glob("*/manifest.json")) if root.is_dir() else []:
+        try:
+            files = json.loads(m.read_text(encoding="utf-8")).get("files", [])
+        except (OSError, json.JSONDecodeError):
+            continue
+        drives = [f["path"] for f in files if re.fullmatch(r"\d{3}-(.+-)?(http|cli)\.json", f.get("path", ""))]
+        if drives:
+            runs.append(f"{m.parent.name} ({len(drives)} drive records)")
+    return {"check": "proof run with evidence", "ok": bool(runs),
+            "detail": "; ".join(runs[-3:]) if runs else f"no {root}/<run-id>/manifest.json with a drive record: "
+                                                         "run the end-to-end proof (control.sh prove) first"}
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         prog="check_verify_skill.py",
@@ -206,11 +222,16 @@ def main(argv: list[str] | None = None) -> int:
     )
     ap.add_argument("skill_dir", type=Path, help="the verify-<app> skill directory")
     ap.add_argument("--json", action="store_true", help="machine-readable output")
+    ap.add_argument("--require-proof", metavar="EVIDENCE_ROOT", type=Path,
+                    help="also require a proof run: some EVIDENCE_ROOT/<run-id>/manifest.json listing at least one "
+                         "drive record (e.g. artifacts/verify). A skill whose proof never ran is a draft.")
     args = ap.parse_args(argv)
     if not args.skill_dir.is_dir():
         print(f"check_verify_skill: {args.skill_dir} is not a directory", file=sys.stderr)
         return 2
     results = check(args.skill_dir)
+    if args.require_proof is not None:
+        results.append(proof_result(args.require_proof))
     failed = [r for r in results if not r["ok"]]
     if args.json:
         print(json.dumps({"skill_dir": str(args.skill_dir), "ok": not failed, "failed": len(failed),

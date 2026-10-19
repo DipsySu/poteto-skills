@@ -1,0 +1,9 @@
+link /home/box/developer/pixel-agent-garden/.claude/skills/architect -> /home/box/developer/poteto-skills/skills/architect
+link /home/box/developer/pixel-agent-garden/.claude/skills/correct -> /home/box/developer/poteto-skills/skills/correct
+link /home/box/developer/pixel-agent-garden/.claude/skills/create-verification-skill -> /home/box/developer/poteto-skills/skills/create-verification-skill
+link /home/box/developer/pixel-agent-garden/.claude/skills/curator -> /home/box/developer/poteto-skills/skills/curator
+link /home/box/developer/pixel-agent-garden/.claude/skills/feedback-to-architecture -> /home/box/developer/poteto-skills/skills/feedback-to-architecture
+link /home/box/developer/pixel-agent-garden/.claude/skills/formal-verification -> /home/box/developer/poteto-skills/skills/formal-verification
+link /home/box/developer/pixel-agent-garden/.claude/skills/maintain-verification-skill -> /home/box/developer/poteto-skills/skills/maintain-verification-skill
+link /home/box/developer/pixel-agent-garden/.claude/skills/sharpen -> /home/box/developer/poteto-skills/skills/sharpen
+install.sh: install done: 8 skill(s), 1 target dir(s), 8 change(s), 0 conflict(s)

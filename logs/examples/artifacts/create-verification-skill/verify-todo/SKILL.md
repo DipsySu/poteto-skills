@@ -39,5 +39,5 @@ Prove behavior on the running app, not a proxy. Every step goes through `.claude
 
 - `scripts/control.sh`: `launch | doctor | drive | evidence | cleanup | status | prove`. `.claude/skills/verify-todo/scripts/control.sh --help` lists the arguments.
 - One-shot proof: `.claude/skills/verify-todo/scripts/control.sh prove --feature <id> http GET /todos` runs launch, doctor, drive, evidence, and cleanup, then checks the evidence survived.
-- Contract check (poteto-skills, default install path): `python3 ~/.claude/skills/create-verification-skill/scripts/check_verify_skill.py .claude/skills/verify-todo`.
-- Drift check: `python3 ~/.claude/skills/maintain-verification-skill/scripts/drift_check.py .claude/skills/verify-todo --repo .`.
+- Contract check: `python3 /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py .claude/skills/verify-todo`.
+- Drift check: `python3 /home/box/developer/poteto-skills/skills/maintain-verification-skill/scripts/drift_check.py .claude/skills/verify-todo --repo .`.

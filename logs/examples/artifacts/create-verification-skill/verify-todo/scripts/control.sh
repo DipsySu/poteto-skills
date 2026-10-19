@@ -326,6 +326,10 @@ for dirpath, _, names in os.walk(root):
         rel = os.path.relpath(p, root)
         if rel == "manifest.json":
             continue
+        if os.path.islink(p):
+            # snapshot keeps links as links; a relative link can dangle in the copy, so record it, don't open it
+            files.append({"path": rel, "symlink": os.readlink(p)})
+            continue
         with open(p, "rb") as f:
             digest = hashlib.sha256(f.read()).hexdigest()
         files.append({"path": rel, "bytes": os.path.getsize(p), "sha256": digest})

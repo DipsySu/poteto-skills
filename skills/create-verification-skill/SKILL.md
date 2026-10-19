@@ -67,8 +67,10 @@ Drive one mapped feature exactly as its recipe says. Fix what fails, and run `cl
 ## 5. Gate and hand off
 
 ```bash
-python3 $SKILL_DIR/scripts/check_verify_skill.py .claude/skills/verify-<name>    # must exit 0
+python3 $SKILL_DIR/scripts/check_verify_skill.py .claude/skills/verify-<name> --require-proof artifacts/verify    # must exit 0
 ```
+
+The structural checks pass on a skill that never ran; `--require-proof` is what fails until a proof run left a manifest with a drive record. The scaffold also writes `FEATURE_MAP.md`, the entry point that lists the feature files; keep it in sync with `features/README.md`.
 
 Commit the skill so every person and agent drives the app the same way, and add `artifacts/` to `.gitignore`. Point the user at /maintain-verification-skill to keep the map honest. Suggest a cadence only if asked.
 

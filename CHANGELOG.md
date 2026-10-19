@@ -4,6 +4,15 @@ All notable changes to this project are documented in this file. The format is b
 
 ## [Unreleased]
 
+### Fixed (found in the Grok CLI trial on pixel-agent-garden, see `logs/grok-trial/`)
+
+- `scan_repo.py`: Rust repos produced 0 features. It now reads clap `#[derive(Subcommand)]` enums (kebab-case variants, `#[command(name = ...)]`) from every crate's bins and invokes them as `cargo run -q -p PKG --bin BIN --`. CLI verbs with no resource behind them are titled ``Run `bin verb` `` (previously "Doctor a --").
+- `scaffold.py`: the generated SKILL.md hardcoded `~/.claude/skills/...` helper paths. They now come from the scaffold's own install location (repo-relative for a project install, absolute otherwise).
+- Generated `control.sh evidence --copy-data`: a dangling or relative symlink in the data dir crashed the manifest. Symlinks are now recorded as `{"path", "symlink"}` and not opened.
+- `scaffold.py` now writes `FEATURE_MAP.md`, the entry point that links every feature file.
+- `check_verify_skill.py --require-proof EVIDENCE_ROOT`: fails until a proof run has left a manifest with a drive record. The structural checks alone passed on a skill that had never run. SKILL.md step 5 uses it.
+- `scripts/run_examples.py`: regression assertions for all of the above.
+
 ## [0.1.0] - 2026-10-19
 
 ### Added

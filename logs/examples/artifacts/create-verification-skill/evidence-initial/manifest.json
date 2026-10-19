@@ -1,67 +1,67 @@
 {
   "app": "todo",
   "run_id": "initial",
-  "written": "2026-10-19T06:51:52Z",
+  "written": "2026-10-19T07:33:19Z",
   "files": [
     {
       "path": "001-health-http.json",
       "bytes": 448,
-      "sha256": "72cfbe6c9c8ccbae445033989e9bd5f9caa5f84a5c7e3a0b25900ad61e5d33cf"
+      "sha256": "1d7438f8c27051f534f26666f3146f1528fac292d2b550ae194e3b2230db7f6b"
     },
     {
       "path": "002-create-todo-http.json",
       "bytes": 528,
-      "sha256": "0124a17b31c08385b2fb4ef6ab5c7f57db5f885d86d08aa386e2304f85023f90"
+      "sha256": "e405119b8dc3c49812f7124d8b14f5059636a2fc25a65236bdaece2d999b9951"
     },
     {
       "path": "003-create-todo-cli.json",
       "bytes": 373,
-      "sha256": "b5f59f08f238d2e6188a93ce1e343de6cb66dcc3f4efc9e3b9a3697ee9a54ca7"
+      "sha256": "2fb761c15f088eeaa92eb1e263a371462b587b2561e6abe0b2ca60feb06ff0b3"
     },
     {
       "path": "004-list-todos-http.json",
       "bytes": 597,
-      "sha256": "16a15b1bd9f4ed6353e266523cc246080972d2e8ddf1b6bb028a8a8512f19c81"
+      "sha256": "18a81fc57e84605381bc2c1b34283b4ef276a4e93b33d13bebff1fbef704dc81"
     },
     {
       "path": "005-list-todos-cli.json",
       "bytes": 420,
-      "sha256": "2964d8e778d708bbe3627767b756471fbe690e07299ad69abf58db9f4d4f8037"
+      "sha256": "99c03afce6116a1bafe602ed10c5c6fe52a99103025615c14a1a0e7d2f2e8b16"
     },
     {
       "path": "006-delete-todo-http.json",
       "bytes": 486,
-      "sha256": "358c24c4bd0ea0030c867ee7f3ca17fb8188d0ab93c4a67d685ce23af72f6009"
+      "sha256": "f9a1938b1fdc0a5f02bc0f27ed30a7742216dcfee3b939cede55975c2edc37db"
     },
     {
       "path": "007-done-todo-http.json",
-      "bytes": 506,
-      "sha256": "f7cc0bd36be5123f159e2d1972aed19b2f17f14b45ea99d7f4188ede8e2cb9e0"
+      "bytes": 505,
+      "sha256": "5d8fad2c0a525ad18cb3733cbe0d81a99c6589580051f8f99d02ac9336cce581"
     },
     {
       "path": "008-done-todo-http.json",
       "bytes": 483,
-      "sha256": "9da22c892b19493539c671a919165b06cf284dd4e53a8d3b1e97f04ea7d58100"
+      "sha256": "fe4d62340f3992d502eb1a86c4eb241604c3d433fd2ad982ab6e51aa11e4b4cf"
     },
     {
       "path": "009-done-todo-cli.json",
       "bytes": 363,
-      "sha256": "036ce05d8b2d55b2e6ff28d9f72fc73cd8e12f42c925f356098368d8553d3573"
+      "sha256": "da035aa5bebc688ca82a83413ada981ff916eacdd5344a9f20bd9623bc461714"
     },
     {
       "path": "010-delete-todo-http.json",
       "bytes": 508,
-      "sha256": "480753f625cfa820c3b11145c6076e99459685a6a2087ff62603ea1da1065642"
+      "sha256": "8a456ad526da9c9f4b5a79a16d2a0ac94f92023fac129142db1457ae488cb31d"
     },
     {
       "path": "011-delete-todo-cli.json",
       "bytes": 367,
-      "sha256": "fae538fe12509036283d2495a8b049f413a48a80d124782a900f0a1b2393ea86"
+      "sha256": "a78cd9a130ee75734e0052f734cedbaf898f72139df3daf6e3d80b791e6d0ce2"
     },
     {
       "path": "012-list-todos-http.json",
       "bytes": 605,
-      "sha256": "d6913b38dd006cff3360f42dc4e69ef5ac32324088018c290a6b5f90e701d502"
+      "sha256": "23f4dc392c75de2d6967549714d4fca95946a291cbd5d6cc899c9e272794d99e"
     },
     {
       "path": "013-data-snapshot/todos.json",

@@ -564,6 +564,8 @@ def group_features(routes: list[dict], commands: list[dict]) -> list[dict]:
             continue
         action = verb_action(c["name"])
         prog_word = (c.get("prog") or "").split()[-1].split(".")[-1] if c.get("prog") else ""
+        if not re.search(r"[A-Za-z0-9]", prog_word) and c.get("aliases"):
+            prog_word = c["aliases"][0]  # `cargo run ... --` style progs end in a separator, not a name
         same_action = [k for k in feats if k[0] == action]
         if len(same_action) == 1:
             key = same_action[0]
@@ -578,7 +580,12 @@ def group_features(routes: list[dict], commands: list[dict]) -> list[dict]:
     for (action, resource), f in feats.items():
         fid = f"{action}-{resource if action == 'list' else singular(resource)}"
         fid = re.sub(r"[^a-z0-9-]+", "-", fid.lower()).strip("-")
-        out.append({"id": fid, "title": feature_title(action, resource), **f})
+        title = feature_title(action, resource)
+        if not f["routes"] and f["commands"] and action not in VERB_CLASSES:
+            # a CLI verb with no resource behind it (`agent-garden doctor`): name the command, not "Doctor a agent-garden"
+            fid = re.sub(r"[^a-z0-9-]+", "-", action.lower()).strip("-")
+            title = f"Run `{resource} {action}`"
+        out.append({"id": fid, "title": title, **f})
     out.sort(key=lambda f: (f["resource"], ACTION_ORDER.get(f["action"], 5), f["id"]))
     seen = Counter()
     for f in out:
@@ -596,6 +603,59 @@ def frontmatter_name(text: str) -> str | None:
         return None
     n = re.search(r"^name:\s*['\"]?([^'\"\n]+)", m.group(1), re.M)
     return n.group(1).strip() if n else None
+
+
+RUST_SUBCMD_ENUM = re.compile(r"#\[derive\([^)]*\bSubcommand\b[^)]*\)\]\s*(?:#\[[^\]]*\]\s*)*(?:pub(?:\([^)]*\))?\s+)?enum\s+\w+\s*\{", re.S)
+RUST_VARIANT = re.compile(r"^\s{4}(?:#\[command\([^)]*name\s*=\s*\"([^\"]+)\"[^)]*\)\]\s*)?([A-Z][A-Za-z0-9]*)\s*(?:[{(,]|$)", re.M)
+
+
+def _kebab(name: str) -> str:
+    return re.sub(r"(?<!^)(?=[A-Z])", "-", name).lower()
+
+
+def _enum_body(text: str, start: int) -> str:
+    depth, i = 0, start
+    while i < len(text):
+        if text[i] == "{":
+            depth += 1
+        elif text[i] == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start + 1:i]
+        i += 1
+    return text[start + 1:]
+
+
+def rust_clap_commands(repo: Path, files: list[str], src_files: list[str], notes: list[str]) -> list[dict]:
+    """clap `#[derive(Subcommand)]` enums -> CLI subcommands, invoked through `cargo run -q -p PKG --bin BIN --`."""
+    out: list[dict] = []
+    for manifest in (f for f in files if Path(f).name == "Cargo.toml"):
+        try:
+            cargo = tomllib.loads(read(repo, manifest)) if tomllib is not None else {}
+        except tomllib.TOMLDecodeError:
+            notes.append(f"{manifest} did not parse")
+            continue
+        pkg = (cargo.get("package") or {}).get("name")
+        if not pkg:
+            continue
+        crate_dir = str(Path(manifest).parent)
+        crate_dir = "" if crate_dir == "." else crate_dir + "/"
+        bins = [(b.get("name") or pkg, b.get("path") or "src/main.rs") for b in cargo.get("bin") or []]
+        if not bins and f"{crate_dir}src/main.rs" in set(files):
+            bins = [(pkg, "src/main.rs")]
+        for bin_name, _ in bins:
+            rs = [f for f in src_files if f.startswith(crate_dir + "src/") and f.endswith(".rs")]
+            for rel in rs:
+                text = read(repo, rel)
+                for m in RUST_SUBCMD_ENUM.finditer(text):
+                    body = _enum_body(text, m.end() - 1)
+                    base = m.end()
+                    for v in RUST_VARIANT.finditer(body):
+                        name = v.group(1) or _kebab(v.group(2))
+                        out.append({"prog": f"cargo run -q -p {pkg} --bin {bin_name} --", "aliases": [bin_name],
+                                    "name": name, "options": [], "global_options": [],
+                                    "source": f"{rel}:{line_of(text, base + v.start())}", "via": "clap"})
+    return out
 
 
 def scan(repo: Path, max_files: int = 20000) -> dict:
@@ -763,6 +823,7 @@ def scan(repo: Path, max_files: int = 20000) -> dict:
     if "Cargo.toml" in fileset:
         res["build_commands"].append({"cmd": "cargo build", "source": "Cargo.toml"})
         res["test_commands"].append({"cmd": "cargo test", "source": "Cargo.toml"})
+        commands.extend(rust_clap_commands(repo, files, src_files, res["notes"]))
 
     # ---- routes: dedupe, health
     seen = {}

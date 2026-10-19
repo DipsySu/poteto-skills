@@ -148,8 +148,51 @@ class Examples:
             finally:
                 feature.write_text(original)
             self.ensure(True, 'contract rejects damaged feature heading order')
+            self.run(self.script(self.name, 'check_verify_skill.py'), self.skill, '--require-proof',
+                     self.repo / 'artifacts/verify', expected=1)
+            self.ensure(True, 'contract with --require-proof fails before any proof run')
             self.live_pass('initial')
+            self.run(self.script(self.name, 'check_verify_skill.py'), self.skill, '--require-proof', self.repo / 'artifacts/verify')
+            self.ensure(True, 'contract with --require-proof passes once a proof run left drive records')
             self.wrapped_cleanup()
+            self.grok_trial_regressions()
+
+    def grok_trial_regressions(self):
+        """Regressions from the Grok CLI trial on a Rust repo (logs/grok-trial/)."""
+        fmap = self.skill / 'FEATURE_MAP.md'
+        self.ensure(fmap.is_file() and all((self.skill / link).is_file() for link in
+                    re.findall(r'\]\(([^)]+\.md)\)', fmap.read_text())), 'scaffold writes FEATURE_MAP.md whose links resolve')
+        helpers = [line for line in (self.skill / 'SKILL.md').read_text().splitlines() if 'check_verify_skill.py' in line]
+        self.ensure(helpers and not any('~/.claude' in line for line in helpers), 'generated helper paths do not assume ~/.claude')
+        rust = self.scratch / 'rust-cli'
+        (rust / 'src').mkdir(parents=True)
+        (rust / 'Cargo.toml').write_text('[package]\nname = "demo-cli"\nversion = "0.1.0"\n\n[[bin]]\nname = "demo"\npath = "src/main.rs"\n')
+        (rust / 'src/main.rs').write_text(
+            'use clap::{Parser, Subcommand};\n#[derive(Parser)]\nstruct Cli { #[command(subcommand)] command: Command }\n'
+            '#[derive(Subcommand)]\nenum Command {\n    /// list adapters\n    Adapters {\n        #[arg(long)]\n        json: bool,\n    },\n'
+            '    ExportWeb,\n    #[command(name = "doctor-x")]\n    Doc,\n}\nfn main() {}\n')
+        inv = self.json(self.script(self.name, 'scan_repo.py'), rust, '--json', cwd=rust)
+        names = {c['name'] for c in inv['cli_commands']}
+        self.ensure(names == {'adapters', 'export-web', 'doctor-x'}, 'scan detects clap Subcommand variants in a Rust CLI')
+        self.ensure(all(c['prog'] == 'cargo run -q -p demo-cli --bin demo --' for c in inv['cli_commands']),
+                    'Rust CLI is invoked through cargo run with its package and bin')
+        self.ensure('Run `demo adapters`' in {f['title'] for f in inv['features']}, 'resource-less CLI features are named after the command')
+        control = self.skill / 'scripts/control.sh'
+        state = self.scratch / 'verify-state-symlink'
+        env = dict(self.env, VERIFY_STATE_DIR=str(state), VERIFY_RUN_ID='symlink')
+        try:
+            launch = self.json(control, 'launch', env=env)
+            data = Path(launch['data_dir'])
+            (data / 'site').mkdir()
+            (data / 'site/index.html').write_text('<h1>x</h1>')
+            os.symlink('site', data / 'web')
+            os.symlink('../outside-the-snapshot', data / 'dangling')
+            self.run(control, 'evidence', '--copy-data', env=env)
+            manifest = json.loads((self.repo / 'artifacts/verify/symlink/manifest.json').read_text())
+            links = {f['path']: f.get('symlink') for f in manifest['files'] if 'symlink' in f}
+            self.ensure(any(p.endswith('dangling') for p in links), 'evidence --copy-data records a dangling symlink instead of crashing')
+        finally:
+            self.run(control, 'cleanup', env=env)
 
     def wrapped_cleanup(self):
         # A wrapper launch command (sh -c, npm, make) forks the real server; cleanup must stop that child too.

@@ -210,6 +210,19 @@ def readme_md(app: str, feats: list[dict], C: str, skipped: list[dict]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def helper_path(inv: dict, skill: str, script: str) -> str:
+    """Where this checkout's poteto helper lives, as the next agent in this repo should type it.
+
+    Uses the unresolved path of this script, so a project install (`.claude/skills/<skill>` symlink or copy)
+    yields a repo-relative path; anything else yields an absolute path. Never assume ~/.claude.
+    """
+    here = Path(__file__).absolute().parent.parent.parent / skill / "scripts" / script
+    try:
+        return here.relative_to(Path(inv["repo"])).as_posix()
+    except ValueError:
+        return str(here)
+
+
 def skill_md(app: str, inv: dict, C: str, skill_rel: str, launch: str, port_mode: str, health: str, read_path: str,
              cli_prog: str, surfaces: list[str], prove_args: str) -> str:
     build = "; ".join(f"`{b['cmd']}`" for b in inv["build_commands"]) or "none (interpreted)"
@@ -268,9 +281,8 @@ def skill_md(app: str, inv: dict, C: str, skill_rel: str, launch: str, port_mode
               f"`{C} --help` lists the arguments.",
               f"- One-shot proof: `{C} prove --feature <id> {prove_args}` runs launch, doctor, drive, "
               "evidence, and cleanup, then checks the evidence survived.",
-              f"- Contract check (poteto-skills, default install path): "
-              f"`python3 ~/.claude/skills/create-verification-skill/scripts/check_verify_skill.py {skill_rel}`.",
-              f"- Drift check: `python3 ~/.claude/skills/maintain-verification-skill/scripts/drift_check.py {skill_rel} --repo .`.",
+              f"- Contract check: `python3 {helper_path(inv, 'create-verification-skill', 'check_verify_skill.py')} {skill_rel}`.",
+              f"- Drift check: `python3 {helper_path(inv, 'maintain-verification-skill', 'drift_check.py')} {skill_rel} --repo .`.",
               ""]
     return "\n".join(lines)
 
@@ -603,6 +615,10 @@ for dirpath, _, names in os.walk(root):
         rel = os.path.relpath(p, root)
         if rel == "manifest.json":
             continue
+        if os.path.islink(p):
+            # snapshot keeps links as links; a relative link can dangle in the copy, so record it, don't open it
+            files.append({"path": rel, "symlink": os.readlink(p)})
+            continue
         with open(p, "rb") as f:
             digest = hashlib.sha256(f.read()).hexdigest()
         files.append({"path": rel, "bytes": os.path.getsize(p), "sha256": digest})
@@ -757,6 +773,12 @@ def main(argv: list[str] | None = None) -> int:
     written.append("SKILL.md")
     (skill / "features" / "README.md").write_text(readme_md(args.app, feats, C, skipped), encoding="utf-8")
     written.append("features/README.md")
+    fm = [f"# {args.app} feature map", "",
+          "Entry point to the maintained feature map. The per-feature recipes live in "
+          "[features/README.md](features/README.md); keep this list in sync with that index.", ""]
+    fm += [f"- [{f['title']}](features/{f['id']}.md)" for f in feats] or [f"- {TODO}: no features detected yet"]
+    (skill / "FEATURE_MAP.md").write_text("\n".join(fm) + "\n", encoding="utf-8")
+    written.append("FEATURE_MAP.md")
     for f in feats:
         text = feature_md(f, inv, C, cli_prefix, cli_suffix, list_routes.get(f["resource"]),
                           list_cmds.get(f["resource"]))
