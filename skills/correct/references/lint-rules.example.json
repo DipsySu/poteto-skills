@@ -2,17 +2,66 @@
   "rules": [
     {
       "id": "no-direct-json-write",
-      "regex": "\\bjson\\.dump\\(",
-      "include": ["**/*.py"],
-      "exclude": ["todo/store.py", "**/tests/**"],
-      "message": "Write todos through `store.save()` in todo/store.py; json.dump on the data file skips its atomic write and lock."
+      "regex": "\\b\\w+\\.path\\.write_text\\s*\\(",
+      "include": [
+        "**/*.py"
+      ],
+      "exclude": [
+        "todo/store.py",
+        "**/tests/**"
+      ],
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "fix": [
+        {
+          "path": "todo/store.py",
+          "symbol": "Store.add"
+        },
+        {
+          "path": "todo/store.py",
+          "symbol": "Store.transition"
+        }
+      ],
+      "tests": [
+        {
+          "expect": "no-direct-json-write",
+          "code": "                store.path.write_text(json.dumps(rows))",
+          "path": "todo/api.py"
+        },
+        {
+          "expect": "ok",
+          "code": "self.reply(201, self.server.store.add(body.get(\"title\")))",
+          "path": "todo/api.py"
+        }
+      ]
     },
     {
       "id": "no-raw-status-strings",
       "regex": "status\\s*==\\s*[\"'](open|done|archived)[\"']",
-      "include": ["todo/**/*.py"],
-      "exclude": ["todo/states.py"],
-      "message": "Compare statuses with the `Status` enum from todo/states.py and move them with `states.transition()`."
+      "include": [
+        "todo/**/*.py"
+      ],
+      "exclude": [
+        "todo/store.py"
+      ],
+      "message": "Use `Store.transition` in todo/store.py to check and change statuses through the shared state machine.",
+      "fix": [
+        {
+          "path": "todo/store.py",
+          "symbol": "Store.transition"
+        }
+      ],
+      "tests": [
+        {
+          "expect": "no-raw-status-strings",
+          "code": "if status == \"done\":",
+          "path": "todo/api.py"
+        },
+        {
+          "expect": "ok",
+          "code": "store.transition(todo_id, \"done\")",
+          "path": "todo/api.py"
+        }
+      ]
     }
   ]
 }

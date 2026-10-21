@@ -8,10 +8,12 @@ in CI.
 Rules file (JSON):
   {"rules": [{
       "id": "no-direct-json-write",
-      "regex": "\\\\bjson\\\\.dump\\\\(",
+      "regex": "\\\\b\\\\w+\\\\.path\\\\.write_text\\\\s*\\\\(",
       "include": ["**/*.py"],
       "exclude": ["todo/store.py", "tests/**"],
-      "message": "Write todos through `store.save()` in todo/store.py, never json.dump on the data file.",
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; avoid direct json.dump writes.",
+      "fix": [{"path": "todo/store.py", "symbol": "Store.add"}],
+      "tests": [{"expect": "no-direct-json-write", "code": "store.path.write_text(json.dumps(rows))", "path": "todo/api.py"}],
       "ignore_case": false,
       "multiline": false
   }]}
@@ -25,6 +27,12 @@ fail, so an already-common pattern can't grow. --update-baseline records
 current counts for new rules and lowers counts that went down; it refuses to
 raise a count (exit 1).
 
+Kept proof: --record RULE --commit FIX_SHA records raw diff cases after a
+whole-file replay (parent must hit, fix must be quiet). --test replays every
+case and checks explicit fix references against the working tree. Each rule
+needs a case expecting its id; "ok" cases must stay quiet. Message names are
+never resolved as fix references. These modes take no positional paths.
+
 Inline exception, on the offending line or the line above it:
   # patlint: allow no-direct-json-write reason=legacy import expires=2026-12-31 approved-by=alice
 reason, expires (YYYY-MM-DD), and approved-by are required. An expired or
@@ -35,6 +43,7 @@ Exit codes: 0 clean, 1 violations / expired or invalid exceptions / ratchet refu
 from __future__ import annotations
 
 import argparse
+import ast
 import datetime as dt
 import json
 import os
@@ -147,11 +156,28 @@ def load_rules(path: Path) -> list[dict]:
         msg = r.get("message") or ""
         if not names_fix(msg):
             errors.append(f"{where}: message must name the fix (the file, function, or type to use instead, "
-                          f"e.g. 'Use `store.save()` from todo/store.py'), got: {msg!r}")
+                          f"e.g. 'Use `Store.add` from todo/store.py'), got: {msg!r}")
+            continue
+        tests = r.get("tests", [])
+        fixes = r.get("fix", [])
+        if not isinstance(tests, list) or any(
+            not isinstance(t, dict) or t.get("expect") not in (rid, "ok")
+            or not isinstance(t.get("code"), str) or not relative_path(t.get("path"))
+            or ("from" in t and not isinstance(t["from"], str)) for t in tests
+        ):
+            errors.append(f"{where}: tests must contain expect ({rid!r} or 'ok'), code, relative path, and optional from sha")
+            continue
+        if not isinstance(fixes, list) or any(
+            not isinstance(f, dict) or not relative_path(f.get("path"))
+            or not isinstance(f.get("symbol"), str)
+            or not re.fullmatch(r"[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*", f["symbol"]) for f in fixes
+        ):
+            errors.append(f"{where}: fix must be a list of relative path and dotted symbol references")
             continue
         rules.append({"id": rid, "regex": rx, "include": [glob_to_regex(g) for g in inc],
                       "exclude": [glob_to_regex(g) for g in exc], "message": msg,
-                      "multiline": bool(r.get("multiline")), "include_globs": inc, "exclude_globs": exc})
+                      "multiline": bool(r.get("multiline")), "include_globs": inc, "exclude_globs": exc,
+                      "tests": tests, "fix": fixes})
     if errors:
         raise RulesError("\n".join(errors))
     if not rules:
@@ -161,6 +187,26 @@ def load_rules(path: Path) -> list[dict]:
 
 def applies(rule: dict, rel: str) -> bool:
     return any(g.match(rel) for g in rule["include"]) and not any(g.match(rel) for g in rule["exclude"])
+
+
+def relative_path(value) -> bool:
+    return isinstance(value, str) and bool(value) and not Path(value).is_absolute() and ".." not in Path(value).parts
+
+
+def text_matches(rule: dict, rel_path: str, text: str) -> list[tuple[int, int]]:
+    """Return raw match positions using the same scope and flags in every mode."""
+    if not applies(rule, rel_path):
+        return []
+    if rule["multiline"]:
+        return [(text.count("\n", 0, m.start()) + 1,
+                 m.start() - (text.rfind("\n", 0, m.start()) + 1) + 1)
+                for m in rule["regex"].finditer(text)]
+    return [(n, m.start() + 1) for n, line in enumerate(text.splitlines(), 1)
+            for m in rule["regex"].finditer(line)]
+
+
+def line_matches(rule: dict, rel_path: str, line: str) -> bool:
+    return bool(text_matches(rule, rel_path, line))
 
 
 # ---------------------------------------------------------------- files
@@ -268,17 +314,7 @@ def lint_text(rel: str, text: str, rules: list[dict], today: dt.date, report: di
         return None, None
 
     for rule in rules:
-        if not applies(rule, rel):
-            continue
-        if rule["multiline"]:
-            hits = []
-            for m in rule["regex"].finditer(text):
-                lineno = text.count("\n", 0, m.start()) + 1
-                col = m.start() - (text.rfind("\n", 0, m.start()) + 1) + 1
-                hits.append((lineno, col))
-        else:
-            hits = [(n, m.start() + 1) for n, ln in enumerate(lines, 1) for m in rule["regex"].finditer(ln)]
-        for lineno, col in hits:
+        for lineno, col in text_matches(rule, rel, text):
             src = lines[lineno - 1].strip() if lineno - 1 < len(lines) else ""
             v = {"rule": rule["id"], "path": rel, "line": lineno, "col": col, "message": rule["message"],
                  "text": src[:200]}
@@ -323,6 +359,164 @@ def write_baseline(path: Path, counts: dict) -> None:
                                 "counts": clean}, indent=2) + "\n", encoding="utf-8")
 
 
+# ---------------------------------------------------------------- kept proof
+
+def fix_error(root: Path, ref: dict) -> str | None:
+    path = root / ref["path"]
+    if not path.resolve().is_relative_to(root.resolve()) or not path.is_file():
+        return f"fix {ref['path']}:{ref['symbol']}: file missing or outside root"
+    if path.suffix != ".py":
+        return None  # Other languages get a file check; Python symbols use AST.
+    try:
+        scope = ast.parse(path.read_text(encoding="utf-8"))
+        for name in ref["symbol"].split("."):
+            scope = next((node for node in scope.body
+                          if isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
+                          and node.name == name), None)
+            if scope is None:
+                return f"fix {ref['path']}:{ref['symbol']}: symbol missing"
+    except (OSError, UnicodeError, SyntaxError) as e:
+        return f"fix {ref['path']}:{ref['symbol']}: {e}"
+    return None
+
+
+def test_rules(rules: list[dict], root: Path) -> dict:
+    failures, count = [], 0
+    for rule in rules:
+        rid = rule["id"]
+        if not any(t["expect"] == rid for t in rule["tests"]):
+            failures.append(f"{rid}: missing ruleid test case")
+        for n, case in enumerate(rule["tests"], 1):
+            count += 1
+            hit = bool(text_matches(rule, case["path"], case["code"]))
+            if case["expect"] == rid and not hit:
+                failures.append(f"{rid}: test {n} ({case['path']}): missing match")
+            elif case["expect"] == "ok" and hit:
+                failures.append(f"{rid}: test {n} ({case['path']}): noisy match")
+        for ref in rule["fix"]:
+            error = fix_error(root, ref)
+            if error:
+                failures.append(f"{rid}: {error}")
+    return {"ok": not failures, "tests": count, "failures": failures}
+
+
+def replay_cases(rule: dict, root: Path, bad_rev: str, good_rev: str, paths: list[str]) -> list[dict]:
+    """Retain matching bad lines and quiet fixed context after whole-file proof.
+
+    Multiline patterns retain the whole matching file as a snippet so their
+    cross-line evidence is executable too. Missing files on either side are OK.
+    """
+    cases = []
+    for rev, expect in ((bad_rev, rule["id"]), (good_rev, "ok")):
+        names = set(git(root, "ls-tree", "-r", "--name-only", rev, "--", *paths).splitlines())
+        for rel in sorted(names):
+            if not applies(rule, rel):
+                continue
+            text = git(root, "show", f"{rev}:{rel}")
+            if expect == rule["id"]:
+                if rule["multiline"]:
+                    snippets = [text] if text_matches(rule, rel, text) else []
+                else:
+                    snippets = [line for line in text.splitlines() if line_matches(rule, rel, line)]
+            else:
+                # A fixed file with any raw match is not quiet context.
+                snippets = [] if text_matches(rule, rel, text) else (
+                    [text] if rule["multiline"] else [line for line in text.splitlines() if line.strip()][:5])
+            for code in dict.fromkeys(snippets):
+                case = {"expect": expect, "code": code, "path": rel, "from": rev}
+                if case not in cases:
+                    cases.append(case)
+    return cases
+
+
+def record_rule(rule: dict, rules_file: Path, root: Path, commit: str) -> dict:
+    # Resolve the revision first: subsequent git commands receive an object id.
+    sha = git(root, "rev-parse", "--verify", "--end-of-options", f"{commit}^{{commit}}").strip()
+    parent = git(root, "rev-parse", f"{sha}^").strip()
+    top = git_toplevel(root)
+    if top is None:
+        raise RuntimeError("--record needs a git repository")
+    diff = git(top, "-c", "core.quotePath=false", "show", "--format=", "--no-ext-diff", "--no-textconv",
+               "--no-renames", "--no-color", "--src-prefix=a/", "--dst-prefix=b/", "--unified=0", sha, "--")
+    old_path = new_path = None
+    in_hunk = False
+    cases, touched, failures = [], set(), []
+
+    def diff_path(header: str) -> str | None:
+        name = ast.literal_eval(header) if header.startswith('"') else header.rstrip("\t")
+        if name == "/dev/null":
+            return None
+        try:
+            return (top / name[2:]).relative_to(root).as_posix()
+        except ValueError:
+            return None
+
+    for line in diff.splitlines():
+        if line.startswith("diff --git "):
+            in_hunk = False
+        elif not in_hunk and line.startswith("--- "):
+            old_path = diff_path(line[4:])
+            if old_path:
+                touched.add(old_path)
+        elif not in_hunk and line.startswith("+++ "):
+            new_path = diff_path(line[4:])
+            if new_path:
+                touched.add(new_path)
+        elif line.startswith("@@ "):
+            in_hunk = True
+        elif in_hunk and line[:1] in ("-", "+"):
+            removed = line[0] == "-"
+            rel = old_path if removed else new_path
+            if rel is None or not applies(rule, rel):
+                continue
+            code = line[1:]
+            hit = line_matches(rule, rel, code)
+            if removed and not hit:
+                continue
+            case = {"expect": rule["id"] if removed else "ok", "code": code,
+                    "path": rel, "from": parent if removed else sha}
+            if case not in cases:
+                cases.append(case)
+            if not removed and hit:
+                failures.append(f"{rule['id']}: noisy added line in {rel}")
+    if not any(c["expect"] == rule["id"] for c in cases):
+        failures.append(f"{rule['id']}: no removed matching line")
+    # Diff lines are examples, never a replacement for the whole-file proof.
+    before_hits = after_hits = 0
+    for rev in (parent, sha):
+        hits = 0
+        git_paths = [(root / p).relative_to(top).as_posix() for p in sorted(touched)]
+        names = git(top, "ls-tree", "-r", "--name-only", rev, "--", *git_paths).splitlines() if git_paths else []
+        for name in names:
+            rel = (top / name).relative_to(root).as_posix()
+            hits += len(text_matches(rule, rel, git(top, "show", f"{rev}:{name}")))
+        if rev == parent:
+            before_hits = hits
+        else:
+            after_hits = hits
+    if not before_hits:
+        failures.append(f"{rule['id']}: whole-file parent replay must hit")
+    if after_hits:
+        failures.append(f"{rule['id']}: whole-file fixed replay has {after_hits} match(es)")
+    if not failures:
+        data = json.loads(rules_file.read_text(encoding="utf-8"))
+        raw_rules = data["rules"] if isinstance(data, dict) else data
+        next(r for r in raw_rules if r["id"] == rule["id"])["tests"] = cases
+        rules_file.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    return {"ok": not failures, "rule": rule["id"], "tests": len(cases), "failures": failures,
+            "hits_at_mistake": before_hits, "hits_at_fixed": after_hits}
+
+
+def print_proof(result: dict, as_json: bool) -> int:
+    if as_json:
+        print(json.dumps(result, indent=2))
+    else:
+        for failure in result["failures"]:
+            print(f"patlint: {failure}")
+        print(f"patlint: {'PASS' if result['ok'] else 'FAIL'}: {result['tests']} test case(s)")
+    return 0 if result["ok"] else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         prog="patlint.py",
@@ -333,6 +527,8 @@ def main(argv: list[str] | None = None) -> int:
                "  patlint.py --rules lint-rules.json --baseline .patlint-baseline.json --update-baseline .   # adopt\n"
                "  patlint.py --rules lint-rules.json --baseline .patlint-baseline.json .                     # CI\n"
                "  patlint.py --rules lint-rules.json --rev abc123^ todo/   # prove the rule fires on a past mistake\n\n"
+               "  patlint.py --rules lint-rules.json --record no-direct-json-write --commit abc123\n"
+               "  patlint.py --rules lint-rules.json --test   # kept proof for CI\n\n"
                "inline exception (same line or the line above):\n"
                "  # patlint: allow RULE_ID reason=why expires=2026-12-31 approved-by=human\n\n"
                "exit: 0 clean, 1 violations/expired or invalid exceptions/ratchet refused, 2 usage or rules error",
@@ -347,9 +543,20 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--today", help="date for exception expiry checks (YYYY-MM-DD, default: today)")
     ap.add_argument("--json", action="store_true", help="machine-readable output")
     ap.add_argument("--verbose", action="store_true", help="also list violations that are within the baseline")
-    ap.add_argument("paths", nargs="+", type=Path, metavar="PATH", help="files or directories to lint")
+    mode = ap.add_mutually_exclusive_group()
+    mode.add_argument("--test", action="store_true", help="replay all rule tests and validate explicit fix references")
+    mode.add_argument("--record", metavar="RULE", help="record a rule's diff cases after whole-file proof")
+    ap.add_argument("--commit", metavar="FIX_SHA", help="fix commit for --record (parent must hit, fix must be quiet)")
+    ap.add_argument("paths", nargs="*", type=Path, metavar="PATH", help="files or directories to lint")
     args = ap.parse_args(argv)
 
+    proof_mode = args.test or args.record is not None
+    if proof_mode and (args.paths or args.rev or args.baseline or args.update_baseline or args.today or args.verbose):
+        ap.error("--test/--record are exclusive modes; use only --rules, --root, --json and --commit (with --record)")
+    if (args.record is not None) != (args.commit is not None):
+        ap.error("--record RULE and --commit FIX_SHA must be used together")
+    if not proof_mode and not args.paths:
+        ap.error("lint needs at least one PATH (or use --test/--record)")
     if args.update_baseline and not args.baseline:
         print("patlint: --update-baseline needs --baseline FILE", file=sys.stderr)
         return 2
@@ -366,6 +573,19 @@ def main(argv: list[str] | None = None) -> int:
     root = (args.root or git_toplevel(Path.cwd()) or Path.cwd()).resolve()
     if args.rev:
         root = git_toplevel(root) or root
+
+    if args.test:
+        return print_proof(test_rules(rules, root), args.json)
+    if args.record is not None:
+        rule = next((r for r in rules if r["id"] == args.record), None)
+        if rule is None:
+            print(f"patlint: unknown rule {args.record!r}", file=sys.stderr)
+            return 2
+        try:
+            return print_proof(record_rule(rule, args.rules, root, args.commit), args.json)
+        except (OSError, RuntimeError) as e:
+            print(f"patlint: {e}", file=sys.stderr)
+            return 2
 
     report = {"violations": [], "allowed": [], "expired": [], "invalid_exceptions": [], "stale_exceptions": []}
     scanned = []

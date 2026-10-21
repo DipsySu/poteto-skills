@@ -6,6 +6,10 @@ All notable changes to this project are documented in this file. The format is b
 
 ### Fixed
 
+- Proposal 3: patlint `--record RULE --commit FIX_SHA` retains raw diff cases after whole-file history proof; `--test` replays every rule's cases with the lint's flags and scope, requires a matching bad case, and validates explicit `fix` references (Python symbols via AST). Ordinary lint and ratchets keep their behavior.
+- Review conflict: chose an explicit `fix` field over scanning every name in the message, so mentioning `json.dump` as the mistake never creates a false fix failure.
+- The planner saves executable cases only from successful proofs. Updated the correct skill, example owner APIs, helper mapping, deterministic builder fix SHA, and example regressions for recording, scope drift, renamed fixes, and mistake mentions.
+
 - Proposal 5: `scripts/check_docs.py`, wired through `verify.docs()`, checks first-party helper paths and command/subcommand flags, local Markdown links and Unicode/duplicate heading anchors, whole-set counts, and every source citation against NOTES.md. Every skill still needs a citation; new source rows require no checker edit. Updated README's whole-history example and removed its hardcoded source range.
 - Review conflict: chose explicit skill-declared README flag policies over banning every flag absent from a skill example. This catches the retired `--since` default while allowing other supported README-only flags. Bare `scripts/` means the collection root; generated harness references now name `verify-<app>/scripts/control.sh`. Generated/placeholder and vendored paths are excluded; cached help calls are bounded and documentation commands are never executed.
 - Curator run_examples assertions cover clean docs and regressions in flags, recommendation policy, path ownership, links/titles/anchors, counts, and citation inventory/attribution, including adding S24.

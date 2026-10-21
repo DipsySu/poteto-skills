@@ -549,7 +549,77 @@ class Examples:
             self.correct_grok_regressions()
             rules = self.save('rules.json', {'rules':[{'id':'no-direct-json-write','regex':r'\b\w+\.path\.write_text\s*\(',
                 'include':['todo/*.py'], 'exclude':['todo/store.py'],
-                'message':'Use Store.add or Store.transition in todo/store.py for atomic persistence.'}]})
+                'message':'Use Store.add or Store.transition in todo/store.py for atomic persistence; avoid json.dump.',
+                'fix':[{'path':'todo/store.py','symbol':'Store.add'}]}]})
+            patlint = self.script(self.name, 'patlint.py')
+            recorded = self.json(patlint, '--rules', rules, '--root', self.repo, '--record', 'no-direct-json-write',
+                                 '--commit', self.built['direct_write_fix'], '--json')
+            saved = json.loads(rules.read_text())
+            cases = saved['rules'][0]['tests']
+            self.ensure(recorded['hits_at_mistake'] > 0 and recorded['hits_at_fixed'] == 0
+                        and any(t['expect']=='no-direct-json-write' and 'write_text(json.dumps(rows))' in t['code']
+                                and t['code'].startswith('                ') for t in cases),
+                        '--record keeps the raw removed mistake after whole-file parent/fix proof')
+            self.ensure(self.json(patlint, '--rules', rules, '--root', self.repo, '--test', '--json')['ok'],
+                        '--test passes the retained history cases and explicit Store.add fix')
+            self.ensure(self.json(patlint, '--rules', ROOT/'skills/correct/references/lint-rules.example.json',
+                                  '--root', self.repo, '--test', '--json')['ok'],
+                        'both documented example rules replay successfully and name existing owner APIs')
+            original_rules = rules.read_text()
+            saved['rules'][0]['include'] = ['todo/__main__.py']
+            rules.write_text(json.dumps(saved))
+            missing = self.json(patlint, '--rules', rules, '--root', self.repo, '--test', '--json', expected=1)
+            self.ensure(any('missing match' in f for f in missing['failures']),
+                        '--test detects missing matches when include no longer covers todo/api.py')
+            rules.write_text(original_rules)
+            store = self.repo / 'todo/store.py'
+            store_source = store.read_text()
+            try:
+                store.write_text(store_source.replace('def add(', 'def create('))
+                renamed = self.json(patlint, '--rules', rules, '--root', self.repo, '--test', '--json', expected=1)
+                self.ensure(any('Store.add: symbol missing' in f for f in renamed['failures']),
+                            '--test rejects a renamed Store.add when the explicit fix reference stays unchanged')
+            finally:
+                store.write_text(store_source)
+            saved = json.loads(original_rules)
+            saved['rules'][0]['tests'].append({'expect':'ok', 'code':'# json.dump was the mistake', 'path':'todo/api.py'})
+            rules.write_text(json.dumps(saved))
+            self.ensure(self.json(patlint, '--rules', rules, '--root', self.repo, '--test', '--json')['ok'],
+                        'message and cases mentioning json.dump as the mistake pass with an explicit fix')
+            del saved['rules'][0]['fix']
+            rules.write_text(json.dumps(saved))
+            self.ensure(self.json(patlint, '--rules', rules, '--root', self.repo, '--test', '--json')['ok'],
+                        'absent fix field never resolves names from the message')
+            saved['rules'][0]['tests'] = [t for t in cases if t['expect']=='ok']
+            rules.write_text(json.dumps(saved))
+            empty = self.json(patlint, '--rules', rules, '--root', self.repo, '--test', '--json', expected=1)
+            self.ensure(any('missing ruleid test case' in f for f in empty['failures']),
+                        '--test requires a ruleid case even when all ok cases pass')
+            saved['rules'][0]['tests'] = cases + [{'expect':'ok', 'code':'store.path.write_text(payload)', 'path':'todo/api.py'}]
+            rules.write_text(json.dumps(saved))
+            noisy = self.json(patlint, '--rules', rules, '--root', self.repo, '--test', '--json', expected=1)
+            self.ensure(any('noisy match' in f for f in noisy['failures']), '--test rejects a matching ok case')
+            rules.write_text(original_rules)
+            self.run(patlint, '--rules', rules, '--root', self.repo, '--record', 'no-direct-json-write',
+                     '--commit', self.built['head'], expected=1)
+            self.ensure(rules.read_text() == original_rules, '--record without a removed match fails without replacing tests')
+            saved = json.loads(original_rules)
+            saved['rules'][0]['regex'] += r'|\bimport json\b'
+            rules.write_text(json.dumps(saved))
+            before_record = rules.read_text()
+            residual = self.json(patlint, '--rules', rules, '--root', self.repo, '--record', 'no-direct-json-write',
+                                 '--commit', self.built['direct_write_fix'], '--json', expected=1)
+            self.ensure(any('whole-file fixed replay' in f for f in residual['failures'])
+                        and not any('noisy added line' in f for f in residual['failures'])
+                        and rules.read_text() == before_record,
+                        '--record rejects unchanged fixed-file matches even when added diff lines are quiet')
+            saved['rules'][0]['regex'] = r'\b\w+\.path\.write_text\s*\(|self\.reply\(201'
+            rules.write_text(json.dumps(saved))
+            noisy_record = self.json(patlint, '--rules', rules, '--root', self.repo, '--record', 'no-direct-json-write',
+                                    '--commit', self.built['direct_write_fix'], '--json', expected=1)
+            self.ensure(any('noisy added line' in f for f in noisy_record['failures']),
+                        '--record rejects added lines that still match the rule')
+            rules.write_text(original_rules)
             old = self.scratch / 'past-direct-write'
             self.run('git', 'worktree', 'add', '--detach', old, self.built['direct_write_commits'][1])
             try:
@@ -608,6 +678,13 @@ class Examples:
                                    extra=('--rev',self.built['direct_write_commits'][1]))
             self.ensure(bool(violations['violations']), 'generated lint fires on the real direct-write mistake')
             self.ensure(self.lint(plan/'lint-rules.json',self.repo/'todo')['ok'], 'generated lint also passes the fixed HEAD')
+            self.ensure(self.json(self.script('correct','patlint.py'), '--rules', plan/'lint-rules.json',
+                                  '--root', self.repo, '--test', '--json')['ok'],
+                        'planner retains executable bad and quiet cases from successful whole-file proofs')
+            unproved = self.scratch / 'unproved-plan'
+            result = self.json(self.script(self.name,'plan.py'), feedback, '--out-dir', unproved, '--no-prove')
+            self.ensure(not result['proven'] and not any(r.get('tests') for r in json.loads((unproved/'lint-rules.json').read_text())['rules']),
+                        '--no-prove never labels unverified cases as proven or records proof tests')
             # Exercise error path: failed fixed-side replay must never count as proof.
             module = load_module(self.script(self.name,'plan.py'),'example_plan')
             original = module.count_hits
@@ -738,7 +815,7 @@ class Examples:
                 'shell separators keep flags associated with their own command')
         changed('README.md', lambda t: t.replace(mine, mine+' --feedback "--literal-payload"'), None,
                 'an option\'s literal value is not mistaken for a helper flag')
-        changed('skills/correct/SKILL.md', lambda t: t.replace('$P --rev', '$P --renamed-rev'), 'unsupported flag --renamed-rev',
+        changed('skills/correct/SKILL.md', lambda t: t.replace('$P --test', '$P --renamed-test'), 'unsupported flag --renamed-test',
                 'literal command variables are expanded without executing examples')
         changed('skills/correct/SKILL.md', lambda t: t+'\n```bash\npython3 $SKILL_DIR/scripts/rule_table.py check AGENTS.md --rule text\n```\n',
                 'unsupported flag --rule', 'subcommand flags are checked against check help, not add help')

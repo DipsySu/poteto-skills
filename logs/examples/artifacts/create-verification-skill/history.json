@@ -1,10 +1,11 @@
 {
-  "repo": "/tmp/poteto-examples-4dfshnbm/todo-app",
+  "repo": "/tmp/poteto-examples-imj4eqch/todo-app",
   "head": "4242a5ae43587ea1ed392b15775e2e3e3acc2aa4",
   "direct_write_commits": [
     "570c1e91c25878c9550969a1ba4072a0e1790d27",
     "dbd44008685859312aee6a60154fd0258c1c063b"
   ],
+  "direct_write_fix": "2fd7988731eb03a000207e269b441daeb22d2a3e",
   "status_bug_commits": [
     "41967033e461ea9fc00af5a5bb985a7bcb6149e0",
     "2c383ecc2ce27c62d73d049228c0b2542683a1b9"

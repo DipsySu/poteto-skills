@@ -61,7 +61,7 @@ def main():
         '                self.reply(201, row)'))
     direct_api = commit("fix: persist API additions with direct JSON writes bypassing store.py", "2026-09-15T09:00:00+00:00")
     api.write_text(good_api)
-    commit("fix: remove direct JSON writes bypassing store.py; use Store.add atomic transaction", "2026-09-18T14:00:00+00:00")
+    direct_write_fix = commit("fix: remove direct JSON writes bypassing store.py; use Store.add atomic transaction", "2026-09-18T14:00:00+00:00")
     store.write_text(good_store.replace('if TRANSITIONS.get(row["status"]) != target:', 'if target not in ("done", "archived"):'))
     skip = commit("feat: allow fast archive status transition", "2026-09-23T09:00:00+00:00")
     store.write_text(good_store)
@@ -87,7 +87,8 @@ def main():
         '- Status transition bugs returned twice: skipping done and accepting done to done. Reject illegal transitions in one state machine.\n')
     commit("docs: retain review and chat evidence of repeated persistence and status mistakes", "2026-10-10T09:00:00+00:00")
     print(json.dumps({"repo": str(dest), "head": git("rev-parse", "HEAD"),
-                      "direct_write_commits": [direct_cli, direct_api], "status_bug_commits": [skip, repeat]}, indent=2))
+                      "direct_write_commits": [direct_cli, direct_api], "direct_write_fix": direct_write_fix,
+                      "status_bug_commits": [skip, repeat]}, indent=2))
 
 
 if __name__ == "__main__":

@@ -16,9 +16,137 @@
         "**/*.test.*",
         "**/*.spec.*"
       ],
-      "message": "Use `Store.add` instead of `rows.append`, `store.path.write_text` (todo/store.py owns this). Theme T1: store.py / bypassing / direct."
+      "message": "Use `Store.add` instead of `rows.append`, `store.path.write_text` (todo/store.py owns this). Theme T1: store.py / bypassing / direct.",
+      "tests": [
+        {
+          "expect": "no-rows-append-outside-store",
+          "code": "                rows.append(row)",
+          "path": "todo/api.py",
+          "from": "2fd7988731eb^"
+        },
+        {
+          "expect": "no-rows-append-outside-store",
+          "code": "                store.path.write_text(json.dumps(rows))",
+          "path": "todo/api.py",
+          "from": "2fd7988731eb^"
+        },
+        {
+          "expect": "ok",
+          "code": "\"\"\"HTTP routes delegate every write to Store.\"\"\"",
+          "path": "todo/api.py",
+          "from": "2fd7988731eb"
+        },
+        {
+          "expect": "ok",
+          "code": "from http.server import BaseHTTPRequestHandler, HTTPServer",
+          "path": "todo/api.py",
+          "from": "2fd7988731eb"
+        },
+        {
+          "expect": "ok",
+          "code": "import json",
+          "path": "todo/api.py",
+          "from": "2fd7988731eb"
+        },
+        {
+          "expect": "ok",
+          "code": "import re",
+          "path": "todo/api.py",
+          "from": "2fd7988731eb"
+        },
+        {
+          "expect": "ok",
+          "code": "from urllib.parse import urlsplit",
+          "path": "todo/api.py",
+          "from": "2fd7988731eb"
+        },
+        {
+          "expect": "no-rows-append-outside-store",
+          "code": "            rows.append(result)",
+          "path": "todo/__main__.py",
+          "from": "97a3f3000122^"
+        },
+        {
+          "expect": "no-rows-append-outside-store",
+          "code": "            store.path.write_text(json.dumps(rows))",
+          "path": "todo/__main__.py",
+          "from": "97a3f3000122^"
+        },
+        {
+          "expect": "ok",
+          "code": "\"\"\"python3 -m todo serve|add|list|done|rm.\"\"\"",
+          "path": "todo/__main__.py",
+          "from": "97a3f3000122"
+        },
+        {
+          "expect": "ok",
+          "code": "import argparse",
+          "path": "todo/__main__.py",
+          "from": "97a3f3000122"
+        },
+        {
+          "expect": "ok",
+          "code": "import json",
+          "path": "todo/__main__.py",
+          "from": "97a3f3000122"
+        },
+        {
+          "expect": "ok",
+          "code": "from .api import serve",
+          "path": "todo/__main__.py",
+          "from": "97a3f3000122"
+        },
+        {
+          "expect": "ok",
+          "code": "from .store import Store",
+          "path": "todo/__main__.py",
+          "from": "97a3f3000122"
+        },
+        {
+          "expect": "no-rows-append-outside-store",
+          "code": "            rows.append(result)",
+          "path": "todo/__main__.py",
+          "from": "570c1e91c258"
+        },
+        {
+          "expect": "no-rows-append-outside-store",
+          "code": "            store.path.write_text(json.dumps(rows))",
+          "path": "todo/__main__.py",
+          "from": "570c1e91c258"
+        },
+        {
+          "expect": "ok",
+          "code": "\"\"\"python3 -m todo serve|add|list|done|rm.\"\"\"",
+          "path": "todo/__main__.py",
+          "from": "570c1e91c258^"
+        },
+        {
+          "expect": "ok",
+          "code": "import argparse",
+          "path": "todo/__main__.py",
+          "from": "570c1e91c258^"
+        },
+        {
+          "expect": "ok",
+          "code": "import json",
+          "path": "todo/__main__.py",
+          "from": "570c1e91c258^"
+        },
+        {
+          "expect": "ok",
+          "code": "from .api import serve",
+          "path": "todo/__main__.py",
+          "from": "570c1e91c258^"
+        },
+        {
+          "expect": "ok",
+          "code": "from .store import Store",
+          "path": "todo/__main__.py",
+          "from": "570c1e91c258^"
+        }
+      ]
     }
   ],
   "generated_by": "feedback-to-architecture/scripts/plan.py",
-  "source": "/tmp/poteto-examples-4dfshnbm/feedback.json"
+  "source": "/tmp/poteto-examples-imj4eqch/feedback.json"
 }

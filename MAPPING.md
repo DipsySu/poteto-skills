@@ -24,7 +24,7 @@ Pyramid layers (S1): 1 codebase improvements (architecture, types, invariants) >
 | create-verification-skill | `check_verify_skill.py SKILL_DIR [--require-proof EVIDENCE_ROOT]` | contract, asserted recipes and HTTP/CLI write read-backs; proof opens records and checks execution plus assertions; exit 1 on failure |
 | maintain-verification-skill | `drift_check.py SKILL_DIR --repo REPO [--json]` | index, contract, missing and dead routes and commands; exit 1 on drift |
 | correct | `mine_mistakes.py REPO [--since DATE] [--feedback FILE...] [--json]` | mistake classes (count >= 2) with commit shas and comment ids |
-| correct | `patlint.py --rules RULES.json [--baseline FILE] [--update-baseline] PATHS...` | lint with ratchet and expiring inline exceptions; `--rev` replays history |
+| correct | `patlint.py --rules RULES.json [--baseline FILE] [--update-baseline] PATHS...` | lint with ratchet and expiring inline exceptions; `--rev` replays history, `--record RULE --commit FIX_SHA` keeps proof cases, `--test` replays them and checks explicit fixes |
 | correct | `rule_table.py check AGENTS.md` | flags rules enforced only by prose |
 | feedback-to-architecture | `collect_feedback.py --repo REPO [--pr-comments JSON] [--chat MD] [--out FILE]` | `feedback.json`, every item with a source ref |
 | feedback-to-architecture | `plan.py feedback.json --out-dir DIR` | `REFACTOR_PLAN.md`, `lint-rules.json`, `plan.json` |

@@ -203,7 +203,7 @@ def main(argv: list[str] | None = None) -> int:
         epilog="examples:\n"
                "  rule_table.py check AGENTS.md\n"
                "  rule_table.py check AGENTS.md --json\n"
-               "  rule_table.py add AGENTS.md --rule 'Write todos only through store.save()' \\\n"
+               "  rule_table.py add AGENTS.md --rule 'Write todos only through Store.add' \\\n"
                "      --enforced-by '`python3 scripts/patlint.py --rules lint-rules.json todo/`'\n\n"
                "Enforced: names a lint, type, test, CI job, hook, schema, or an existing script/test file in backticks.\n"
                "Flagged:  prose, docs, AGENTS.md, code review, empty, or a backticked path that does not exist.",

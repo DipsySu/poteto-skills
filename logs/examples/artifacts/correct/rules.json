@@ -9,7 +9,27 @@
       "exclude": [
         "todo/store.py"
       ],
-      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence."
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence; avoid json.dump.",
+      "fix": [
+        {
+          "path": "todo/store.py",
+          "symbol": "Store.add"
+        }
+      ],
+      "tests": [
+        {
+          "expect": "no-direct-json-write",
+          "code": "                store.path.write_text(json.dumps(rows))",
+          "path": "todo/api.py",
+          "from": "dbd44008685859312aee6a60154fd0258c1c063b"
+        },
+        {
+          "expect": "ok",
+          "code": "                self.reply(201, self.server.store.add(body.get(\"title\")))",
+          "path": "todo/api.py",
+          "from": "2fd7988731eb03a000207e269b441daeb22d2a3e"
+        }
+      ]
     }
   ]
 }

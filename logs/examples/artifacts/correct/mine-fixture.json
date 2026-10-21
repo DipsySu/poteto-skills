@@ -1,5 +1,5 @@
 {
-  "repo": "/tmp/poteto-examples-4dfshnbm/mine-fixture",
+  "repo": "/tmp/poteto-examples-imj4eqch/mine-fixture",
   "since": null,
   "items": 2,
   "counts": {
@@ -23,16 +23,16 @@
       ],
       "evidence": [
         {
-          "id": "commit:da74972746",
+          "id": "commit:f8be16c40f",
           "source": "commit",
           "kind": "fix",
-          "ref": "da74972746af86deb87ae36d82af90c6dea17a29",
+          "ref": "f8be16c40f35b76202b287365ab4c9c2c84cb457",
           "text": "fix: layout overlap in the changelog renderer again",
           "paths": [
             "CHANGELOG.md"
           ],
           "line": null,
-          "author": "Dipsy",
+          "author": "t",
           "date": "2026-10-21",
           "url": null,
           "diff_ids": [],
@@ -40,16 +40,16 @@
           "diff_removed": []
         },
         {
-          "id": "commit:befda604ac",
+          "id": "commit:47d23562cb",
           "source": "commit",
           "kind": "fix",
-          "ref": "befda604aca0fe3113320643d3ae43d9f2969b22",
+          "ref": "47d23562cb9a7bb97dd3aa93b1dc8749a160330a",
           "text": "feat: layout pass, plus 3 layout-audit fixes",
           "paths": [
             "CHANGELOG.md"
           ],
           "line": null,
-          "author": "Dipsy",
+          "author": "t",
           "date": "2026-10-21",
           "url": null,
           "diff_ids": [],

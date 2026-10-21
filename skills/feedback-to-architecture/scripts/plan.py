@@ -381,6 +381,21 @@ def main(argv: list[str] | None = None) -> int:
             for t in themes:
                 if t["rule"]:
                     t["proof"] = prove(t["rule"], t["evidence"], rules_file, repo)
+                    if t["proof"]["proven"]:
+                        compiled = next(r for r in patlint.load_rules(rules_file) if r["id"] == t["rule"]["id"])
+                        cases = []
+                        for replay in t["proof"]["replays"]:
+                            if not replay["distinguishes"]:
+                                continue
+                            paths = sorted({p for item in t["evidence"] for p in item.get("paths", [])
+                                            if item.get("source") == "commit"
+                                            and item.get("ref", "").startswith(replay["commit"])})
+                            for case in patlint.replay_cases(compiled, repo, replay["mistake_rev"],
+                                                            replay["fixed_rev"], paths):
+                                if case not in cases:
+                                    cases.append(case)
+                        t["rule"]["tests"] = cases
+            rules_file.write_text(json.dumps(rules_doc, indent=2) + "\n", encoding="utf-8")
 
     patlint_cmd = f"python3 {CORRECT / 'patlint.py'} --rules {rules_file} --root {repo} {repo}"
     lines = [

@@ -39,16 +39,19 @@ Human review is not a level. A reviewer who must catch the same mistake on every
 
 ## 3. Fix and prove, one commit per class
 
-Most frequent class first. Rules file format: [`references/lint-rules.example.json`](references/lint-rules.example.json) (`id`, `regex`, `include`, `exclude`, `message`; patlint rejects a message that doesn't name the fix).
+Most frequent class first. Rules file format: [`references/lint-rules.example.json`](references/lint-rules.example.json) (`id`, `regex`, `include`, `exclude`, `message`, `tests`, and optional `fix`; patlint rejects a message that doesn't name the fix).
 
 ```bash
 P="python3 $SKILL_DIR/scripts/patlint.py --rules lint-rules.json"
-$P --rev <fix-sha>^ <files>     # exit 1: fires on the real past mistake
-$P --rev <fix-sha>  <files>     # exit 0: quiet on the fix
+$P --record <rule-id> --commit <fix-sha>  # record removed bad lines and added quiet lines after whole-file replay
+$P --test                                # kept proof: run locally and in CI, no paths needed
 $P --baseline .patlint-baseline.json --update-baseline .   # adopt existing hits once (ratchet)
 $P --baseline .patlint-baseline.json .                     # the command CI runs
 ```
 
+- Each rule keeps `tests`: objects with `expect` (its rule id or `ok`), raw `code`, relative `path`, and optional `from` sha. `--test` fails on missing or noisy matches, or a rule with no case expecting its id. Matching uses the lint's regex flags and include/exclude globs.
+- `--record RULE --commit FIX_SHA` requires removed matching lines and a whole-file hit at the parent with zero hits at the fix; added matching lines fail. It replaces that rule's tests only after proof succeeds. `--record` and `--test` are exclusive modes; ordinary lint still needs paths. For cases from a review without a fix commit, add raw snippets by hand and run `--test`.
+- Optional `fix` entries explicitly name `{ "path": "todo/store.py", "symbol": "Store.add" }`. `--test` checks the file and resolves Python definitions with AST; other languages get a file check. Only these entries are resolved, so mentioning `json.dump` as the mistake in a message never triggers a fix check.
 - Every new check must fail on a real past mistake: a reverted commit, the parent of a fix commit, or the line a reviewer flagged. A check you never saw fail proves nothing.
 - Types and architecture: show the old code no longer type-checks, imports, or passes its test.
 - Run the same command locally and in CI. CI has no skills dir, so vendor the linter (one stdlib file): `cp $SKILL_DIR/scripts/patlint.py tools/patlint.py`, commit `lint-rules.json`, and call `python3 tools/patlint.py ...` from the existing test/CI entry point.
@@ -60,7 +63,7 @@ $P --baseline .patlint-baseline.json .                     # the command CI runs
 The agent instruction file pairs each rule with what enforces it.
 
 ```bash
-python3 $SKILL_DIR/scripts/rule_table.py add AGENTS.md --rule "Write todos only via store.save()" \
+python3 $SKILL_DIR/scripts/rule_table.py add AGENTS.md --rule "Write todos only via Store.add" \
   --enforced-by '`python3 tools/patlint.py --rules lint-rules.json .`'
 python3 $SKILL_DIR/scripts/rule_table.py check AGENTS.md   # exit 1: prose-only rows, or enforcer files that don't exist
 ```
