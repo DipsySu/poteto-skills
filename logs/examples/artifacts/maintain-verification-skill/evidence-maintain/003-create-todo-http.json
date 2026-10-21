@@ -1,0 +1,43 @@
+{
+  "feature": "create-todo",
+  "kind": "http",
+  "write": null,
+  "read_back": [
+    "create-http"
+  ],
+  "read_only": true,
+  "started": "2026-10-21T03:10:15Z",
+  "method": "GET",
+  "url": "http://127.0.0.1:34795/todos",
+  "request_body": null,
+  "status": 200,
+  "response_headers": {
+    "Server": "BaseHTTP/0.6 Python/3.13.5",
+    "Date": "Wed, 21 Oct 2026 03:10:15 GMT",
+    "Content-Type": "application/json",
+    "Content-Length": "53"
+  },
+  "expect": null,
+  "response_body": [
+    {
+      "id": 1,
+      "status": "open",
+      "title": "verify HTTP"
+    }
+  ],
+  "assertions": [
+    {
+      "expr": "--expect-json 0.title=verify HTTP",
+      "ok": true,
+      "got": "verify HTTP"
+    },
+    {
+      "expr": "--expect-json 0.status=open",
+      "ok": true,
+      "got": "open"
+    }
+  ],
+  "execution_ok": true,
+  "ok": true,
+  "elapsed_ms": 8.9
+}

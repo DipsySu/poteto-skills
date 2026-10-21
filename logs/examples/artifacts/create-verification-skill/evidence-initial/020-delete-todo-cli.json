@@ -1,0 +1,31 @@
+{
+  "feature": "delete-todo",
+  "kind": "cli",
+  "write": "archive-cli",
+  "read_back": [],
+  "read_only": false,
+  "started": "2026-10-21T03:10:10Z",
+  "argv": [
+    "/usr/bin/python3",
+    "-m",
+    "todo",
+    "rm",
+    "2",
+    "--data",
+    "/tmp/poteto-examples-4dfshnbm/verify-state-initial/initial/data"
+  ],
+  "exit_code": 0,
+  "stdout": "{\"id\": 2, \"status\": \"archived\", \"title\": \"verify CLI\"}\n",
+  "stderr": "",
+  "expect_exit": 0,
+  "assertions": [
+    {
+      "expr": "--expect-json status=archived",
+      "ok": true,
+      "got": "archived"
+    }
+  ],
+  "execution_ok": true,
+  "ok": true,
+  "elapsed_ms": 52.7
+}

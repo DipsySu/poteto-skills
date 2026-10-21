@@ -1,0 +1,43 @@
+{
+  "feature": "done-todo",
+  "kind": "http",
+  "write": null,
+  "read_back": [
+    "retry-http"
+  ],
+  "read_only": true,
+  "started": "2026-10-21T03:10:16Z",
+  "method": "GET",
+  "url": "http://127.0.0.1:34795/todos",
+  "request_body": null,
+  "status": 200,
+  "response_headers": {
+    "Server": "BaseHTTP/0.6 Python/3.13.5",
+    "Date": "Wed, 21 Oct 2026 03:10:16 GMT",
+    "Content-Type": "application/json",
+    "Content-Length": "105"
+  },
+  "expect": null,
+  "response_body": [
+    {
+      "id": 1,
+      "status": "done",
+      "title": "verify HTTP"
+    },
+    {
+      "id": 2,
+      "status": "open",
+      "title": "verify CLI"
+    }
+  ],
+  "assertions": [
+    {
+      "expr": "--expect-json 0.status=done",
+      "ok": true,
+      "got": "done"
+    }
+  ],
+  "execution_ok": true,
+  "ok": true,
+  "elapsed_ms": 10.0
+}

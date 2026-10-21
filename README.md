@@ -47,7 +47,7 @@ Requirements: Python 3.11+ (developed on 3.13) using the stdlib only, bash, and 
 
 ```bash
 S=~/.claude/skills
-python3 $S/correct/scripts/mine_mistakes.py . --since "90 days ago"
+python3 $S/correct/scripts/mine_mistakes.py .
 python3 $S/create-verification-skill/scripts/scan_repo.py .
 python3 $S/create-verification-skill/scripts/scaffold.py . --app myapp
 python3 $S/formal-verification/scripts/bounded_check.py $S/formal-verification/references/example_model.py --mutants
@@ -62,7 +62,7 @@ skills/<name>/SKILL.md        frontmatter (name, description) + agent-facing bod
 skills/<name>/scripts/        executable helpers, stdlib Python or bash, all with --help
 skills/<name>/references/     templates and worked examples
 install.sh                    symlink or copy into Claude Code / Cursor skill dirs
-research/                     NOTES.md (sources S1-S23) and verbatim upstream snapshots
+research/                     NOTES.md (source inventory) and verbatim upstream snapshots
 examples/todo-app/            example repo the helpers are exercised against
 scripts/verify.sh             the collection's self-check; scripts/run-examples.sh runs every helper for real
 ```
@@ -78,7 +78,10 @@ The ideas, structure, and much of the vocabulary come from [pstack](https://gith
 ./scripts/run-examples.sh             # fresh scratch build; exercise all eight skills serially
 ./scripts/verify.sh                   # packaging, syntax, installer, app tests, saved example results
 ./scripts/verify.sh --run-examples    # regenerate example results first
+python3 scripts/check_docs.py         # helper paths/flags, links, counts, every source citation
 ```
+
+The docs check reads README.md, MAPPING.md, and first-party `skills/*/SKILL.md`. It checks supported flags using cached, bounded `--help` calls, without executing examples. A skill's explicit `check-docs: readme-avoid` policy keeps README defaults aligned; other supported flags may appear only in README. Generated `verify-*` and vendored `tools/` commands belong to the target app. Source IDs come from NOTES.md; adding a row needs no checker edit, but any explicit source-range claim must be updated too.
 
 The builder uses committed source plus explicit history edits, fixed dates and identity; repeated builds produce the same commit IDs. It refuses a nonempty destination. The outer repo ignores `examples/todo-app/`; no nested `.git` files or gitlinks are stored. Pass a new destination to the builder to make another copy.
 

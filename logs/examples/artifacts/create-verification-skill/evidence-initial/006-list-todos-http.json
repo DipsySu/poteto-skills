@@ -1,0 +1,46 @@
+{
+  "feature": "list-todos",
+  "kind": "http",
+  "write": null,
+  "read_back": [],
+  "read_only": true,
+  "started": "2026-10-21T03:10:09Z",
+  "method": "GET",
+  "url": "http://127.0.0.1:55805/todos",
+  "request_body": null,
+  "status": 200,
+  "response_headers": {
+    "Server": "BaseHTTP/0.6 Python/3.13.5",
+    "Date": "Wed, 21 Oct 2026 03:10:09 GMT",
+    "Content-Type": "application/json",
+    "Content-Length": "105"
+  },
+  "expect": "200",
+  "response_body": [
+    {
+      "id": 1,
+      "status": "open",
+      "title": "verify HTTP"
+    },
+    {
+      "id": 2,
+      "status": "open",
+      "title": "verify CLI"
+    }
+  ],
+  "assertions": [
+    {
+      "expr": "--expect-json 0.id=1",
+      "ok": true,
+      "got": 1
+    },
+    {
+      "expr": "--expect-json 1.id=2",
+      "ok": true,
+      "got": 2
+    }
+  ],
+  "execution_ok": true,
+  "ok": true,
+  "elapsed_ms": 11.1
+}

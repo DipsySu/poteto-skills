@@ -6,7 +6,6 @@ import json
 import os
 from pathlib import Path
 import py_compile
-import re
 import subprocess
 import sys
 import tempfile
@@ -61,8 +60,7 @@ def main():
                 require(fm.get('name')==path.name,f'{path}: name does not match directory')
                 desc = fm.get('description','')
                 require(desc and 'Use' in desc and f'/{path.name}' in desc,f'{path}: description needs Use and slash invocation')
-                require(bool(re.search(r'\bS(?:[1-9]|1[0-9]|2[0-3])\b',text)),f'{path}: missing source ID')
-            return '8 valid skill frontmatters with invocation and source IDs'
+            return '8 valid skill frontmatters with invocation; source IDs checked by docs'
         check('skill frontmatter',frontmatter)
 
         def scripts():
@@ -98,7 +96,8 @@ def main():
                 require((ROOT/file).is_file(),f'missing {file}')
             mapping = (ROOT/'MAPPING.md').read_text()
             require(all(f'`{name}`' in mapping for name in EXPECTED),'MAPPING.md omits a skill')
-            return 'required files present; mapping lists every skill'
+            output = run(sys.executable,ROOT/'scripts/check_docs.py','--repo',ROOT)
+            return 'required files present; mapping lists every skill; ' + output.strip()
         check('docs and mapping',docs)
 
         def install():

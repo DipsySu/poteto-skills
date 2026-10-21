@@ -1,0 +1,37 @@
+{
+  "feature": "create-todo",
+  "kind": "cli",
+  "write": null,
+  "read_back": [
+    "create-cli"
+  ],
+  "read_only": true,
+  "started": "2026-10-21T03:10:15Z",
+  "argv": [
+    "/usr/bin/python3",
+    "-m",
+    "todo",
+    "list",
+    "--data",
+    "/tmp/poteto-examples-4dfshnbm/verify-state-maintain/maintain/data"
+  ],
+  "exit_code": 0,
+  "stdout": "[{\"id\": 1, \"status\": \"open\", \"title\": \"verify HTTP\"}, {\"id\": 2, \"status\": \"open\", \"title\": \"verify CLI\"}]\n",
+  "stderr": "",
+  "expect_exit": 0,
+  "assertions": [
+    {
+      "expr": "--expect-json 1.title=verify CLI",
+      "ok": true,
+      "got": "verify CLI"
+    },
+    {
+      "expr": "--expect-json 1.status=open",
+      "ok": true,
+      "got": "open"
+    }
+  ],
+  "execution_ok": true,
+  "ok": true,
+  "elapsed_ms": 51.0
+}

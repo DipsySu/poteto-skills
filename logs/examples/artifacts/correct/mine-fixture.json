@@ -1,5 +1,5 @@
 {
-  "repo": "/tmp/poteto-examples-q85kbr94/mine-fixture",
+  "repo": "/tmp/poteto-examples-4dfshnbm/mine-fixture",
   "since": null,
   "items": 2,
   "counts": {
@@ -23,16 +23,16 @@
       ],
       "evidence": [
         {
-          "id": "commit:161194d7b3",
+          "id": "commit:da74972746",
           "source": "commit",
           "kind": "fix",
-          "ref": "161194d7b3ffea8e0947d733a88b93803d4a64cc",
-          "text": "feat: layout pass, plus 3 layout-audit fixes",
+          "ref": "da74972746af86deb87ae36d82af90c6dea17a29",
+          "text": "fix: layout overlap in the changelog renderer again",
           "paths": [
             "CHANGELOG.md"
           ],
           "line": null,
-          "author": "t",
+          "author": "Dipsy",
           "date": "2026-10-21",
           "url": null,
           "diff_ids": [],
@@ -40,16 +40,16 @@
           "diff_removed": []
         },
         {
-          "id": "commit:08ab1e90d4",
+          "id": "commit:befda604ac",
           "source": "commit",
           "kind": "fix",
-          "ref": "08ab1e90d40e510897080ab8b52a5bc6ce46e15a",
-          "text": "fix: layout overlap in the changelog renderer again",
+          "ref": "befda604aca0fe3113320643d3ae43d9f2969b22",
+          "text": "feat: layout pass, plus 3 layout-audit fixes",
           "paths": [
             "CHANGELOG.md"
           ],
           "line": null,
-          "author": "t",
+          "author": "Dipsy",
           "date": "2026-10-21",
           "url": null,
           "diff_ids": [],

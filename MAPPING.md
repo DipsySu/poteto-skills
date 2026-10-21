@@ -20,7 +20,7 @@ Pyramid layers (S1): 1 codebase improvements (architecture, types, invariants) >
 | Skill | Script | Output |
 |---|---|---|
 | create-verification-skill | `scan_repo.py REPO [--json]` | inventory: languages, build/test commands, launch candidates, routes, CLI subcommands, skill dirs, features |
-| create-verification-skill | `scaffold.py REPO --app NAME [--skills-dir DIR]` | `verify-NAME/` with SKILL.md, `features/`, `scripts/control.sh`; unknowns as `TODO(verify)` |
+| create-verification-skill | `scaffold.py REPO --app NAME [--skills-dir DIR]` | `verify-NAME/` with SKILL.md, `features/`, `verify-NAME/scripts/control.sh`; unknowns as `TODO(verify)` |
 | create-verification-skill | `check_verify_skill.py SKILL_DIR [--require-proof EVIDENCE_ROOT]` | contract, asserted recipes and HTTP/CLI write read-backs; proof opens records and checks execution plus assertions; exit 1 on failure |
 | maintain-verification-skill | `drift_check.py SKILL_DIR --repo REPO [--json]` | index, contract, missing and dead routes and commands; exit 1 on drift |
 | correct | `mine_mistakes.py REPO [--since DATE] [--feedback FILE...] [--json]` | mistake classes (count >= 2) with commit shas and comment ids |
@@ -43,5 +43,7 @@ Pyramid layers (S1): 1 codebase improvements (architecture, types, invariants) >
 | S19 Claude Code adapter | Install paths are handled by `install.sh`. |
 
 ## Reproducible validation
+
+`scripts/check_docs.py [--repo DIR]`, called by `verify.docs()`, checks collection helper paths and supported command flags, explicit README usage policies, local Markdown links/heading anchors, whole-set counts, and all cited IDs against NOTES.md. Each skill still needs at least one source citation. It resolves `$SKILL_DIR`, `$S/<skill>`, sibling skills, and literal command variables; bare `scripts/` paths are collection-relative. Generated `verify-*`, placeholder paths, and vendored `tools/` commands are excluded. Inline links (including titles/angle destinations), reference links, and Unicode/duplicate heading slugs are supported; remote URLs are not fetched.
 
 `examples/build-todo-app.sh` reconstructs the nested example history from `examples/todo-app-src/` and explicit commit edits; the generated repository is ignored by the outer repo. `scripts/run-examples.sh` builds its own scratch repository and exercises every skill serially, retaining positive and negative assertion results in `logs/examples/summary.json`. `scripts/verify.sh` gates packaging and the saved results; `--run-examples` regenerates them. Live socket restrictions remain reported failures, with no simulated replacement evidence.

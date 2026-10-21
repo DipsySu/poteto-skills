@@ -47,7 +47,7 @@ Offline proposals record cached diff evidence and source URLs; they do not claim
 1. Every proposal has a real URL that was fetched. Search snippets don't count, and `check_proposals.py --fetch` re-requests each URL.
 2. Every proposal has a pyramid level. A change that makes a skill's output more deterministic (a script, lint, test, or type) beats more prose.
 3. Every proposal names a concrete change to a named skill (or `new:<name>`, or `collection`).
-4. An applied change passes `scripts/verify.sh`, adds a CHANGELOG line, and keeps MAPPING.md and each SKILL.md Sources footer in sync.
+4. An applied change passes `scripts/verify.sh` (including `scripts/check_docs.py`: helper paths/flags, links, counts, source IDs, and explicit README usage policies), adds a CHANGELOG line, and keeps MAPPING.md and each SKILL.md Sources footer in sync.
 5. Upstream text is MIT (© 2026 Lauren Tan). Adapt it with credit; don't paste it wholesale.
 
 Reject unsourced claims, prose that restates an existing rule, and anything that would add network access to a skill script other than the curator's.

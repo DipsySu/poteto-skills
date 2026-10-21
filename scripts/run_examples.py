@@ -676,8 +676,117 @@ class Examples:
             self.ensure(self.last_returncode == (0 if availability['available'] else 1), 'TLA availability exit code matches its report and advertises the stdlib fallback')
             self.save('tla-availability.json', availability)
 
+    def docs(self):
+        """Mutate a disposable collection; keep doc checks under curator's key."""
+        root = self.scratch/'docs'
+        for directory in ('skills', 'scripts'):
+            shutil.copytree(ROOT/directory, root/directory, ignore=shutil.ignore_patterns('__pycache__'))
+        (root/'research').mkdir()
+        shutil.copyfile(ROOT/'research/NOTES.md', root/'research/NOTES.md')
+        shutil.copytree(ROOT/'research/upstream', root/'research/upstream')
+        for file in ('README.md', 'MAPPING.md', 'install.sh'):
+            shutil.copyfile(ROOT/file, root/file)
+        # README also links its builder; helper inventory includes examples/.
+        shutil.copytree(ROOT/'examples', root/'examples',
+                        ignore=shutil.ignore_patterns('todo-app', '__pycache__'))
+        module = load_module(ROOT/'scripts/check_docs.py', 'example_docs')
+        checker = ROOT/'scripts/check_docs.py'
+        self.run(checker, '--repo', root)
+        self.ensure(True, 'clean copied docs pass the standalone documentation checker')
+
+        def changed(file, transform, expected, description):
+            path = root/file
+            original = path.read_text()
+            try:
+                path.write_text(transform(original))
+                issues = module.check(root)
+                self.ensure(not issues if expected is None else any(expected in issue for issue in issues), description)
+                if expected is not None:
+                    self.ensure(all(re.match(r'[^:]+:\d+: ', issue) for issue in issues),
+                                description + ': diagnostics include file and line')
+            finally:
+                path.write_text(original)
+
+        mine = 'python3 $S/correct/scripts/mine_mistakes.py .'
+        changed('README.md', lambda t: t.replace(mine, mine+' --since "90 days ago"'), 'README policy avoids --since',
+                'reintroducing README\'s retired --since recommendation fails its explicit policy')
+        changed('README.md', lambda t: t.replace('--mutants', '--renamed-mutants'), 'unsupported flag --renamed-mutants',
+                'a renamed helper flag fails against its real --help')
+        changed('README.md', lambda t: t.replace('(#credits)', '(#missing-heading)'), 'unknown heading anchor',
+                'a dead heading link fails')
+        changed('README.md', lambda t: t+'\n[dead](README.md#absent "title")\n', 'unknown heading anchor',
+                'inline links with titles still validate their destination')
+        changed('README.md', lambda t: t+'\n[dead](<missing-file.md> "title")\n', 'broken relative link',
+                'angle destinations with titles still validate their destination')
+        changed('README.md', lambda t: t.replace('all eight skills', 'all nine skills'), 'skill count claims 9',
+                'a stale whole-set skill count fails against the tree')
+        changed('README.md', lambda t: t+'\nThe sources S1-S22 cover the collection.\n', 'source range differs',
+                'an explicit source range must match the entire NOTES inventory')
+        changed('skills/sharpen/SKILL.md', lambda t: t+'\nS7 and S999\n', 'unknown source citation: S999',
+                'a valid source alongside an unknown source does not hide the unknown citation')
+        changed('MAPPING.md', lambda t: t+'\nS99\n', 'unknown source citation: S99',
+                'mapping citations are validated too')
+        changed('skills/sharpen/SKILL.md', lambda t: re.sub(r'\bS\d+\b', 'source', t), 'missing source ID',
+                'every skill still needs at least one source citation')
+        changed('README.md', lambda t: t.replace(mine, mine+' --json'), None,
+                'a supported README-only flag absent from skill examples remains allowed')
+        changed('skills/correct/SKILL.md', lambda t: t.replace('mine_mistakes.py --since -->', 'mine_mistakes.py --sinc -->'),
+                'README policy names unsupported flag', 'a typo in the explicit recommendation policy fails too')
+        changed('README.md', lambda t: t.replace(mine, mine+' -- --application-flag'), None,
+                'flags after -- are outside the helper\'s option contract')
+        changed('README.md', lambda t: t.replace(mine, mine+' && other-tool --unrelated-flag'), None,
+                'shell separators keep flags associated with their own command')
+        changed('README.md', lambda t: t.replace(mine, mine+' --feedback "--literal-payload"'), None,
+                'an option\'s literal value is not mistaken for a helper flag')
+        changed('skills/correct/SKILL.md', lambda t: t.replace('$P --rev', '$P --renamed-rev'), 'unsupported flag --renamed-rev',
+                'literal command variables are expanded without executing examples')
+        changed('skills/correct/SKILL.md', lambda t: t+'\n```bash\npython3 $SKILL_DIR/scripts/rule_table.py check AGENTS.md --rule text\n```\n',
+                'unsupported flag --rule', 'subcommand flags are checked against check help, not add help')
+        changed('skills/correct/SKILL.md', lambda t: t+'\n`mine_mistakes.py . --nonexistent`\n',
+                'unsupported flag --nonexistent', 'bare inline helper commands resolve within their owning skill')
+        changed('skills/correct/SKILL.md', lambda t: t+'\n```bash\nD=$SKILL_DIR\npython3 $D/scripts/missing.py --help\n```\n',
+                'missing script', 'helper paths expanded from literal directory variables are validated')
+        changed('skills/correct/SKILL.md', lambda t: t.replace('mine_mistakes.py', 'missing-helper.py'), 'missing script',
+                '$SKILL_DIR paths resolve to the owning skill')
+        changed('README.md', lambda t: t.replace('$S/correct/scripts/mine_mistakes.py', '$S/correct/scripts/missing.py'),
+                'missing script', '$S/skill paths resolve to the named skill')
+        changed('skills/feedback-to-architecture/SKILL.md', lambda t: t+'\n`$SKILL_DIR/../correct/scripts/missing.py`\n',
+                'missing script', 'sibling skill paths resolve from the current skill')
+        changed('README.md', lambda t: t+'\n`correct/scripts/missing.py`\n', 'missing script',
+                'explicit skill/scripts paths resolve to that skill')
+        changed('README.md', lambda t: t+'\n`absent-skill/scripts/missing.py`\n', 'missing script',
+                'a helper path naming a nonexistent skill fails')
+        changed('skills/curator/SKILL.md', lambda t: t+'\n` scripts/missing.py `\n', 'missing script',
+                'bare scripts paths resolve at the collection root')
+        changed('skills/feedback-to-architecture/SKILL.md', lambda t: t+'\n```bash\npython3 $SKILL_DIR/../correct/scripts/patlint.py --help\n```\n',
+                None, 'valid sibling helpers are recognized')
+        changed('README.md', lambda t: t+'\n```bash\nverify-demo/scripts/control.sh --generated-flag\npython3 tools/patlint.py --vendored-flag\nverify-<app>/scripts/control.sh --placeholder\n```\n',
+                None, 'generated harnesses, placeholders and vendored commands are outside collection contracts')
+        changed('README.md', lambda t: t+'\n## Café 文!\n## Café 文!\n## Heading `code`\n\n[one](#café-文) [two](#café-文-1) [code](#heading-code)\n[title](README.md "title") [angle](<README.md>)\n[ref][docs] [docs][] [docs]\n\n[docs]: <README.md#credits> "title"\n',
+                None, 'Unicode and duplicate heading anchors, code headings, titled/angle links and references resolve')
+        changed('README.md', lambda t: t+'\n[bad][undefined]\n', 'undefined link reference',
+                'undefined explicit reference links fail')
+        changed('README.md', lambda t: t+'\n[remote helper](https://example.invalid/scripts/helper.py)\n', None,
+                'remote URLs containing scripts paths are not local file references')
+        changed('README.md', lambda t: t+'\n```bash\npython3 scripts/check_docs.py --repo "$(touch SHOULD_NOT_EXIST)"\n```\n', None,
+                'documentation command substitutions are never executed')
+        self.ensure(not (root/'SHOULD_NOT_EXIST').exists(), 'shell snippets have no side effects')
+
+        notes = root/'research/NOTES.md'
+        original = notes.read_text()
+        try:
+            notes.write_text(original+'\n| S24 | Local fixture source | checked |\n')
+            changed('skills/sharpen/SKILL.md', lambda t: re.sub(r'\bS\d+\b', 'S24', t), None,
+                    'adding S24 to NOTES allows a skill citing only S24 without editing checker code')
+            changed('README.md', lambda t: t+'\nSources S1-S23\n', 'source range differs',
+                    'adding a source also invalidates any stale explicit whole-set range')
+        finally:
+            notes.write_text(original)
+        self.ensure(not module.check(root), 'all scratch mutations restore to clean documentation')
+
     def curator(self):
         with self.case('curator'):
+            self.docs()
             # Populate a fake cached upstream directly: git init only, no remotes or fetches.
             cache = self.scratch/'cache'
             upstream = cache/'cursor-plugins'

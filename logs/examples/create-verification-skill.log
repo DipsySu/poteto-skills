@@ -1,7 +1,7 @@
-scratch: /tmp/poteto-examples-q85kbr94
-$ /home/box/developer/poteto-skills/examples/build-todo-app.sh /tmp/poteto-examples-q85kbr94/todo-app
+scratch: /tmp/poteto-examples-4dfshnbm
+$ /home/box/developer/poteto-skills/examples/build-todo-app.sh /tmp/poteto-examples-4dfshnbm/todo-app
 {
-  "repo": "/tmp/poteto-examples-q85kbr94/todo-app",
+  "repo": "/tmp/poteto-examples-4dfshnbm/todo-app",
   "head": "4242a5ae43587ea1ed392b15775e2e3e3acc2aa4",
   "direct_write_commits": [
     "570c1e91c25878c9550969a1ba4072a0e1790d27",
@@ -14,9 +14,9 @@ $ /home/box/developer/poteto-skills/examples/build-todo-app.sh /tmp/poteto-examp
 }
 
 [exit 0; expected 0]
-$ /home/box/developer/poteto-skills/examples/build-todo-app.sh /tmp/poteto-examples-q85kbr94/repro
+$ /home/box/developer/poteto-skills/examples/build-todo-app.sh /tmp/poteto-examples-4dfshnbm/repro
 {
-  "repo": "/tmp/poteto-examples-q85kbr94/repro",
+  "repo": "/tmp/poteto-examples-4dfshnbm/repro",
   "head": "4242a5ae43587ea1ed392b15775e2e3e3acc2aa4",
   "direct_write_commits": [
     "570c1e91c25878c9550969a1ba4072a0e1790d27",
@@ -32,7 +32,7 @@ $ /home/box/developer/poteto-skills/examples/build-todo-app.sh /tmp/poteto-examp
 ASSERT PASS: two independent builds reproduce identical git HEAD
 $ /usr/bin/python3 -m unittest -q
 ----------------------------------------------------------------------
-Ran 7 tests in 0.281s
+Ran 7 tests in 0.305s
 
 OK
 
@@ -93,9 +93,9 @@ index ca0a837..6f5d02b 100644
 
 [exit 0; expected 0]
 ASSERT PASS: real direct-write mistake retained at dbd440086858
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/scan_repo.py /tmp/poteto-examples-q85kbr94/todo-app --json
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/scan_repo.py /tmp/poteto-examples-4dfshnbm/todo-app --json
 {
-  "repo": "/tmp/poteto-examples-q85kbr94/todo-app",
+  "repo": "/tmp/poteto-examples-4dfshnbm/todo-app",
   "languages": [
     {
       "name": "python",
@@ -577,9 +577,9 @@ $ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/sca
 [exit 0; expected 0]
 ASSERT PASS: scan detects all five HTTP routes
 ASSERT PASS: scan detects CLI and serve subcommands
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/scaffold.py /tmp/poteto-examples-q85kbr94/todo-app --app todo --json
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/scaffold.py /tmp/poteto-examples-4dfshnbm/todo-app --app todo --json
 {
-  "skill_dir": "/tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo",
+  "skill_dir": "/tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo",
   "files": [
     "SKILL.md",
     "features/README.md",
@@ -637,7 +637,7 @@ $ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/sca
 
 [exit 0; expected 0]
 ASSERT PASS: scaffold leaves unknown application facts explicit
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 FAIL  asserted recipes create-todo.md: --expect-json needs PATH=VALUE; --expect-json needs PATH=VALUE; --expect-json needs PATH=VALUE
 FAIL  literal recipes delete-todo.md: placeholder(s) <id> in a drive command; write the real value
 FAIL  asserted recipes delete-todo.md: --expect-json needs PATH=VALUE; --expect-json needs PATH=VALUE; --expect-json needs PATH=VALUE
@@ -645,92 +645,92 @@ FAIL  literal recipes done-todo.md: placeholder(s) <id> in a drive command; writ
 FAIL  asserted recipes done-todo.md: --expect-json needs PATH=VALUE; --expect-json needs PATH=VALUE; --expect-json needs PATH=VALUE
 FAIL  asserted recipes list-todos.md: --expect-json needs PATH=VALUE; --expect-json needs PATH=VALUE; --expect-json needs PATH=VALUE
 FAIL  no TODO(verify) left: 24: SKILL.md:42, features/README.md:10, features/create-todo.md:3, features/create-todo.md:22, features/create-todo.md:23, features/create-todo.md:24, features/create-todo.md:28, features/delete-todo.md:3, features/delete-todo.md:20, features/delete-todo.md:22, features/delete-todo.md:23, features/delete-todo.md:24 …
-check_verify_skill: FAIL (26/33 checks) /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+check_verify_skill: FAIL (26/33 checks) /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 
 [exit 1; expected 1]
-$ /home/box/developer/poteto-skills/examples/fill_verify.py /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+$ /home/box/developer/poteto-skills/examples/fill_verify.py /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 filled 4 feature recipes with the example's real commands
 
 [exit 0; expected 0]
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
-check_verify_skill: PASS (33/33 checks) /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
+check_verify_skill: PASS (33/33 checks) /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 
 [exit 0; expected 0]
 ASSERT PASS: all scaffold questions replaced by real todo recipes
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
-check_verify_skill: PASS (37/37 checks) /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
+check_verify_skill: PASS (37/37 checks) /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 
 [exit 0; expected 0]
 ASSERT PASS: generated bytecode does not invalidate the skill contract
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 FAIL  contract create-todo.md: H2s must be exactly ['Sub-features', 'How to get to it (user POV)', 'Driving it with <harness>', 'Gotchas'] in order, got ['Sub-features', 'How to get to it (user POV)', 'Driving it with control.sh', 'Wrong heading']
-check_verify_skill: FAIL (32/33 checks) /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+check_verify_skill: FAIL (32/33 checks) /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 
 [exit 1; expected 1]
 ASSERT PASS: contract rejects damaged feature heading order
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo --require-proof /tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify
-FAIL  proof run with evidence: no /tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/<run-id>/manifest.json with successful, asserted drive records and mutation read-backs: run the end-to-end proof first
-check_verify_skill: FAIL (33/34 checks) /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo --require-proof /tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify
+FAIL  proof run with evidence: no /tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/<run-id>/manifest.json with successful, asserted drive records and mutation read-backs: run the end-to-end proof first
+check_verify_skill: FAIL (33/34 checks) /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 
 [exit 1; expected 1]
 ASSERT PASS: contract with --require-proof fails before any proof run
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 FAIL  asserted recipes create-todo.md: mutation needs --write KEY and a later asserted --read-back KEY; mutation needs --write KEY and a later asserted --read-back KEY; add --expect-json, --expect-text, or --expect-no-text to a drive
-check_verify_skill: FAIL (32/33 checks) /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+check_verify_skill: FAIL (32/33 checks) /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 
 [exit 1; expected 1]
 ASSERT PASS: old status-only create-todo recipe fails the assertion gate
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 FAIL  asserted recipes create-todo.md: write added needs a later asserted --read-back added
-check_verify_skill: FAIL (32/33 checks) /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+check_verify_skill: FAIL (32/33 checks) /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 
 [exit 1; expected 1]
 ASSERT PASS: an asserted POST still requires a second view
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 FAIL  asserted recipes create-todo.md: read-back added must observe the written resource, not /health; write added needs a later asserted --read-back added
-check_verify_skill: FAIL (32/33 checks) /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+check_verify_skill: FAIL (32/33 checks) /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 
 [exit 1; expected 1]
 ASSERT PASS: an unrelated asserted health read cannot prove a todo write
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 FAIL  asserted recipes create-todo.md: write added needs a later asserted --read-back added
-check_verify_skill: FAIL (32/33 checks) /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+check_verify_skill: FAIL (32/33 checks) /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 
 [exit 1; expected 1]
 ASSERT PASS: CLI writes require an asserted read-back too
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
-check_verify_skill: PASS (33/33 checks) /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
+check_verify_skill: PASS (33/33 checks) /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 
 [exit 0; expected 0]
 ASSERT PASS: HTML in literal text assertions is not an unfilled recipe placeholder
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 FAIL  literal recipes create-todo.md: placeholder(s) <dir> in a drive command; write the real value
-check_verify_skill: FAIL (32/33 checks) /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+check_verify_skill: FAIL (32/33 checks) /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 
 [exit 1; expected 1]
 ASSERT PASS: application argument placeholders still fail after CLI --
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 FAIL  assertion-capable harness: regenerate control.sh with scaffold.py, then reapply the app's CONFIG values if assertion flags are missing
-check_verify_skill: FAIL (32/33 checks) /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+check_verify_skill: FAIL (32/33 checks) /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 
 [exit 1; expected 1]
 ASSERT PASS: legacy harness without assertion support gets a regeneration hint
 ASSERT PASS: worked feature example has assertions and paired HTTP/CLI read-backs
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh launch
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh launch
 {
   "run_id": "initial",
-  "pid": 228197,
-  "port": 51413,
-  "base_url": "http://127.0.0.1:51413",
-  "data_dir": "/tmp/poteto-examples-q85kbr94/verify-state-initial/initial/data",
-  "evidence_dir": "/tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial",
-  "log": "/tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial/launch.log"
+  "pid": 242208,
+  "port": 55805,
+  "base_url": "http://127.0.0.1:55805",
+  "data_dir": "/tmp/poteto-examples-4dfshnbm/verify-state-initial/initial/data",
+  "evidence_dir": "/tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial",
+  "log": "/tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial/launch.log"
 }
 
 [exit 0; expected 0]
 ASSERT PASS: launch records a distinct owned server PID on a free port
 ASSERT PASS: launch starts with an empty data directory
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh doctor
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh doctor
 {
   "ok": true,
   "run_id": "initial",
@@ -738,12 +738,12 @@ $ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/cont
     {
       "name": "process",
       "ok": true,
-      "detail": "pid 228197 alive, started by this run"
+      "detail": "pid 242208 alive, started by this run"
     },
     {
       "name": "port",
       "ok": true,
-      "detail": "51413 accepts connections"
+      "detail": "55805 accepts connections"
     },
     {
       "name": "GET /health",
@@ -758,183 +758,183 @@ $ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/cont
     {
       "name": "data dir",
       "ok": true,
-      "detail": "/tmp/poteto-examples-q85kbr94/verify-state-initial/initial/data"
+      "detail": "/tmp/poteto-examples-4dfshnbm/verify-state-initial/initial/data"
     },
     {
       "name": "evidence dir",
       "ok": true,
-      "detail": "/tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial"
+      "detail": "/tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial"
     }
   ]
 }
 
 [exit 0; expected 0]
 ASSERT PASS: doctor checks owned process, health and read route
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature health --expect-json ok=true http GET /health --expect 200
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature health --expect-json ok=true http GET /health --expect 200
 PASS --expect-json ok=true
-evidence: /tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial/001-health-http.json
-GET http://127.0.0.1:51413/health -> 200
+evidence: /tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial/001-health-http.json
+GET http://127.0.0.1:55805/health -> 200
 {"ok": true}
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature create-todo --write create-http http POST /todos '{"title":"verify HTTP"}' --expect 201 --expect-json id=1 --expect-json status=open
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature create-todo --write create-http http POST /todos '{"title":"verify HTTP"}' --expect 201 --expect-json id=1 --expect-json status=open
 PASS --expect-json id=1
 PASS --expect-json status=open
-evidence: /tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial/002-create-todo-http.json
-POST http://127.0.0.1:51413/todos -> 201
+evidence: /tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial/002-create-todo-http.json
+POST http://127.0.0.1:55805/todos -> 201
 {"id": 1, "title": "verify HTTP", "status": "open"}
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature create-todo --read-back create-http http GET /todos --expect-json '0.title=verify HTTP' --expect-json 0.status=open
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature create-todo --read-back create-http http GET /todos --expect-json '0.title=verify HTTP' --expect-json 0.status=open
 PASS --expect-json 0.title=verify HTTP
 PASS --expect-json 0.status=open
-evidence: /tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial/003-create-todo-http.json
-GET http://127.0.0.1:51413/todos -> 200
+evidence: /tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial/003-create-todo-http.json
+GET http://127.0.0.1:55805/todos -> 200
 [{"id": 1, "status": "open", "title": "verify HTTP"}]
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature create-todo cli --write create-cli --expect-json id=2 --expect-json status=open -- /usr/bin/python3 -m todo add 'verify CLI' --data '{DATA_DIR}'
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature create-todo cli --write create-cli --expect-json id=2 --expect-json status=open -- /usr/bin/python3 -m todo add 'verify CLI' --data '{DATA_DIR}'
 exit: 0
 PASS --expect-json id=2
 PASS --expect-json status=open
-evidence: /tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial/004-create-todo-cli.json
+evidence: /tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial/004-create-todo-cli.json
 {"id": 2, "title": "verify CLI", "status": "open"}
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature create-todo cli --read-back create-cli --expect-json '1.title=verify CLI' --expect-json 1.status=open -- /usr/bin/python3 -m todo list --data '{DATA_DIR}'
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature create-todo cli --read-back create-cli --expect-json '1.title=verify CLI' --expect-json 1.status=open -- /usr/bin/python3 -m todo list --data '{DATA_DIR}'
 exit: 0
 PASS --expect-json 1.title=verify CLI
 PASS --expect-json 1.status=open
-evidence: /tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial/005-create-todo-cli.json
+evidence: /tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial/005-create-todo-cli.json
 [{"id": 1, "status": "open", "title": "verify HTTP"}, {"id": 2, "status": "open", "title": "verify CLI"}]
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature list-todos http GET /todos --expect 200 --expect-json 0.id=1 --expect-json 1.id=2
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature list-todos http GET /todos --expect 200 --expect-json 0.id=1 --expect-json 1.id=2
 PASS --expect-json 0.id=1
 PASS --expect-json 1.id=2
-evidence: /tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial/006-list-todos-http.json
-GET http://127.0.0.1:51413/todos -> 200
+evidence: /tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial/006-list-todos-http.json
+GET http://127.0.0.1:55805/todos -> 200
 [{"id": 1, "status": "open", "title": "verify HTTP"}, {"id": 2, "status": "open", "title": "verify CLI"}]
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature list-todos cli --read-only --expect-json 1.id=2 -- /usr/bin/python3 -m todo list --data '{DATA_DIR}'
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature list-todos cli --read-only --expect-json 1.id=2 -- /usr/bin/python3 -m todo list --data '{DATA_DIR}'
 exit: 0
 PASS --expect-json 1.id=2
-evidence: /tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial/007-list-todos-cli.json
+evidence: /tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial/007-list-todos-cli.json
 [{"id": 1, "status": "open", "title": "verify HTTP"}, {"id": 2, "status": "open", "title": "verify CLI"}]
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo --write reject-http http DELETE /todos/1 --expect 409 --expect-json 'error=cannot move open to archived'
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo --write reject-http http DELETE /todos/1 --expect 409 --expect-json 'error=cannot move open to archived'
 PASS --expect-json error=cannot move open to archived
-evidence: /tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial/008-delete-todo-http.json
-DELETE http://127.0.0.1:51413/todos/1 -> 409
+evidence: /tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial/008-delete-todo-http.json
+DELETE http://127.0.0.1:55805/todos/1 -> 409
 {"error": "cannot move open to archived"}
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo --read-back reject-http http GET /todos --expect-json 0.status=open
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo --read-back reject-http http GET /todos --expect-json 0.status=open
 PASS --expect-json 0.status=open
-evidence: /tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial/009-delete-todo-http.json
-GET http://127.0.0.1:51413/todos -> 200
+evidence: /tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial/009-delete-todo-http.json
+GET http://127.0.0.1:55805/todos -> 200
 [{"id": 1, "status": "open", "title": "verify HTTP"}, {"id": 2, "status": "open", "title": "verify CLI"}]
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo cli --write reject-cli --expect-exit 1 --expect-no-text archived -- /usr/bin/python3 -m todo rm 2 --data '{DATA_DIR}'
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo cli --write reject-cli --expect-exit 1 --expect-no-text archived -- /usr/bin/python3 -m todo rm 2 --data '{DATA_DIR}'
 todo: cannot move open to archived
 exit: 1
 PASS --expect-no-text archived
-evidence: /tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial/010-delete-todo-cli.json
+evidence: /tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial/010-delete-todo-cli.json
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo cli --read-back reject-cli --expect-json 1.status=open -- /usr/bin/python3 -m todo list --data '{DATA_DIR}'
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo cli --read-back reject-cli --expect-json 1.status=open -- /usr/bin/python3 -m todo list --data '{DATA_DIR}'
 exit: 0
 PASS --expect-json 1.status=open
-evidence: /tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial/011-delete-todo-cli.json
+evidence: /tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial/011-delete-todo-cli.json
 [{"id": 1, "status": "open", "title": "verify HTTP"}, {"id": 2, "status": "open", "title": "verify CLI"}]
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo --write done-http http POST /todos/1/done --expect 200 --expect-json status=done
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo --write done-http http POST /todos/1/done --expect 200 --expect-json status=done
 PASS --expect-json status=done
-evidence: /tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial/012-done-todo-http.json
-POST http://127.0.0.1:51413/todos/1/done -> 200
+evidence: /tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial/012-done-todo-http.json
+POST http://127.0.0.1:55805/todos/1/done -> 200
 {"id": 1, "status": "done", "title": "verify HTTP"}
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo --read-back done-http http GET /todos --expect-json 0.status=done
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo --read-back done-http http GET /todos --expect-json 0.status=done
 PASS --expect-json 0.status=done
-evidence: /tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial/013-done-todo-http.json
-GET http://127.0.0.1:51413/todos -> 200
+evidence: /tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial/013-done-todo-http.json
+GET http://127.0.0.1:55805/todos -> 200
 [{"id": 1, "status": "done", "title": "verify HTTP"}, {"id": 2, "status": "open", "title": "verify CLI"}]
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo --write retry-http http POST /todos/1/done --expect 409 --expect-text 'cannot move done to done'
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo --write retry-http http POST /todos/1/done --expect 409 --expect-text 'cannot move done to done'
 PASS --expect-text cannot move done to done
-evidence: /tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial/014-done-todo-http.json
-POST http://127.0.0.1:51413/todos/1/done -> 409
+evidence: /tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial/014-done-todo-http.json
+POST http://127.0.0.1:55805/todos/1/done -> 409
 {"error": "cannot move done to done"}
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo --read-back retry-http http GET /todos --expect-json 0.status=done
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo --read-back retry-http http GET /todos --expect-json 0.status=done
 PASS --expect-json 0.status=done
-evidence: /tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial/015-done-todo-http.json
-GET http://127.0.0.1:51413/todos -> 200
+evidence: /tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial/015-done-todo-http.json
+GET http://127.0.0.1:55805/todos -> 200
 [{"id": 1, "status": "done", "title": "verify HTTP"}, {"id": 2, "status": "open", "title": "verify CLI"}]
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo cli --write done-cli --expect-json status=done -- /usr/bin/python3 -m todo done 2 --data '{DATA_DIR}'
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo cli --write done-cli --expect-json status=done -- /usr/bin/python3 -m todo done 2 --data '{DATA_DIR}'
 exit: 0
 PASS --expect-json status=done
-evidence: /tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial/016-done-todo-cli.json
+evidence: /tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial/016-done-todo-cli.json
 {"id": 2, "status": "done", "title": "verify CLI"}
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo cli --read-back done-cli --expect-json 1.status=done -- /usr/bin/python3 -m todo list --data '{DATA_DIR}'
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo cli --read-back done-cli --expect-json 1.status=done -- /usr/bin/python3 -m todo list --data '{DATA_DIR}'
 exit: 0
 PASS --expect-json 1.status=done
-evidence: /tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial/017-done-todo-cli.json
+evidence: /tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial/017-done-todo-cli.json
 [{"id": 1, "status": "done", "title": "verify HTTP"}, {"id": 2, "status": "done", "title": "verify CLI"}]
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo --write archive-http http DELETE /todos/1 --expect 200 --expect-json status=archived
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo --write archive-http http DELETE /todos/1 --expect 200 --expect-json status=archived
 PASS --expect-json status=archived
-evidence: /tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial/018-delete-todo-http.json
-DELETE http://127.0.0.1:51413/todos/1 -> 200
+evidence: /tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial/018-delete-todo-http.json
+DELETE http://127.0.0.1:55805/todos/1 -> 200
 {"id": 1, "status": "archived", "title": "verify HTTP"}
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo --read-back archive-http http GET /todos --expect-json 0.status=archived
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo --read-back archive-http http GET /todos --expect-json 0.status=archived
 PASS --expect-json 0.status=archived
-evidence: /tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial/019-delete-todo-http.json
-GET http://127.0.0.1:51413/todos -> 200
+evidence: /tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial/019-delete-todo-http.json
+GET http://127.0.0.1:55805/todos -> 200
 [{"id": 1, "status": "archived", "title": "verify HTTP"}, {"id": 2, "status": "done", "title": "verify CLI"}]
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo cli --write archive-cli --expect-json status=archived -- /usr/bin/python3 -m todo rm 2 --data '{DATA_DIR}'
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo cli --write archive-cli --expect-json status=archived -- /usr/bin/python3 -m todo rm 2 --data '{DATA_DIR}'
 exit: 0
 PASS --expect-json status=archived
-evidence: /tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial/020-delete-todo-cli.json
+evidence: /tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial/020-delete-todo-cli.json
 {"id": 2, "status": "archived", "title": "verify CLI"}
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo cli --read-back archive-cli --expect-json 1.status=archived -- /usr/bin/python3 -m todo list --data '{DATA_DIR}'
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo cli --read-back archive-cli --expect-json 1.status=archived -- /usr/bin/python3 -m todo list --data '{DATA_DIR}'
 exit: 0
 PASS --expect-json 1.status=archived
-evidence: /tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial/021-delete-todo-cli.json
+evidence: /tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial/021-delete-todo-cli.json
 [{"id": 1, "status": "archived", "title": "verify HTTP"}, {"id": 2, "status": "archived", "title": "verify CLI"}]
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature list-todos http GET /todos --expect 200 --expect-json 0.status=archived --expect-json 1.status=archived
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature list-todos http GET /todos --expect 200 --expect-json 0.status=archived --expect-json 1.status=archived
 PASS --expect-json 0.status=archived
 PASS --expect-json 1.status=archived
-evidence: /tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial/022-list-todos-http.json
-GET http://127.0.0.1:51413/todos -> 200
+evidence: /tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial/022-list-todos-http.json
+GET http://127.0.0.1:55805/todos -> 200
 [{"id": 1, "status": "archived", "title": "verify HTTP"}, {"id": 2, "status": "archived", "title": "verify CLI"}]
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh evidence --copy-data
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh evidence --copy-data
 {
-  "evidence_dir": "/tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial",
+  "evidence_dir": "/tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial",
   "files": 25,
-  "manifest": "/tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial/manifest.json"
+  "manifest": "/tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial/manifest.json"
 }
 
 [exit 0; expected 0]
@@ -944,11 +944,11 @@ ASSERT PASS: POST evidence records the real request and created task
 ASSERT PASS: HTTP and CLI complete and archive both real records
 ASSERT PASS: stored JSON snapshot matches the API read-back
 ASSERT PASS: every evidence manifest digest matches its actual file
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh cleanup
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh cleanup
 {
   "run_id": "initial",
   "killed": true,
-  "evidence_dir": "/tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/initial",
+  "evidence_dir": "/tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/initial",
   "evidence_files": 26
 }
 
@@ -957,226 +957,226 @@ ASSERT PASS: cleanup stops its recorded server and clears run state
 ASSERT PASS: owned server no longer runs after cleanup
 ASSERT PASS: cleanup leaves an unrelated process alive
 ASSERT PASS: cleanup preserves evidence files
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh cleanup
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh cleanup
 {"cleaned": false, "reason": "no active run"}
 
 [exit 0; expected 0]
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo --require-proof /tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify
-check_verify_skill: PASS (34/34 checks) /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo --require-proof /tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify
+check_verify_skill: PASS (34/34 checks) /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 
 [exit 0; expected 0]
 ASSERT PASS: contract with --require-proof passes once a proof run left drive records
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh launch
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh launch
 {
   "run_id": "assertions",
-  "pid": 228517,
-  "port": 42697,
-  "base_url": "http://127.0.0.1:42697",
-  "data_dir": "/tmp/poteto-examples-q85kbr94/assertion-state/assertions/data",
-  "evidence_dir": "/tmp/poteto-examples-q85kbr94/assertion-evidence/assertions",
-  "log": "/tmp/poteto-examples-q85kbr94/assertion-evidence/assertions/launch.log"
+  "pid": 242518,
+  "port": 35159,
+  "base_url": "http://127.0.0.1:35159",
+  "data_dir": "/tmp/poteto-examples-4dfshnbm/assertion-state/assertions/data",
+  "evidence_dir": "/tmp/poteto-examples-4dfshnbm/assertion-evidence/assertions",
+  "log": "/tmp/poteto-examples-4dfshnbm/assertion-evidence/assertions/launch.log"
 }
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --expect-json '.=[]' http GET /todos
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --expect-json '.=[]' http GET /todos
 PASS --expect-json .=[]
-evidence: /tmp/poteto-examples-q85kbr94/assertion-evidence/assertions/001-adhoc-http.json
-GET http://127.0.0.1:42697/todos -> 200
+evidence: /tmp/poteto-examples-4dfshnbm/assertion-evidence/assertions/001-adhoc-http.json
+GET http://127.0.0.1:35159/todos -> 200
 []
 
 [exit 0; expected 0]
 ASSERT PASS: root JSON path asserts an empty stored list
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive http GET /todos --expect 201 --expect-json '.=[]'
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive http GET /todos --expect 201 --expect-json '.=[]'
 PASS --expect-json .=[]
-evidence: /tmp/poteto-examples-q85kbr94/assertion-evidence/assertions/002-adhoc-http.json
-GET http://127.0.0.1:42697/todos -> 200
+evidence: /tmp/poteto-examples-4dfshnbm/assertion-evidence/assertions/002-adhoc-http.json
+GET http://127.0.0.1:35159/todos -> 200
 []
 
 [exit 1; expected 1]
 ASSERT PASS: matching response JSON cannot override a wrong HTTP status
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive http GET /health --expect-json missing=null
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive http GET /health --expect-json missing=null
 FAIL --expect-json missing=null
-evidence: /tmp/poteto-examples-q85kbr94/assertion-evidence/assertions/003-adhoc-http.json
-GET http://127.0.0.1:42697/health -> 200
+evidence: /tmp/poteto-examples-4dfshnbm/assertion-evidence/assertions/003-adhoc-http.json
+GET http://127.0.0.1:35159/health -> 200
 {"ok": true}
 
 [exit 1; expected 1]
 ASSERT PASS: missing JSON path is distinct from null
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive http GET /health --expect-json ok=1
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive http GET /health --expect-json ok=1
 FAIL --expect-json ok=1
-evidence: /tmp/poteto-examples-q85kbr94/assertion-evidence/assertions/004-adhoc-http.json
-GET http://127.0.0.1:42697/health -> 200
+evidence: /tmp/poteto-examples-4dfshnbm/assertion-evidence/assertions/004-adhoc-http.json
+GET http://127.0.0.1:35159/health -> 200
 {"ok": true}
 
 [exit 1; expected 1]
 ASSERT PASS: JSON assertion distinguishes true from 1
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive http GET /health --expect-json 'ok="true"'
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive http GET /health --expect-json 'ok="true"'
 FAIL --expect-json ok="true"
-evidence: /tmp/poteto-examples-q85kbr94/assertion-evidence/assertions/005-adhoc-http.json
-GET http://127.0.0.1:42697/health -> 200
+evidence: /tmp/poteto-examples-4dfshnbm/assertion-evidence/assertions/005-adhoc-http.json
+GET http://127.0.0.1:35159/health -> 200
 {"ok": true}
 
 [exit 1; expected 1]
 ASSERT PASS: JSON assertion distinguishes true from "true"
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --expect-text '<title>todos</title>' cli --read-only --expect-no-text 'Discard me' -- /usr/bin/python3 -c 'print("<title>todos</title>")' --expect-json application-argument
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --expect-text '<title>todos</title>' cli --read-only --expect-no-text 'Discard me' -- /usr/bin/python3 -c 'print("<title>todos</title>")' --expect-json application-argument
 exit: 0
 PASS --expect-text <title>todos</title>
 PASS --expect-no-text Discard me
-evidence: /tmp/poteto-examples-q85kbr94/assertion-evidence/assertions/006-adhoc-cli.json
+evidence: /tmp/poteto-examples-4dfshnbm/assertion-evidence/assertions/006-adhoc-cli.json
 <title>todos</title>
 
 [exit 0; expected 0]
 ASSERT PASS: CLI -- preserves application flags and arguments verbatim
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive cli --read-only --expect-json value=null --expect-json items.0=true -- /usr/bin/python3 -c 'print('"'"'{"value":null,"items":[true]}'"'"')'
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive cli --read-only --expect-json value=null --expect-json items.0=true -- /usr/bin/python3 -c 'print('"'"'{"value":null,"items":[true]}'"'"')'
 exit: 0
 PASS --expect-json value=null
 PASS --expect-json items.0=true
-evidence: /tmp/poteto-examples-q85kbr94/assertion-evidence/assertions/007-adhoc-cli.json
+evidence: /tmp/poteto-examples-4dfshnbm/assertion-evidence/assertions/007-adhoc-cli.json
 {"value":null,"items":[true]}
 
 [exit 0; expected 0]
 ASSERT PASS: existing null and nested array paths assert successfully on CLI JSON
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive cli --read-only --expect-text missing -- /usr/bin/python3 -c 'print("present")'
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive cli --read-only --expect-text missing -- /usr/bin/python3 -c 'print("present")'
 exit: 0
 FAIL --expect-text missing
-evidence: /tmp/poteto-examples-q85kbr94/assertion-evidence/assertions/008-adhoc-cli.json
+evidence: /tmp/poteto-examples-4dfshnbm/assertion-evidence/assertions/008-adhoc-cli.json
 present
 
 [exit 1; expected 1]
 ASSERT PASS: text mismatch fails even with CLI exit zero
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive cli --read-only --expect-no-text present -- /usr/bin/python3 -c 'print("present")'
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive cli --read-only --expect-no-text present -- /usr/bin/python3 -c 'print("present")'
 exit: 0
 FAIL --expect-no-text present
-evidence: /tmp/poteto-examples-q85kbr94/assertion-evidence/assertions/009-adhoc-cli.json
+evidence: /tmp/poteto-examples-4dfshnbm/assertion-evidence/assertions/009-adhoc-cli.json
 present
 
 [exit 1; expected 1]
 ASSERT PASS: absence assertion fails when stdout contains the forbidden text
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive cli --read-only --expect-json x=1 -- /usr/bin/python3 -c 'print("not JSON")'
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive cli --read-only --expect-json x=1 -- /usr/bin/python3 -c 'print("not JSON")'
 exit: 0
 FAIL --expect-json x=1
-evidence: /tmp/poteto-examples-q85kbr94/assertion-evidence/assertions/010-adhoc-cli.json
+evidence: /tmp/poteto-examples-4dfshnbm/assertion-evidence/assertions/010-adhoc-cli.json
 not JSON
 
 [exit 1; expected 1]
 ASSERT PASS: JSON assertions reject non-JSON stdout
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh cleanup
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh cleanup
 {
   "run_id": "assertions",
   "killed": true,
-  "evidence_dir": "/tmp/poteto-examples-q85kbr94/assertion-evidence/assertions",
+  "evidence_dir": "/tmp/poteto-examples-4dfshnbm/assertion-evidence/assertions",
   "evidence_files": 11
 }
 
 [exit 0; expected 0]
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo --require-proof /tmp/poteto-examples-q85kbr94/proof-records
-FAIL  proof run with evidence: no /tmp/poteto-examples-q85kbr94/proof-records/<run-id>/manifest.json with successful, asserted drive records and mutation read-backs: run the end-to-end proof first
-check_verify_skill: FAIL (33/34 checks) /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo --require-proof /tmp/poteto-examples-4dfshnbm/proof-records
+FAIL  proof run with evidence: no /tmp/poteto-examples-4dfshnbm/proof-records/<run-id>/manifest.json with successful, asserted drive records and mutation read-backs: run the end-to-end proof first
+check_verify_skill: FAIL (33/34 checks) /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 
 [exit 1; expected 1]
 ASSERT PASS: manifest pointing to a nonexistent record cannot count as proof
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo --require-proof /tmp/poteto-examples-q85kbr94/proof-records
-FAIL  proof run with evidence: no /tmp/poteto-examples-q85kbr94/proof-records/<run-id>/manifest.json with successful, asserted drive records and mutation read-backs: run the end-to-end proof first
-check_verify_skill: FAIL (33/34 checks) /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo --require-proof /tmp/poteto-examples-4dfshnbm/proof-records
+FAIL  proof run with evidence: no /tmp/poteto-examples-4dfshnbm/proof-records/<run-id>/manifest.json with successful, asserted drive records and mutation read-backs: run the end-to-end proof first
+check_verify_skill: FAIL (33/34 checks) /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 
 [exit 1; expected 1]
 ASSERT PASS: proof gate rejects assertion-free evidence
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo --require-proof /tmp/poteto-examples-q85kbr94/proof-records
-FAIL  proof run with evidence: no /tmp/poteto-examples-q85kbr94/proof-records/<run-id>/manifest.json with successful, asserted drive records and mutation read-backs: run the end-to-end proof first
-check_verify_skill: FAIL (33/34 checks) /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo --require-proof /tmp/poteto-examples-4dfshnbm/proof-records
+FAIL  proof run with evidence: no /tmp/poteto-examples-4dfshnbm/proof-records/<run-id>/manifest.json with successful, asserted drive records and mutation read-backs: run the end-to-end proof first
+check_verify_skill: FAIL (33/34 checks) /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 
 [exit 1; expected 1]
 ASSERT PASS: proof gate rejects failed assertion evidence
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo --require-proof /tmp/poteto-examples-q85kbr94/proof-records
-FAIL  proof run with evidence: no /tmp/poteto-examples-q85kbr94/proof-records/<run-id>/manifest.json with successful, asserted drive records and mutation read-backs: run the end-to-end proof first
-check_verify_skill: FAIL (33/34 checks) /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo --require-proof /tmp/poteto-examples-4dfshnbm/proof-records
+FAIL  proof run with evidence: no /tmp/poteto-examples-4dfshnbm/proof-records/<run-id>/manifest.json with successful, asserted drive records and mutation read-backs: run the end-to-end proof first
+check_verify_skill: FAIL (33/34 checks) /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 
 [exit 1; expected 1]
 ASSERT PASS: proof gate rejects failed overall evidence
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo --require-proof /tmp/poteto-examples-q85kbr94/proof-records
-FAIL  proof run with evidence: no /tmp/poteto-examples-q85kbr94/proof-records/<run-id>/manifest.json with successful, asserted drive records and mutation read-backs: run the end-to-end proof first
-check_verify_skill: FAIL (33/34 checks) /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo --require-proof /tmp/poteto-examples-4dfshnbm/proof-records
+FAIL  proof run with evidence: no /tmp/poteto-examples-4dfshnbm/proof-records/<run-id>/manifest.json with successful, asserted drive records and mutation read-backs: run the end-to-end proof first
+check_verify_skill: FAIL (33/34 checks) /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 
 [exit 1; expected 1]
 ASSERT PASS: proof gate rejects wrong status with passing assertions
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo --require-proof /tmp/poteto-examples-q85kbr94/proof-records
-FAIL  proof run with evidence: no /tmp/poteto-examples-q85kbr94/proof-records/<run-id>/manifest.json with successful, asserted drive records and mutation read-backs: run the end-to-end proof first
-check_verify_skill: FAIL (33/34 checks) /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo --require-proof /tmp/poteto-examples-4dfshnbm/proof-records
+FAIL  proof run with evidence: no /tmp/poteto-examples-4dfshnbm/proof-records/<run-id>/manifest.json with successful, asserted drive records and mutation read-backs: run the end-to-end proof first
+check_verify_skill: FAIL (33/34 checks) /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 
 [exit 1; expected 1]
 ASSERT PASS: proof gate rejects wrong status with forged overall flags
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo --require-proof /tmp/poteto-examples-q85kbr94/proof-records
-FAIL  proof run with evidence: no /tmp/poteto-examples-q85kbr94/proof-records/<run-id>/manifest.json with successful, asserted drive records and mutation read-backs: run the end-to-end proof first
-check_verify_skill: FAIL (33/34 checks) /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo --require-proof /tmp/poteto-examples-4dfshnbm/proof-records
+FAIL  proof run with evidence: no /tmp/poteto-examples-4dfshnbm/proof-records/<run-id>/manifest.json with successful, asserted drive records and mutation read-backs: run the end-to-end proof first
+check_verify_skill: FAIL (33/34 checks) /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 
 [exit 1; expected 1]
 ASSERT PASS: malformed proof record fails without crashing
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo --require-proof /tmp/poteto-examples-q85kbr94/proof-records
-check_verify_skill: PASS (34/34 checks) /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo --require-proof /tmp/poteto-examples-4dfshnbm/proof-records
+check_verify_skill: PASS (34/34 checks) /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 
 [exit 0; expected 0]
 ASSERT PASS: proof gate accepts actual successful asserted read evidence
 ASSERT PASS: scratch mutant targets the actual persistence boundary
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh launch
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh launch
 {
   "run_id": "lost-write",
-  "pid": 228678,
-  "port": 50617,
-  "base_url": "http://127.0.0.1:50617",
-  "data_dir": "/tmp/poteto-examples-q85kbr94/assertion-state/lost-write/data",
-  "evidence_dir": "/tmp/poteto-examples-q85kbr94/lost-write-evidence/lost-write",
-  "log": "/tmp/poteto-examples-q85kbr94/lost-write-evidence/lost-write/launch.log"
+  "pid": 242685,
+  "port": 53363,
+  "base_url": "http://127.0.0.1:53363",
+  "data_dir": "/tmp/poteto-examples-4dfshnbm/assertion-state/lost-write/data",
+  "evidence_dir": "/tmp/poteto-examples-4dfshnbm/lost-write-evidence/lost-write",
+  "log": "/tmp/poteto-examples-4dfshnbm/lost-write-evidence/lost-write/launch.log"
 }
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature create-todo --write lost http POST /todos '{"title":"verify HTTP"}' --expect 201 --expect-json 'title=verify HTTP'
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature create-todo --write lost http POST /todos '{"title":"verify HTTP"}' --expect 201 --expect-json 'title=verify HTTP'
 PASS --expect-json title=verify HTTP
-evidence: /tmp/poteto-examples-q85kbr94/lost-write-evidence/lost-write/001-create-todo-http.json
-POST http://127.0.0.1:50617/todos -> 201
+evidence: /tmp/poteto-examples-4dfshnbm/lost-write-evidence/lost-write/001-create-todo-http.json
+POST http://127.0.0.1:53363/todos -> 201
 {"id": 1, "title": "verify HTTP", "status": "open"}
 
 [exit 0; expected 0]
 ASSERT PASS: skipped-replace mutant still returns 201 with the expected response title
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature create-todo --read-back lost http GET /todos --expect-json '0.title=verify HTTP'
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh drive --feature create-todo --read-back lost http GET /todos --expect-json '0.title=verify HTTP'
 FAIL --expect-json 0.title=verify HTTP
-evidence: /tmp/poteto-examples-q85kbr94/lost-write-evidence/lost-write/002-create-todo-http.json
-GET http://127.0.0.1:50617/todos -> 200
+evidence: /tmp/poteto-examples-4dfshnbm/lost-write-evidence/lost-write/002-create-todo-http.json
+GET http://127.0.0.1:53363/todos -> 200
 []
 
 [exit 1; expected 1]
 ASSERT PASS: asserted GET second view catches the skipped-replace persistence bug
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh evidence --copy-data
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh evidence --copy-data
 {
-  "evidence_dir": "/tmp/poteto-examples-q85kbr94/lost-write-evidence/lost-write",
+  "evidence_dir": "/tmp/poteto-examples-4dfshnbm/lost-write-evidence/lost-write",
   "files": 4,
-  "manifest": "/tmp/poteto-examples-q85kbr94/lost-write-evidence/lost-write/manifest.json"
+  "manifest": "/tmp/poteto-examples-4dfshnbm/lost-write-evidence/lost-write/manifest.json"
 }
 
 [exit 0; expected 0]
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo --require-proof /tmp/poteto-examples-q85kbr94/lost-write-evidence
-FAIL  proof run with evidence: no /tmp/poteto-examples-q85kbr94/lost-write-evidence/<run-id>/manifest.json with successful, asserted drive records and mutation read-backs: run the end-to-end proof first
-check_verify_skill: FAIL (33/34 checks) /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo --require-proof /tmp/poteto-examples-4dfshnbm/lost-write-evidence
+FAIL  proof run with evidence: no /tmp/poteto-examples-4dfshnbm/lost-write-evidence/<run-id>/manifest.json with successful, asserted drive records and mutation read-backs: run the end-to-end proof first
+check_verify_skill: FAIL (33/34 checks) /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 
 [exit 1; expected 1]
 ASSERT PASS: a successful write response and failed stored read-back cannot count as proof
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh cleanup
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh cleanup
 {
   "run_id": "lost-write",
   "killed": true,
-  "evidence_dir": "/tmp/poteto-examples-q85kbr94/lost-write-evidence/lost-write",
+  "evidence_dir": "/tmp/poteto-examples-4dfshnbm/lost-write-evidence/lost-write",
   "evidence_files": 5
 }
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh prove --feature list-todos http GET /todos --expect-json '.=[]'
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh prove --feature list-todos http GET /todos --expect-json '.=[]'
 {
   "run_id": "prove-read",
-  "pid": 228755,
-  "port": 60593,
-  "base_url": "http://127.0.0.1:60593",
-  "data_dir": "/tmp/poteto-examples-q85kbr94/assertion-state/prove-read/data",
-  "evidence_dir": "/tmp/poteto-examples-q85kbr94/prove-evidence/prove-read",
-  "log": "/tmp/poteto-examples-q85kbr94/prove-evidence/prove-read/launch.log"
+  "pid": 242762,
+  "port": 42971,
+  "base_url": "http://127.0.0.1:42971",
+  "data_dir": "/tmp/poteto-examples-4dfshnbm/assertion-state/prove-read/data",
+  "evidence_dir": "/tmp/poteto-examples-4dfshnbm/prove-evidence/prove-read",
+  "log": "/tmp/poteto-examples-4dfshnbm/prove-evidence/prove-read/launch.log"
 }
 {
   "ok": true,
@@ -1185,12 +1185,12 @@ $ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/cont
     {
       "name": "process",
       "ok": true,
-      "detail": "pid 228755 alive, started by this run"
+      "detail": "pid 242762 alive, started by this run"
     },
     {
       "name": "port",
       "ok": true,
-      "detail": "60593 accepts connections"
+      "detail": "42971 accepts connections"
     },
     {
       "name": "GET /health",
@@ -1205,42 +1205,42 @@ $ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/cont
     {
       "name": "data dir",
       "ok": true,
-      "detail": "/tmp/poteto-examples-q85kbr94/assertion-state/prove-read/data"
+      "detail": "/tmp/poteto-examples-4dfshnbm/assertion-state/prove-read/data"
     },
     {
       "name": "evidence dir",
       "ok": true,
-      "detail": "/tmp/poteto-examples-q85kbr94/prove-evidence/prove-read"
+      "detail": "/tmp/poteto-examples-4dfshnbm/prove-evidence/prove-read"
     }
   ]
 }
 PASS --expect-json .=[]
-evidence: /tmp/poteto-examples-q85kbr94/prove-evidence/prove-read/001-list-todos-http.json
-GET http://127.0.0.1:60593/todos -> 200
+evidence: /tmp/poteto-examples-4dfshnbm/prove-evidence/prove-read/001-list-todos-http.json
+GET http://127.0.0.1:42971/todos -> 200
 []
 {
   "run_id": "prove-read",
   "killed": true,
-  "evidence_dir": "/tmp/poteto-examples-q85kbr94/prove-evidence/prove-read",
+  "evidence_dir": "/tmp/poteto-examples-4dfshnbm/prove-evidence/prove-read",
   "evidence_files": 4
 }
-prove: drive exit 0; evidence kept in /tmp/poteto-examples-q85kbr94/prove-evidence/prove-read (1 drive record(s))
+prove: drive exit 0; evidence kept in /tmp/poteto-examples-4dfshnbm/prove-evidence/prove-read (1 drive record(s))
 
 [exit 0; expected 0]
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo --require-proof /tmp/poteto-examples-q85kbr94/prove-evidence
-check_verify_skill: PASS (34/34 checks) /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo --require-proof /tmp/poteto-examples-4dfshnbm/prove-evidence
+check_verify_skill: PASS (34/34 checks) /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo
 
 [exit 0; expected 0]
 ASSERT PASS: read-only prove shortcut keeps passing asserted evidence through cleanup
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh prove http GET /todos
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh prove http GET /todos
 {
   "run_id": "prove-unasserted",
-  "pid": 228851,
-  "port": 36483,
-  "base_url": "http://127.0.0.1:36483",
-  "data_dir": "/tmp/poteto-examples-q85kbr94/assertion-state/prove-unasserted/data",
-  "evidence_dir": "/tmp/poteto-examples-q85kbr94/prove-evidence/prove-unasserted",
-  "log": "/tmp/poteto-examples-q85kbr94/prove-evidence/prove-unasserted/launch.log"
+  "pid": 242856,
+  "port": 48381,
+  "base_url": "http://127.0.0.1:48381",
+  "data_dir": "/tmp/poteto-examples-4dfshnbm/assertion-state/prove-unasserted/data",
+  "evidence_dir": "/tmp/poteto-examples-4dfshnbm/prove-evidence/prove-unasserted",
+  "log": "/tmp/poteto-examples-4dfshnbm/prove-evidence/prove-unasserted/launch.log"
 }
 {
   "ok": true,
@@ -1249,12 +1249,12 @@ $ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/cont
     {
       "name": "process",
       "ok": true,
-      "detail": "pid 228851 alive, started by this run"
+      "detail": "pid 242856 alive, started by this run"
     },
     {
       "name": "port",
       "ok": true,
-      "detail": "36483 accepts connections"
+      "detail": "48381 accepts connections"
     },
     {
       "name": "GET /health",
@@ -1269,12 +1269,12 @@ $ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/cont
     {
       "name": "data dir",
       "ok": true,
-      "detail": "/tmp/poteto-examples-q85kbr94/assertion-state/prove-unasserted/data"
+      "detail": "/tmp/poteto-examples-4dfshnbm/assertion-state/prove-unasserted/data"
     },
     {
       "name": "evidence dir",
       "ok": true,
-      "detail": "/tmp/poteto-examples-q85kbr94/prove-evidence/prove-unasserted"
+      "detail": "/tmp/poteto-examples-4dfshnbm/prove-evidence/prove-unasserted"
     }
   ]
 }
@@ -1282,22 +1282,22 @@ control.sh drive: prove needs --expect-json, --expect-text, or --expect-no-text
 {
   "run_id": "prove-unasserted",
   "killed": true,
-  "evidence_dir": "/tmp/poteto-examples-q85kbr94/prove-evidence/prove-unasserted",
+  "evidence_dir": "/tmp/poteto-examples-4dfshnbm/prove-evidence/prove-unasserted",
   "evidence_files": 3
 }
-control.sh: prove: evidence did not survive cleanup in /tmp/poteto-examples-q85kbr94/prove-evidence/prove-unasserted
+control.sh: prove: evidence did not survive cleanup in /tmp/poteto-examples-4dfshnbm/prove-evidence/prove-unasserted
 
 [exit 1; expected 1]
 ASSERT PASS: prove rejects an unasserted read and still cleans up
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh prove --write mutation http POST /todos '{"title":"x"}' --expect 201 --expect-json id=1
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh prove --write mutation http POST /todos '{"title":"x"}' --expect 201 --expect-json id=1
 {
   "run_id": "prove-write",
-  "pid": 228939,
-  "port": 57835,
-  "base_url": "http://127.0.0.1:57835",
-  "data_dir": "/tmp/poteto-examples-q85kbr94/assertion-state/prove-write/data",
-  "evidence_dir": "/tmp/poteto-examples-q85kbr94/prove-evidence/prove-write",
-  "log": "/tmp/poteto-examples-q85kbr94/prove-evidence/prove-write/launch.log"
+  "pid": 242947,
+  "port": 50545,
+  "base_url": "http://127.0.0.1:50545",
+  "data_dir": "/tmp/poteto-examples-4dfshnbm/assertion-state/prove-write/data",
+  "evidence_dir": "/tmp/poteto-examples-4dfshnbm/prove-evidence/prove-write",
+  "log": "/tmp/poteto-examples-4dfshnbm/prove-evidence/prove-write/launch.log"
 }
 {
   "ok": true,
@@ -1306,12 +1306,12 @@ $ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/cont
     {
       "name": "process",
       "ok": true,
-      "detail": "pid 228939 alive, started by this run"
+      "detail": "pid 242947 alive, started by this run"
     },
     {
       "name": "port",
       "ok": true,
-      "detail": "57835 accepts connections"
+      "detail": "50545 accepts connections"
     },
     {
       "name": "GET /health",
@@ -1326,12 +1326,12 @@ $ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/cont
     {
       "name": "data dir",
       "ok": true,
-      "detail": "/tmp/poteto-examples-q85kbr94/assertion-state/prove-write/data"
+      "detail": "/tmp/poteto-examples-4dfshnbm/assertion-state/prove-write/data"
     },
     {
       "name": "evidence dir",
       "ok": true,
-      "detail": "/tmp/poteto-examples-q85kbr94/prove-evidence/prove-write"
+      "detail": "/tmp/poteto-examples-4dfshnbm/prove-evidence/prove-write"
     }
   ]
 }
@@ -1339,51 +1339,51 @@ control.sh drive: prove is a read-only shortcut; run launch, doctor, write, asse
 {
   "run_id": "prove-write",
   "killed": true,
-  "evidence_dir": "/tmp/poteto-examples-q85kbr94/prove-evidence/prove-write",
+  "evidence_dir": "/tmp/poteto-examples-4dfshnbm/prove-evidence/prove-write",
   "evidence_files": 3
 }
-control.sh: prove: evidence did not survive cleanup in /tmp/poteto-examples-q85kbr94/prove-evidence/prove-write
+control.sh: prove: evidence did not survive cleanup in /tmp/poteto-examples-4dfshnbm/prove-evidence/prove-write
 
 [exit 1; expected 1]
 ASSERT PASS: prove rejects mutation-only shortcuts and still cleans up
 ASSERT PASS: wrapper variant reuses the generated launch command
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-wrapped/scripts/control.sh launch
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-wrapped/scripts/control.sh launch
 {
-  "run_id": "20261021T024916Z-229015",
-  "pid": 229024,
-  "port": 51241,
-  "base_url": "http://127.0.0.1:51241",
-  "data_dir": "/tmp/poteto-examples-q85kbr94/verify-state-wrapped/20261021T024916Z-229015/data",
-  "evidence_dir": "/tmp/poteto-examples-q85kbr94/evidence-wrapped/20261021T024916Z-229015",
-  "log": "/tmp/poteto-examples-q85kbr94/evidence-wrapped/20261021T024916Z-229015/launch.log"
+  "run_id": "20261021T031014Z-243020",
+  "pid": 243029,
+  "port": 40143,
+  "base_url": "http://127.0.0.1:40143",
+  "data_dir": "/tmp/poteto-examples-4dfshnbm/verify-state-wrapped/20261021T031014Z-243020/data",
+  "evidence_dir": "/tmp/poteto-examples-4dfshnbm/evidence-wrapped/20261021T031014Z-243020",
+  "log": "/tmp/poteto-examples-4dfshnbm/evidence-wrapped/20261021T031014Z-243020/launch.log"
 }
 
 [exit 0; expected 0]
-$ ps -o pid= --ppid 229024
- 229026
+$ ps -o pid= --ppid 243029
+ 243031
 
 [exit 0; expected 0]
 ASSERT PASS: wrapper launch runs the server as a child of the recorded PID
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-wrapped/scripts/control.sh cleanup
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-wrapped/scripts/control.sh cleanup
 {
-  "run_id": "20261021T024916Z-229015",
+  "run_id": "20261021T031014Z-243020",
   "killed": true,
-  "evidence_dir": "/tmp/poteto-examples-q85kbr94/evidence-wrapped/20261021T024916Z-229015",
+  "evidence_dir": "/tmp/poteto-examples-4dfshnbm/evidence-wrapped/20261021T031014Z-243020",
   "evidence_files": 1
 }
 
 [exit 0; expected 0]
 ASSERT PASS: cleanup stops the recorded wrapper
 ASSERT PASS: cleanup also stops the server child of a wrapper launch command
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-wrapped/scripts/control.sh cleanup
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-wrapped/scripts/control.sh cleanup
 {"cleaned": false, "reason": "no active run"}
 
 [exit 0; expected 0]
 ASSERT PASS: scaffold writes FEATURE_MAP.md whose links resolve
 ASSERT PASS: generated helper paths do not assume ~/.claude
-$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/scan_repo.py /tmp/poteto-examples-q85kbr94/rust-cli --json
+$ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/scan_repo.py /tmp/poteto-examples-4dfshnbm/rust-cli --json
 {
-  "repo": "/tmp/poteto-examples-q85kbr94/rust-cli",
+  "repo": "/tmp/poteto-examples-4dfshnbm/rust-cli",
   "languages": [
     {
       "name": "rust",
@@ -1566,32 +1566,32 @@ $ /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/sca
 ASSERT PASS: scan detects clap Subcommand variants in a Rust CLI
 ASSERT PASS: Rust CLI is invoked through cargo run with its package and bin
 ASSERT PASS: resource-less CLI features are named after the command
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh launch
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh launch
 {
   "run_id": "symlink",
-  "pid": 229068,
-  "port": 52593,
-  "base_url": "http://127.0.0.1:52593",
-  "data_dir": "/tmp/poteto-examples-q85kbr94/verify-state-symlink/symlink/data",
-  "evidence_dir": "/tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/symlink",
-  "log": "/tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/symlink/launch.log"
+  "pid": 243073,
+  "port": 47335,
+  "base_url": "http://127.0.0.1:47335",
+  "data_dir": "/tmp/poteto-examples-4dfshnbm/verify-state-symlink/symlink/data",
+  "evidence_dir": "/tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/symlink",
+  "log": "/tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/symlink/launch.log"
 }
 
 [exit 0; expected 0]
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh evidence --copy-data
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh evidence --copy-data
 {
-  "evidence_dir": "/tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/symlink",
+  "evidence_dir": "/tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/symlink",
   "files": 3,
-  "manifest": "/tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/symlink/manifest.json"
+  "manifest": "/tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/symlink/manifest.json"
 }
 
 [exit 0; expected 0]
 ASSERT PASS: evidence --copy-data records a dangling symlink instead of crashing
-$ /tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo/scripts/control.sh cleanup
+$ /tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo/scripts/control.sh cleanup
 {
   "run_id": "symlink",
   "killed": true,
-  "evidence_dir": "/tmp/poteto-examples-q85kbr94/todo-app/artifacts/verify/symlink",
+  "evidence_dir": "/tmp/poteto-examples-4dfshnbm/todo-app/artifacts/verify/symlink",
   "evidence_files": 3
 }
 

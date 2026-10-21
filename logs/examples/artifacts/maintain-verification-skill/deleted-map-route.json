@@ -1,6 +1,6 @@
 {
-  "skill_dir": "/tmp/poteto-examples-q85kbr94/todo-app/.claude/skills/verify-todo",
-  "repo": "/tmp/poteto-examples-q85kbr94/todo-app",
+  "skill_dir": "/tmp/poteto-examples-4dfshnbm/todo-app/.claude/skills/verify-todo",
+  "repo": "/tmp/poteto-examples-4dfshnbm/todo-app",
   "index": {
     "missing": [],
     "dead": [],

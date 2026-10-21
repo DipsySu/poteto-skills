@@ -1,23 +1,86 @@
-scratch: /tmp/poteto-examples-q85kbr94
-$ git init -q --initial-branch=main --template= /tmp/poteto-examples-q85kbr94/cache/cursor-plugins
+scratch: /tmp/poteto-examples-4dfshnbm
+$ /home/box/developer/poteto-skills/scripts/check_docs.py --repo /tmp/poteto-examples-4dfshnbm/docs
+PASS docs: helper paths, commands, links, counts and source citations
 
 [exit 0; expected 0]
-$ git -C /tmp/poteto-examples-q85kbr94/cache/cursor-plugins add -A
+ASSERT PASS: clean copied docs pass the standalone documentation checker
+ASSERT PASS: reintroducing README's retired --since recommendation fails its explicit policy
+ASSERT PASS: reintroducing README's retired --since recommendation fails its explicit policy: diagnostics include file and line
+ASSERT PASS: a renamed helper flag fails against its real --help
+ASSERT PASS: a renamed helper flag fails against its real --help: diagnostics include file and line
+ASSERT PASS: a dead heading link fails
+ASSERT PASS: a dead heading link fails: diagnostics include file and line
+ASSERT PASS: inline links with titles still validate their destination
+ASSERT PASS: inline links with titles still validate their destination: diagnostics include file and line
+ASSERT PASS: angle destinations with titles still validate their destination
+ASSERT PASS: angle destinations with titles still validate their destination: diagnostics include file and line
+ASSERT PASS: a stale whole-set skill count fails against the tree
+ASSERT PASS: a stale whole-set skill count fails against the tree: diagnostics include file and line
+ASSERT PASS: an explicit source range must match the entire NOTES inventory
+ASSERT PASS: an explicit source range must match the entire NOTES inventory: diagnostics include file and line
+ASSERT PASS: a valid source alongside an unknown source does not hide the unknown citation
+ASSERT PASS: a valid source alongside an unknown source does not hide the unknown citation: diagnostics include file and line
+ASSERT PASS: mapping citations are validated too
+ASSERT PASS: mapping citations are validated too: diagnostics include file and line
+ASSERT PASS: every skill still needs at least one source citation
+ASSERT PASS: every skill still needs at least one source citation: diagnostics include file and line
+ASSERT PASS: a supported README-only flag absent from skill examples remains allowed
+ASSERT PASS: a typo in the explicit recommendation policy fails too
+ASSERT PASS: a typo in the explicit recommendation policy fails too: diagnostics include file and line
+ASSERT PASS: flags after -- are outside the helper's option contract
+ASSERT PASS: shell separators keep flags associated with their own command
+ASSERT PASS: an option's literal value is not mistaken for a helper flag
+ASSERT PASS: literal command variables are expanded without executing examples
+ASSERT PASS: literal command variables are expanded without executing examples: diagnostics include file and line
+ASSERT PASS: subcommand flags are checked against check help, not add help
+ASSERT PASS: subcommand flags are checked against check help, not add help: diagnostics include file and line
+ASSERT PASS: bare inline helper commands resolve within their owning skill
+ASSERT PASS: bare inline helper commands resolve within their owning skill: diagnostics include file and line
+ASSERT PASS: helper paths expanded from literal directory variables are validated
+ASSERT PASS: helper paths expanded from literal directory variables are validated: diagnostics include file and line
+ASSERT PASS: $SKILL_DIR paths resolve to the owning skill
+ASSERT PASS: $SKILL_DIR paths resolve to the owning skill: diagnostics include file and line
+ASSERT PASS: $S/skill paths resolve to the named skill
+ASSERT PASS: $S/skill paths resolve to the named skill: diagnostics include file and line
+ASSERT PASS: sibling skill paths resolve from the current skill
+ASSERT PASS: sibling skill paths resolve from the current skill: diagnostics include file and line
+ASSERT PASS: explicit skill/scripts paths resolve to that skill
+ASSERT PASS: explicit skill/scripts paths resolve to that skill: diagnostics include file and line
+ASSERT PASS: a helper path naming a nonexistent skill fails
+ASSERT PASS: a helper path naming a nonexistent skill fails: diagnostics include file and line
+ASSERT PASS: bare scripts paths resolve at the collection root
+ASSERT PASS: bare scripts paths resolve at the collection root: diagnostics include file and line
+ASSERT PASS: valid sibling helpers are recognized
+ASSERT PASS: generated harnesses, placeholders and vendored commands are outside collection contracts
+ASSERT PASS: Unicode and duplicate heading anchors, code headings, titled/angle links and references resolve
+ASSERT PASS: undefined explicit reference links fail
+ASSERT PASS: undefined explicit reference links fail: diagnostics include file and line
+ASSERT PASS: remote URLs containing scripts paths are not local file references
+ASSERT PASS: documentation command substitutions are never executed
+ASSERT PASS: shell snippets have no side effects
+ASSERT PASS: adding S24 to NOTES allows a skill citing only S24 without editing checker code
+ASSERT PASS: adding a source also invalidates any stale explicit whole-set range
+ASSERT PASS: adding a source also invalidates any stale explicit whole-set range: diagnostics include file and line
+ASSERT PASS: all scratch mutations restore to clean documentation
+$ git init -q --initial-branch=main --template= /tmp/poteto-examples-4dfshnbm/cache/cursor-plugins
 
 [exit 0; expected 0]
-$ git -C /tmp/poteto-examples-q85kbr94/cache/cursor-plugins -c user.name=example-dev -c user.email=dev@example.local -c commit.gpgsign=false commit -qm 'offline upstream fixture'
+$ git -C /tmp/poteto-examples-4dfshnbm/cache/cursor-plugins add -A
+
+[exit 0; expected 0]
+$ git -C /tmp/poteto-examples-4dfshnbm/cache/cursor-plugins -c user.name=example-dev -c user.email=dev@example.local -c commit.gpgsign=false commit -qm 'offline upstream fixture'
 
 [exit 0; expected 0]
 $ /home/box/developer/poteto-skills/skills/curator/scripts/upstream_diff.sh --repo /home/box/developer/poteto-skills --offline --json
 {
   "upstream": {
-    "url": "/tmp/poteto-examples-q85kbr94/cache/cursor-plugins",
+    "url": "/tmp/poteto-examples-4dfshnbm/cache/cursor-plugins",
     "branch": "main",
-    "head": "89a2296d2cd45d985aa1bd83a5f0e8929801044a",
-    "head_date": "2026-10-21T02:49:23Z",
+    "head": "1915047511fd266d83538bcf7036538193af5596",
+    "head_date": "2026-10-21T03:10:24Z",
     "version": null,
     "fetch": "skipped",
-    "clone": "/tmp/poteto-examples-q85kbr94/cache/cursor-plugins"
+    "clone": "/tmp/poteto-examples-4dfshnbm/cache/cursor-plugins"
   },
   "snapshot": {
     "dir": "/home/box/developer/poteto-skills/research/upstream",
@@ -51,26 +114,26 @@ $ /home/box/developer/poteto-skills/skills/curator/scripts/upstream_diff.sh --re
 ASSERT PASS: offline diff detects a changed upstream skill against the snapshot
 ASSERT PASS: first offline diff reports a new skill absent from the snapshot
 ASSERT PASS: fake upstream maps every snapshotted source path correctly
-$ git -C /tmp/poteto-examples-q85kbr94/cache/cursor-plugins add -A
+$ git -C /tmp/poteto-examples-4dfshnbm/cache/cursor-plugins add -A
 
 [exit 0; expected 0]
-$ git -C /tmp/poteto-examples-q85kbr94/cache/cursor-plugins -c user.name=example-dev -c user.email=dev@example.local -c commit.gpgsign=false commit -qm 'add a skill between curator runs'
+$ git -C /tmp/poteto-examples-4dfshnbm/cache/cursor-plugins -c user.name=example-dev -c user.email=dev@example.local -c commit.gpgsign=false commit -qm 'add a skill between curator runs'
 
 [exit 0; expected 0]
-$ /home/box/developer/poteto-skills/skills/curator/scripts/curate.sh --propose --offline --repo /tmp/poteto-examples-q85kbr94/collection --date 2026-10-19
-[curate 02:49:23] mode=propose offline=1 no_fetch=0 repo=/tmp/poteto-examples-q85kbr94/collection cache=/tmp/poteto-examples-q85kbr94/cache
-[curate 02:49:23] upstream: 2 change(s), 1 changed file(s), head 411eab731dad
-[curate 02:49:23] wrote /tmp/poteto-examples-q85kbr94/collection/proposals/2026-10-19.md (offline, from the upstream diff)
-check_proposals: PASS: 2 proposal(s), 0 above prose, 2 prose/review (/tmp/poteto-examples-q85kbr94/collection/proposals/2026-10-19.md)
-[curate 02:49:23] done
+$ /home/box/developer/poteto-skills/skills/curator/scripts/curate.sh --propose --offline --repo /tmp/poteto-examples-4dfshnbm/collection --date 2026-10-19
+[curate 03:10:24] mode=propose offline=1 no_fetch=0 repo=/tmp/poteto-examples-4dfshnbm/collection cache=/tmp/poteto-examples-4dfshnbm/cache
+[curate 03:10:24] upstream: 2 change(s), 1 changed file(s), head 61b97ed05845
+[curate 03:10:24] wrote /tmp/poteto-examples-4dfshnbm/collection/proposals/2026-10-19.md (offline, from the upstream diff)
+check_proposals: PASS: 2 proposal(s), 0 above prose, 2 prose/review (/tmp/poteto-examples-4dfshnbm/collection/proposals/2026-10-19.md)
+[curate 03:10:24] done
 
 [exit 0; expected 0]
 ASSERT PASS: offline curate writes a proposal and execution log
 ASSERT PASS: proposal includes changed and new upstream evidence with source URLs
 ASSERT PASS: a later run proposes only skills new since the previous run, not every untracked skill again
-$ /home/box/developer/poteto-skills/skills/curator/scripts/check_proposals.py /tmp/poteto-examples-q85kbr94/collection/proposals/2026-10-19.md --skills-dir /tmp/poteto-examples-q85kbr94/collection/skills --json
+$ /home/box/developer/poteto-skills/skills/curator/scripts/check_proposals.py /tmp/poteto-examples-4dfshnbm/collection/proposals/2026-10-19.md --skills-dir /tmp/poteto-examples-4dfshnbm/collection/skills --json
 {
-  "file": "/tmp/poteto-examples-q85kbr94/collection/proposals/2026-10-19.md",
+  "file": "/tmp/poteto-examples-4dfshnbm/collection/proposals/2026-10-19.md",
   "items": 2,
   "deterministic": 0,
   "prose_or_review": 2,
@@ -100,10 +163,10 @@ $ /home/box/developer/poteto-skills/skills/curator/scripts/check_proposals.py /t
 }
 
 [exit 0; expected 0]
-$ /home/box/developer/poteto-skills/skills/curator/scripts/curate.sh --propose --offline --repo /tmp/poteto-examples-q85kbr94/collection --date 2026-10-20
-[curate 02:49:23] mode=propose offline=1 no_fetch=0 repo=/tmp/poteto-examples-q85kbr94/collection cache=/tmp/poteto-examples-q85kbr94/empty-cache
-upstream_diff: no cached clone at /tmp/poteto-examples-q85kbr94/empty-cache/cursor-plugins and nothing fetched; run once with network access
-[curate 02:49:23] ERROR: upstream_diff failed (exit 3); no proposal can be grounded in this run
+$ /home/box/developer/poteto-skills/skills/curator/scripts/curate.sh --propose --offline --repo /tmp/poteto-examples-4dfshnbm/collection --date 2026-10-20
+[curate 03:10:24] mode=propose offline=1 no_fetch=0 repo=/tmp/poteto-examples-4dfshnbm/collection cache=/tmp/poteto-examples-4dfshnbm/empty-cache
+upstream_diff: no cached clone at /tmp/poteto-examples-4dfshnbm/empty-cache/cursor-plugins and nothing fetched; run once with network access
+[curate 03:10:24] ERROR: upstream_diff failed (exit 3); no proposal can be grounded in this run
 
 [exit 1; expected 1]
 ASSERT PASS: failed upstream diff cannot produce a false clean proposal
@@ -116,7 +179,7 @@ ASSERT PASS: unstructured proposal text cannot pass as an empty proposal list
 ASSERT PASS: HTTP 401 fails the fetched-source acceptance gate (stubbed transport, no network)
 ASSERT PASS: HTTP 403 fails the fetched-source acceptance gate (stubbed transport, no network)
 ASSERT PASS: HTTP 429 fails the fetched-source acceptance gate (stubbed transport, no network)
-$ git -C /tmp/poteto-examples-q85kbr94/cache/cursor-plugins remote
+$ git -C /tmp/poteto-examples-4dfshnbm/cache/cursor-plugins remote
 
 [exit 0; expected 0]
 ASSERT PASS: local upstream fixture has no git remotes

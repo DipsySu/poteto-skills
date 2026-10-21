@@ -1,0 +1,31 @@
+{
+  "feature": "delete-todo",
+  "kind": "cli",
+  "write": "reject-cli",
+  "read_back": [],
+  "read_only": false,
+  "started": "2026-10-21T03:10:09Z",
+  "argv": [
+    "/usr/bin/python3",
+    "-m",
+    "todo",
+    "rm",
+    "2",
+    "--data",
+    "/tmp/poteto-examples-4dfshnbm/verify-state-initial/initial/data"
+  ],
+  "exit_code": 1,
+  "stdout": "",
+  "stderr": "todo: cannot move open to archived\n",
+  "expect_exit": 1,
+  "assertions": [
+    {
+      "expr": "--expect-no-text archived",
+      "ok": true,
+      "got": ""
+    }
+  ],
+  "execution_ok": true,
+  "ok": true,
+  "elapsed_ms": 59.2
+}

@@ -1,0 +1,30 @@
+{
+  "feature": "list-todos",
+  "kind": "cli",
+  "write": null,
+  "read_back": [],
+  "read_only": true,
+  "started": "2026-10-21T03:10:09Z",
+  "argv": [
+    "/usr/bin/python3",
+    "-m",
+    "todo",
+    "list",
+    "--data",
+    "/tmp/poteto-examples-4dfshnbm/verify-state-initial/initial/data"
+  ],
+  "exit_code": 0,
+  "stdout": "[{\"id\": 1, \"status\": \"open\", \"title\": \"verify HTTP\"}, {\"id\": 2, \"status\": \"open\", \"title\": \"verify CLI\"}]\n",
+  "stderr": "",
+  "expect_exit": 0,
+  "assertions": [
+    {
+      "expr": "--expect-json 1.id=2",
+      "ok": true,
+      "got": 2
+    }
+  ],
+  "execution_ok": true,
+  "ok": true,
+  "elapsed_ms": 74.5
+}

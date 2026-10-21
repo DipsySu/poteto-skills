@@ -23,6 +23,7 @@ python3 $SKILL_DIR/scripts/mine_mistakes.py . --feedback review-comments.json ch
 - `REPEAT` = a rule already exists and nothing that runs enforces it. Those go first, fixed higher up, in the same change.
 - The clustering is a start, not a verdict. Read the evidence; split or merge classes and say why.
 - Mine the whole history first. A `--since` window narrows a long-lived class to the part that fits, and can drop the top class entirely; use it only to compare against an earlier pass.
+<!-- check-docs: readme-avoid $SKILL_DIR/scripts/mine_mistakes.py --since -->
 - Clustering is lexical. The same mistake under different words (for example `let-chain` versus `1.85 compatibility`) lands in separate classes, so merge those by reading the diffs.
 - When a regex cannot express the invariant (geometry, pixels, cross-file ordering), the lint level is out. Write the test that reads the real source, and replay it on the offending commit the same way `patlint --rev` would.
 

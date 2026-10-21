@@ -6,6 +6,10 @@ All notable changes to this project are documented in this file. The format is b
 
 ### Fixed
 
+- Proposal 5: `scripts/check_docs.py`, wired through `verify.docs()`, checks first-party helper paths and command/subcommand flags, local Markdown links and Unicode/duplicate heading anchors, whole-set counts, and every source citation against NOTES.md. Every skill still needs a citation; new source rows require no checker edit. Updated README's whole-history example and removed its hardcoded source range.
+- Review conflict: chose explicit skill-declared README flag policies over banning every flag absent from a skill example. This catches the retired `--since` default while allowing other supported README-only flags. Bare `scripts/` means the collection root; generated harness references now name `verify-<app>/scripts/control.sh`. Generated/placeholder and vendored paths are excluded; cached help calls are bounded and documentation commands are never executed.
+- Curator run_examples assertions cover clean docs and regressions in flags, recommendation policy, path ownership, links/titles/anchors, counts, and citation inventory/attribution, including adding S24.
+
 - Proposal 2: generated drives support JSON dot-path/root, text, absence, and expected CLI exit assertions. Evidence records each assertion and overall execution success; the proof gate opens actual records and rejects missing, failed, or assertion-free evidence.
 - HTTP and CLI write recipes require explicit `--write KEY` / asserted `--read-back KEY` pairs; HTTP reads must address the written resource. CLI reads declare their semantics. This extends the proposal's HTTP-only gate to match its “every write” rule. For the proof shortcut, chose the simpler, safer read-only scope with a documented multi-command mutation sequence rather than adding another recipe executor.
 - Updated CLI drift parsing, placeholder scanning (literal assertion payloads may contain HTML), scaffold guidance, all four fixtures, the worked feature example, and live/example regressions. Older harnesses receive a regenerate-control.sh hint.

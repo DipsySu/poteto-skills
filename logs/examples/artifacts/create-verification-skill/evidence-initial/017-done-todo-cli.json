@@ -1,0 +1,32 @@
+{
+  "feature": "done-todo",
+  "kind": "cli",
+  "write": null,
+  "read_back": [
+    "done-cli"
+  ],
+  "read_only": true,
+  "started": "2026-10-21T03:10:10Z",
+  "argv": [
+    "/usr/bin/python3",
+    "-m",
+    "todo",
+    "list",
+    "--data",
+    "/tmp/poteto-examples-4dfshnbm/verify-state-initial/initial/data"
+  ],
+  "exit_code": 0,
+  "stdout": "[{\"id\": 1, \"status\": \"done\", \"title\": \"verify HTTP\"}, {\"id\": 2, \"status\": \"done\", \"title\": \"verify CLI\"}]\n",
+  "stderr": "",
+  "expect_exit": 0,
+  "assertions": [
+    {
+      "expr": "--expect-json 1.status=done",
+      "ok": true,
+      "got": "done"
+    }
+  ],
+  "execution_ok": true,
+  "ok": true,
+  "elapsed_ms": 56.8
+}
