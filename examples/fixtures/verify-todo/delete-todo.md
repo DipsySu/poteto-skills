@@ -13,10 +13,11 @@ On a fresh run, follow create and done recipes to seed records 1 and 2 in status
 
 ## Driving it with control.sh
 
-- `.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo http DELETE /todos/1 --expect 200` returns ID 1, status archived.
-- `.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo cli -- python3 -m todo rm 2 --data {DATA_DIR}` exits 0 with ID 2, status archived.
-- `.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo http GET /todos --expect 200` shows IDs 1 and 2, both archived.
-- `.claude/skills/verify-todo/scripts/control.sh evidence --copy-data` records both actions and todos.json containing both archived records.
+- `.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo --write archive-http http DELETE /todos/1 --expect 200 --expect-json 'id=1' --expect-json 'status=archived'` archives the first record.
+- `.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo --read-back archive-http http GET /todos --expect-json '0.status=archived'` observes the archived state.
+- `.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo cli --write archive-cli --expect-json 'id=2' --expect-json 'status=archived' -- python3 -m todo rm 2 --data {DATA_DIR}` archives the second record.
+- `.claude/skills/verify-todo/scripts/control.sh drive --feature delete-todo cli --read-back archive-cli --expect-json '1.status=archived' -- python3 -m todo list --data {DATA_DIR}` observes the CLI archive.
+- `.claude/skills/verify-todo/scripts/control.sh evidence --copy-data` retains the requests, assertions, read-backs, and stored todos.json.
 
 ## Gotchas
 

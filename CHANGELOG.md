@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file. The format is b
 
 ## [Unreleased]
 
+### Fixed
+
+- Proposal 2: generated drives support JSON dot-path/root, text, absence, and expected CLI exit assertions. Evidence records each assertion and overall execution success; the proof gate opens actual records and rejects missing, failed, or assertion-free evidence.
+- HTTP and CLI write recipes require explicit `--write KEY` / asserted `--read-back KEY` pairs; HTTP reads must address the written resource. CLI reads declare their semantics. This extends the proposal's HTTP-only gate to match its “every write” rule. For the proof shortcut, chose the simpler, safer read-only scope with a documented multi-command mutation sequence rather than adding another recipe executor.
+- Updated CLI drift parsing, placeholder scanning (literal assertion payloads may contain HTML), scaffold guidance, all four fixtures, the worked feature example, and live/example regressions. Older harnesses receive a regenerate-control.sh hint.
+
 ### Fixed (found in the Grok CLI trial on pixel-agent-garden, see `logs/grok-trial/`)
 
 - `scan_repo.py`: Rust repos produced 0 features. It now reads clap `#[derive(Subcommand)]` enums (kebab-case variants, `#[command(name = ...)]`) from every crate's bins and invokes them as `cargo run -q -p PKG --bin BIN --`. CLI verbs with no resource behind them are titled ``Run `bin verb` `` (previously "Doctor a --").

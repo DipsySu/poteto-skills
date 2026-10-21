@@ -1,5 +1,5 @@
 {
-  "repo": "/tmp/poteto-examples-25d2flg6/mine-fixture",
+  "repo": "/tmp/poteto-examples-q85kbr94/mine-fixture",
   "since": null,
   "items": 2,
   "counts": {
@@ -23,34 +23,34 @@
       ],
       "evidence": [
         {
-          "id": "commit:a654591a06",
+          "id": "commit:161194d7b3",
           "source": "commit",
           "kind": "fix",
-          "ref": "a654591a06582f91a5ce51448ac6911e1128ef68",
-          "text": "fix: layout overlap in the changelog renderer again",
-          "paths": [
-            "CHANGELOG.md"
-          ],
-          "line": null,
-          "author": "t",
-          "date": "2026-10-19",
-          "url": null,
-          "diff_ids": [],
-          "diff_added": [],
-          "diff_removed": []
-        },
-        {
-          "id": "commit:7c33f84397",
-          "source": "commit",
-          "kind": "fix",
-          "ref": "7c33f84397056b31650cfd234db4d386ab8a0cea",
+          "ref": "161194d7b3ffea8e0947d733a88b93803d4a64cc",
           "text": "feat: layout pass, plus 3 layout-audit fixes",
           "paths": [
             "CHANGELOG.md"
           ],
           "line": null,
           "author": "t",
-          "date": "2026-10-19",
+          "date": "2026-10-21",
+          "url": null,
+          "diff_ids": [],
+          "diff_added": [],
+          "diff_removed": []
+        },
+        {
+          "id": "commit:08ab1e90d4",
+          "source": "commit",
+          "kind": "fix",
+          "ref": "08ab1e90d40e510897080ab8b52a5bc6ce46e15a",
+          "text": "fix: layout overlap in the changelog renderer again",
+          "paths": [
+            "CHANGELOG.md"
+          ],
+          "line": null,
+          "author": "t",
+          "date": "2026-10-21",
           "url": null,
           "diff_ids": [],
           "diff_added": [],

@@ -111,6 +111,7 @@ def feature_md(f: dict, inv: dict, C: str, cli_prefix: str, cli_suffix: str, lis
     lines = [f"# {title}", "",
              f"{TODO}: one paragraph, from the user's point of view: what \"{title.lower()}\" does and what the user "
              f"sees afterwards.", "", "## Sub-features", ""]
+    write_keys = []
     for r in f["routes"]:
         lines.append(f"- `{fid}-http-{r['method'].lower()}`: `{r['method']} {concrete(r['path'])}` over HTTP.")
     for c in f["commands"]:
@@ -140,19 +141,28 @@ def feature_md(f: dict, inv: dict, C: str, cli_prefix: str, cli_suffix: str, lis
             else:
                 body = f" '{TODO}: JSON body'"
         id_note = f" Replace `<...>` with the real id. " if "<" in path else " "
-        lines.append(f"- **HTTP {r['method']}.** Run `{C} drive --feature {fid} http {r['method']} {path}{body}`."
+        key = f"{fid}-http-{r['method'].lower()}"
+        write = f" --write {key}" if r['method'] in ('POST', 'PUT', 'PATCH', 'DELETE') else ""
+        if write:
+            write_keys.append(key)
+        lines.append(f"- **HTTP {r['method']}.** Run `{C} drive --feature {fid}{write} http {r['method']} {path}{body} --expect-json '{TODO}'`."
                      f"{id_note}{TODO}: the expected status and body.")
     for c in f["commands"]:
         args = " ".join(sh(sample_value(p, fid)) for p in c.get("positionals", []))
         cmdline = f"{cli_prefix} {c['name']}{cli_suffix} {args}".strip()
         id_note = " Replace `<...>` with the real id." if "<" in args else ""
-        lines.append(f"- **CLI {c['name']}.** Run `{C} drive --feature {fid} cli -- {cmdline}`.{id_note} "
+        key = f"{fid}-cli-{c['name']}"
+        mode = "--read-only" if f['action'] == 'list' else f"--write {key}"
+        if f['action'] != 'list':
+            write_keys.append(key)
+        lines.append(f"- **CLI {c['name']}.** Run `{C} drive --feature {fid} cli {mode} --expect-json '{TODO}' -- {cmdline}`.{id_note} "
                      f"{TODO}: the expected exit code and stdout.")
     proof = []
+    reads = "".join(f" --read-back {key}" for key in write_keys)
     if list_route:
-        proof.append(f"`{C} drive --feature {fid} http GET {concrete(list_route['path'])}`")
+        proof.append(f"`{C} drive --feature {fid}{reads} http GET {concrete(list_route['path'])} --expect-json '{TODO}'`")
     elif list_cmd:
-        proof.append(f"`{C} drive --feature {fid} cli -- {cli_prefix} {list_cmd['name']}{cli_suffix}`".replace("  ", " "))
+        proof.append(f"`{C} drive --feature {fid} cli{reads or ' --read-only'} --expect-json '{TODO}' -- {cli_prefix} {list_cmd['name']}{cli_suffix}`".replace("  ", " "))
     proof.append(f"`{C} evidence --copy-data`")
     lines.append(f"- **Proof.** Read it back through a second view: run {' and '.join(proof)}. "
                  f"{TODO}: what the read-back and the data snapshot must show.")
@@ -184,12 +194,21 @@ def readme_md(app: str, feats: list[dict], C: str, skipped: list[dict]) -> str:
              f"- HTTP: `{C} drive --feature <id> http METHOD PATH ['JSON'] [--expect STATUS]`.",
              f"- CLI: `{C} drive --feature <id> cli -- <command>`. `{{DATA_DIR}}`, `{{PORT}}`, `{{BASE_URL}}`, and "
              "`{RUN_ID}` in arguments become this run's values.",
+             "- Add repeatable `--expect-json 'PATH=VALUE'`, `--expect-text TEXT`, or `--expect-no-text TEXT`. "
+             "JSON paths use dots and array indexes; `.` selects the root. VALUE is JSON, or a string if it is not JSON. "
+             "Missing paths fail, including when VALUE is null; JSON types must match.",
+             "- HTTP `--expect STATUS` and CLI `--expect-exit N` (default 0) combine with every assertion. "
+             "Harness flags go before `http`/`cli`, after the HTTP path, or before the CLI `--`; application flags go after `--`.",
              "- Start each recipe from the state its Preconditions name. Use stable handles: route paths, subcommand "
              "names, JSON fields.",
              "", "## Proof and skip reporting", "",
              "- Each drive records the action and its result in `artifacts/verify/<run-id>/`.",
-             f"- A mutation needs a read-only second view (a GET or a list command), then `{C} evidence --copy-data` "
-             "for the stored side effect.",
+             f"- Label each HTTP or CLI mutation `--write KEY`, then use an asserted GET or CLI read/list "
+             f"with `--read-back KEY` before the next write with that key, then `{C} evidence --copy-data`. "
+             "The read must show the changed (or unchanged after rejection) stored value. HTTP reads must address "
+             "the written resource or a non-root parent path; a health check cannot prove a todo write. Use a distinct key per write.",
+             "- CLI read commands declare `--read-only`; `--read-back KEY` also declares a read. "
+             "These declarations describe the command's real behavior; the harness cannot infer arbitrary CLI semantics.",
              "- Record the feature id with every artifact (`--feature`).",
              "- Report an unreachable path with the attempted command and the unmet precondition. Never report it as "
              "verified through a different path.",
@@ -266,7 +285,11 @@ def skill_md(app: str, inv: dict, C: str, skill_rel: str, launch: str, port_mode
     lines += ["- One recipe per feature in `features/`. Drive the public routes and commands only.", "",
               "## Evidence", "",
               "- Every drive writes `artifacts/verify/<run-id>/NNN-<feature>-<http|cli>.json`: the request or argv, "
-              "the status or exit code, the response body or stdout/stderr, and timing.",
+              "the status or exit code, the response body or stdout/stderr, timing, assertions, execution_ok, and overall ok. "
+              "Overall ok requires successful execution and every assertion passing.",
+              "- Use repeatable `--expect-json 'PATH=VALUE'` (`.` for the root), `--expect-text TEXT`, or "
+              "`--expect-no-text TEXT`; CLI `--expect-exit N` defaults to 0. Put harness flags before the CLI `--`. "
+              "See the feature index for assertion and write/read-back conventions.",
               f"- `{C} evidence --copy-data` snapshots the data dir (the side effect) and writes `manifest.json` "
               "with a sha256 per file.",
               "- Proof standard: the real user path (no internal setters or test-only endpoints); the action and the "
@@ -280,7 +303,9 @@ def skill_md(app: str, inv: dict, C: str, skill_rel: str, launch: str, port_mode
               f"- `scripts/control.sh`: `launch | doctor | drive | evidence | cleanup | status | prove`. "
               f"`{C} --help` lists the arguments.",
               f"- One-shot proof: `{C} prove --feature <id> {prove_args}` runs launch, doctor, drive, "
-              "evidence, and cleanup, then checks the evidence survived.",
+              "evidence, and cleanup, then checks the evidence survived. This shortcut accepts read-only drives. "
+              "For mutations, run launch, doctor, the recipe's `--write KEY` drive and asserted `--read-back KEY` "
+              "drive, evidence --copy-data, then cleanup; cleanup is required after a failed attempt too.",
               f"- Contract check: `python3 {helper_path(inv, 'create-verification-skill', 'check_verify_skill.py')} {skill_rel}`.",
               f"- Drift check: `python3 {helper_path(inv, 'maintain-verification-skill', 'drift_check.py')} {skill_rel} --repo .`.",
               ""]
@@ -323,11 +348,18 @@ Drive $APP for verification. Run from anywhere; paths resolve to the repo root.
   drive [--feature ID] cli -- CMD [ARGS...]
                                  run a command in the repo root; {DATA_DIR} {PORT} {BASE_URL} {RUN_ID}
                                  in ARGS become this run's values; evidence saved as NNN-ID-cli.json
+  drive assertion flags:         --expect-json PATH=VALUE | --expect-text TEXT | --expect-no-text TEXT (repeatable)
+                                 JSON dot paths include array indexes; . is the root; missing paths fail
+                                 --expect STATUS (HTTP), --expect-exit N (CLI, default 0)
+                                 --write KEY, --read-back KEY (repeatable), --read-only (CLI reads)
+                                 flags go before http/cli, after HTTP PATH, or before CLI --
   evidence [--copy-data]         write manifest.json (sha256 per file); --copy-data snapshots the data dir
   cleanup                        stop only the process group this run started, delete scratch state, keep evidence
   status                         print the current run's state (read-only)
   prove [--feature ID] http|cli ...
-                                 launch, doctor, drive once, evidence --copy-data, cleanup, check evidence survived
+                                 read-only shortcut: launch, doctor, drive, evidence --copy-data, cleanup
+                                 mutations: launch; doctor; drive --write KEY ...; drive --read-back KEY ...;
+                                 evidence --copy-data; cleanup (also after failure)
 
 env: VERIFY_PORT, VERIFY_RUN_ID, VERIFY_STATE_DIR (default $STATE_ROOT),
      VERIFY_ARTIFACTS_DIR (default $ARTIFACTS_ROOT), VERIFY_READY_TIMEOUT (default 30s)
@@ -506,94 +538,142 @@ PY
 
 cmd_drive() {
   load_run
-  local feature="adhoc"
-  if [[ "${1:-}" == "--feature" ]]; then feature="${2:?--feature needs an id}"; shift 2; fi
-  local kind="${1:-}"; shift || true
   local seq; seq="$(next_seq)"
-  local out="$EVIDENCE_DIR/$seq-$feature-$kind.json"
-  case "$kind" in
-    http)
-      local method="${1:?usage: drive http METHOD PATH [JSON] [--expect STATUS]}" path="${2:?missing PATH}"
-      shift 2
-      local body="" expect=""
-      while [[ $# -gt 0 ]]; do
-        case "$1" in
-          --expect) expect="${2:?--expect needs a status}"; shift 2 ;;
-          *) body="$1"; shift ;;
-        esac
-      done
-      path="${path//\{RUN_ID\}/$RUN_ID}"
-      [[ -n "$BASE_URL" ]] || die "this run has no server; use: drive cli -- ..."
-      python3 - "$method" "$BASE_URL$path" "$body" "$out" "$feature" "$expect" <<'PY'
-import json, sys, time, urllib.error, urllib.request
-method, url, body, out, feature, expect = sys.argv[1:7]
-data = body.encode() if body else None
-headers = {"Content-Type": "application/json", "Accept": "application/json"} if body else {"Accept": "application/json"}
-opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+  python3 - "$EVIDENCE_DIR" "$seq" "$REPO_ROOT" "$DATA_DIR" "$PORT" "$BASE_URL" "$RUN_ID" "${VERIFY_PROVE_READ_ONLY:-0}" "$@" <<'PYDRIVE'
+import json, os, re, subprocess, sys, time, urllib.error, urllib.parse, urllib.request
+root, seq, repo, data_dir, port, base_url, run_id, prove_only, *args = sys.argv[1:]
+feature, kind, expect, expect_exit, write = "adhoc", None, None, 0, None
+read_back, read_only, specs, positional, argv = [], False, [], [], []
+value_flags = {"--feature", "--expect", "--expect-exit", "--expect-json", "--expect-text", "--expect-no-text", "--write", "--read-back"}
+def fail(message):
+    sys.exit("control.sh drive: " + message)
+while args:
+    arg = args.pop(0)
+    if arg == "--":
+        argv, args = args, []
+        break
+    if arg in value_flags:
+        if not args:
+            fail(arg + " needs a value")
+        value = args.pop(0)
+        if arg == "--feature": feature = value
+        elif arg == "--expect": expect = value
+        elif arg == "--expect-exit":
+            try: expect_exit = int(value)
+            except ValueError: fail("--expect-exit needs an integer")
+        elif arg == "--write": write = value
+        elif arg == "--read-back": read_back.append(value)
+        else: specs.append((arg, value))
+    elif arg == "--read-only": read_only = True
+    elif kind is None and arg in ("http", "cli"): kind = arg
+    elif kind == "http" and not arg.startswith("--"): positional.append(arg)
+    else: fail("unknown argument " + arg + "; CLI application arguments must follow --")
+if not re.fullmatch(r"[A-Za-z0-9_-]+", feature):
+    fail("feature must contain only letters, digits, underscores, and dashes")
+if write and (read_back or read_only):
+    fail("a drive cannot be both a write and a read")
+for flag, expr in specs:
+    if flag == "--expect-json" and ("=" not in expr or not expr.split("=", 1)[0]):
+        fail("--expect-json needs PATH=VALUE (. selects the root)")
+if kind == "http":
+    if len(positional) not in (2, 3) or argv or not base_url:
+        fail("usage: http METHOD PATH [JSON] [assertion flags]; launch a server first")
+    method, path, *body_args = positional
+    method = method.upper()
+    path = path.replace("{RUN_ID}", run_id)
+    body = body_args[0] if body_args else ""
+    is_read = method == "GET"
+    if not path.startswith("/") or urllib.parse.urlsplit(path).netloc:
+        fail("HTTP path must be local to this run")
+    if (read_back or read_only) and not is_read:
+        fail("HTTP read-backs must use GET")
+    if write and is_read:
+        fail("GET cannot declare --write")
+elif kind == "cli":
+    if not argv or positional or expect is not None:
+        fail("usage: cli [--expect-exit N] [assertion flags] -- CMD [ARGS...]")
+    is_read = read_only or bool(read_back)
+else:
+    fail("choose http or cli")
+if prove_only == "1" and (not is_read or write):
+    fail("prove is a read-only shortcut; run launch, doctor, write, asserted read-back, evidence, cleanup for mutations")
+if prove_only == "1" and not specs:
+    fail("prove needs --expect-json, --expect-text, or --expect-no-text")
 started = time.time()
-try:
-    with opener.open(urllib.request.Request(url, data=data, method=method.upper(), headers=headers), timeout=30) as r:
-        status, raw, rh = r.status, r.read(), dict(r.headers)
-except urllib.error.HTTPError as e:
-    status, raw, rh = e.code, e.read(), dict(e.headers)
-except Exception as e:  # connection refused, timeout
-    status, raw, rh = 0, str(e).encode(), {}
-text = raw.decode("utf-8", "replace")
-try:
-    parsed = json.loads(text) if text else None
-except ValueError:
-    parsed = None
-try:
-    req_body = json.loads(body) if body else None
-except ValueError:
-    req_body = body
-rec = {"feature": feature, "kind": "http", "method": method.upper(), "url": url, "request_body": req_body,
-       "status": status, "response_headers": rh, "response_body": parsed if parsed is not None else text,
-       "started": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(started)),
-       "elapsed_ms": round((time.time() - started) * 1000, 1), "expect": expect or None}
-with open(out, "w") as f:
-    json.dump(rec, f, indent=2)
-print(f"{method.upper()} {url} -> {status}")
-if text:
-    print(text)
+rec = {"feature": feature, "kind": kind, "write": write, "read_back": read_back, "read_only": is_read,
+       "started": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(started))}
+if kind == "http":
+    url = base_url + path
+    headers = {"Accept": "application/json"}
+    if body: headers["Content-Type"] = "application/json"
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    try:
+        with opener.open(urllib.request.Request(url, data=body.encode() if body else None,
+                                               method=method, headers=headers), timeout=30) as response:
+            status, raw, rh = response.status, response.read(), dict(response.headers)
+    except urllib.error.HTTPError as error:
+        status, raw, rh = error.code, error.read(), dict(error.headers)
+    except Exception as error:
+        status, raw, rh = 0, str(error).encode(), {}
+    text = raw.decode("utf-8", "replace")
+    try: request_body = json.loads(body) if body else None
+    except ValueError: request_body = body
+    rec.update(method=method, url=url, request_body=request_body, status=status,
+               response_headers=rh, expect=expect)
+    execution_ok = str(status) == expect if expect is not None else 200 <= status < 400
+    # A transport failure is never an expected HTTP response.
+    execution_ok = execution_ok and status != 0
+    print(f"{method} {url} -> {status}")
+else:
+    replacements = {"{DATA_DIR}": data_dir, "{PORT}": port, "{BASE_URL}": base_url, "{RUN_ID}": run_id}
+    for key, value in replacements.items():
+        argv = [a.replace(key, value) for a in argv]
+    env = dict(os.environ, PORT=port, DATA_DIR=data_dir, BASE_URL=base_url, RUN_ID=run_id)
+    try:
+        result = subprocess.run(argv, cwd=repo, env=env, stdin=subprocess.DEVNULL,
+                                capture_output=True, text=True, errors="replace")
+        rc, text, stderr = result.returncode, result.stdout, result.stderr
+    except OSError as error:
+        rc, text, stderr = None, "", str(error)
+    rec.update(argv=argv, exit_code=rc, stdout=text, stderr=stderr, expect_exit=expect_exit)
+    execution_ok = rc == expect_exit
+    print(stderr, end="", file=sys.stderr)
+    print(f"exit: {rc}", file=sys.stderr)
+missing = object()
+try: parsed = json.loads(text)
+except ValueError: parsed = missing
+if kind == "http": rec["response_body"] = text if parsed is missing else parsed
+def at_path(path):
+    value = parsed
+    for part in ([] if path == "." else path.split(".")):
+        if isinstance(value, dict) and part in value: value = value[part]
+        elif isinstance(value, list) and part.isdecimal() and int(part) < len(value): value = value[int(part)]
+        else: return missing
+    return value
+assertions = []
+for flag, expr in specs:
+    if flag == "--expect-json":
+        path, expected = expr.split("=", 1)
+        try: expected = json.loads(expected)
+        except ValueError: pass
+        got = at_path(path)
+        ok = got is not missing and json.dumps(got, sort_keys=True) == json.dumps(expected, sort_keys=True)
+    else:
+        got = text
+        ok = (expr not in text) if flag == "--expect-no-text" else (expr in text)
+    assertions.append({"expr": flag + " " + expr, "ok": ok, "got": {"missing": True} if got is missing else got})
+rec.update(assertions=assertions, execution_ok=execution_ok,
+           ok=execution_ok and all(a["ok"] for a in assertions),
+           elapsed_ms=round((time.time() - started) * 1000, 1))
+out = os.path.join(root, f"{seq}-{feature}-{kind}.json")
+with open(out, "w") as stream:
+    json.dump(rec, stream, indent=2)
+if text: print(text, end="" if text.endswith("\n") else "\n")
+for assertion in assertions:
+    print(f"{'PASS' if assertion['ok'] else 'FAIL'} {assertion['expr']}", file=sys.stderr)
 print(f"evidence: {out}", file=sys.stderr)
-if expect:
-    sys.exit(0 if str(status) == expect else 1)
-sys.exit(0 if 200 <= status < 400 else 1)
-PY
-      ;;
-    cli)
-      [[ "${1:-}" == "--" ]] && shift
-      [[ $# -gt 0 ]] || die "usage: drive [--feature ID] cli -- CMD [ARGS...]"
-      local argv=() a
-      for a in "$@"; do
-        a="${a//\{DATA_DIR\}/$DATA_DIR}"; a="${a//\{PORT\}/$PORT}"
-        a="${a//\{BASE_URL\}/$BASE_URL}"; a="${a//\{RUN_ID\}/$RUN_ID}"
-        argv+=("$a")
-      done
-      local so se rc
-      so="$(mktemp)"; se="$(mktemp)"
-      set +e
-      (cd "$REPO_ROOT" && PORT="$PORT" DATA_DIR="$DATA_DIR" BASE_URL="$BASE_URL" RUN_ID="$RUN_ID" "${argv[@]}") >"$so" 2>"$se" </dev/null
-      rc=$?
-      set -e
-      python3 - "$out" "$feature" "$rc" "$so" "$se" "${argv[@]}" <<'PY'
-import json, sys, time
-out, feature, rc, so, se, *argv = sys.argv[1:]
-rec = {"feature": feature, "kind": "cli", "argv": argv, "exit_code": int(rc),
-       "stdout": open(so, encoding="utf-8", errors="replace").read(),
-       "stderr": open(se, encoding="utf-8", errors="replace").read(),
-       "finished": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
-with open(out, "w") as f:
-    json.dump(rec, f, indent=2)
-PY
-      cat "$so"; cat "$se" >&2
-      rm -f "$so" "$se"
-      echo "exit: $rc  evidence: $out" >&2
-      return "$rc"
-      ;;
-    *) die "usage: drive [--feature ID] http METHOD PATH [JSON] | drive [--feature ID] cli -- CMD..." ;;
-  esac
+sys.exit(0 if rec["ok"] else 1)
+PYDRIVE
 }
 
 cmd_evidence() {
@@ -674,7 +754,7 @@ cmd_prove() {
   "$self" launch || { "$self" cleanup >/dev/null 2>&1 || true; die "prove: launch failed"; }
   trap '"$self" cleanup >/dev/null 2>&1 || true' EXIT
   "$self" doctor || { echo "control.sh: prove: doctor failed" >&2; rc=1; }
-  if [[ "$rc" == 0 ]]; then "$self" drive "$@" || rc=$?; fi
+  if [[ "$rc" == 0 ]]; then VERIFY_PROVE_READ_ONLY=1 "$self" drive "$@" || rc=$?; fi
   load_run
   local ev="$EVIDENCE_DIR"
   "$self" evidence --copy-data >/dev/null
@@ -757,11 +837,11 @@ def main(argv: list[str] | None = None) -> int:
     cli_prog = cli["cmd"] if cli else ""
     surfaces = (["HTTP API"] if inv["http_routes"] else []) + (["CLI"] if inv["cli_commands"] else [])
     if launch:
-        prove_args = f"http GET {read_path or health or '/'}"
+        prove_args = f"http GET {read_path or health or '/'} --expect-json '{TODO}'"
     elif cli_prog:
         first_list = next(iter(list_cmds.values()), None)
         sub = first_list["name"] if first_list else "--help"
-        prove_args = f"cli -- {cli_prefix} {sub}{cli_suffix if first_list else ''}".replace("  ", " ")
+        prove_args = f"cli --read-only --expect-json '{TODO}' -- {cli_prefix} {sub}{cli_suffix if first_list else ''}".replace("  ", " ")
     else:
         prove_args = f"cli -- {TODO}: a read-only command"
 

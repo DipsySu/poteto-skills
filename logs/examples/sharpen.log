@@ -1,5 +1,5 @@
-scratch: /tmp/poteto-examples-25d2flg6
-$ /home/box/developer/poteto-skills/skills/sharpen/scripts/brief.py 'Prevent lost todo writes and invalid status transitions' --repo /tmp/poteto-examples-25d2flg6/todo-app --out /home/box/developer/poteto-skills/logs/examples/artifacts/sharpen/BRIEF.md
+scratch: /tmp/poteto-examples-q85kbr94
+$ /home/box/developer/poteto-skills/skills/sharpen/scripts/brief.py 'Prevent lost todo writes and invalid status transitions' --repo /tmp/poteto-examples-q85kbr94/todo-app --out /home/box/developer/poteto-skills/logs/examples/artifacts/sharpen/BRIEF.md
 brief: wrote /home/box/developer/poteto-skills/logs/examples/artifacts/sharpen/BRIEF.md (8 candidate sources)
 
 [exit 0; expected 0]

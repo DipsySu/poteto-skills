@@ -151,11 +151,159 @@ class Examples:
             self.run(self.script(self.name, 'check_verify_skill.py'), self.skill, '--require-proof',
                      self.repo / 'artifacts/verify', expected=1)
             self.ensure(True, 'contract with --require-proof fails before any proof run')
+            self.drive_contract_regressions()
             self.live_pass('initial')
             self.run(self.script(self.name, 'check_verify_skill.py'), self.skill, '--require-proof', self.repo / 'artifacts/verify')
             self.ensure(True, 'contract with --require-proof passes once a proof run left drive records')
+            self.drive_result_regressions()
             self.wrapped_cleanup()
             self.grok_trial_regressions()
+
+    def drive_contract_regressions(self):
+        gate = self.script(self.name, 'check_verify_skill.py')
+        feature = self.skill / 'features/create-todo.md'
+        original = feature.read_text()
+        prefix, rest = original.split('## Driving it with control.sh\n', 1)
+        _, suffix = rest.split('## Gotchas', 1)
+        control = '.claude/skills/verify-todo/scripts/control.sh'
+        def recipe(lines):
+            feature.write_text(prefix + '## Driving it with control.sh\n\n' + '\n'.join(f'- `{control} drive {line}`' for line in lines)
+                               + '\n\n## Gotchas' + suffix)
+        try:
+            recipe(['--feature create-todo http POST /todos \'{"title":"verify HTTP"}\' --expect 201',
+                    '--feature create-todo cli -- python3 -m todo add \'verify CLI\' --data {DATA_DIR}',
+                    '--feature create-todo http GET /todos --expect 200'])
+            result = self.run(gate, self.skill, expected=1)
+            self.ensure('add --expect-json' in result, 'old status-only create-todo recipe fails the assertion gate')
+            write = '--feature create-todo --write added http POST /todos \'{"title":"verify HTTP"}\' --expect 201 --expect-json id=1'
+            recipe([write])
+            self.ensure('later asserted --read-back' in self.run(gate, self.skill, expected=1),
+                        'an asserted POST still requires a second view')
+            recipe([write, '--feature create-todo --read-back added http GET /health --expect-json ok=true'])
+            self.ensure('must observe the written resource' in self.run(gate, self.skill, expected=1),
+                        'an unrelated asserted health read cannot prove a todo write')
+            recipe(['--feature create-todo cli --write added --expect-json id=1 -- python3 -m todo add x --data {DATA_DIR}'])
+            self.ensure('later asserted --read-back' in self.run(gate, self.skill, expected=1),
+                        'CLI writes require an asserted read-back too')
+            recipe(['--feature create-todo cli --read-only --expect-text \'<title>todos</title>\' -- python3 -m todo list --data {DATA_DIR}'])
+            self.run(gate, self.skill)
+            self.ensure(True, 'HTML in literal text assertions is not an unfilled recipe placeholder')
+            recipe(['--feature create-todo cli --read-only --expect-no-text missing -- python3 -m todo list --data <dir>'])
+            self.ensure('<dir>' in self.run(gate, self.skill, expected=1), 'application argument placeholders still fail after CLI --')
+        finally:
+            feature.write_text(original)
+        control_path = self.skill / 'scripts/control.sh'
+        original_control = control_path.read_text()
+        try:
+            control_path.write_text(original_control.replace('--expect-json', '--old-json'))
+            self.ensure('regenerate control.sh' in self.run(gate, self.skill, expected=1),
+                        'legacy harness without assertion support gets a regeneration hint')
+        finally:
+            control_path.write_text(original_control)
+        worked = ROOT / 'skills/create-verification-skill/references/feature-example.md'
+        module = load_module(gate, 'drive_contract')
+        drives = module.recipe_drives(worked.read_text())
+        self.ensure(drives and not module.second_view_errors(drives) and not module.recipe_placeholders(worked.read_text()),
+                    'worked feature example has assertions and paired HTTP/CLI read-backs')
+
+    def drive_result_regressions(self):
+        control = self.skill / 'scripts/control.sh'
+        gate = self.script(self.name, 'check_verify_skill.py')
+        root = self.scratch / 'assertion-evidence'
+        env = dict(self.env, VERIFY_STATE_DIR=str(self.scratch / 'assertion-state'),
+                   VERIFY_ARTIFACTS_DIR=str(root), VERIFY_RUN_ID='assertions')
+        def record():
+            return json.loads(sorted((root / 'assertions').glob('[0-9]*.json'))[-1].read_text())
+        try:
+            self.json(control, 'launch', env=env)
+            self.run(control, 'drive', '--expect-json', '.=[]', 'http', 'GET', '/todos', env=env)
+            good = record()
+            self.ensure(good['ok'] and good['assertions'][0]['got'] == [], 'root JSON path asserts an empty stored list')
+            self.run(control, 'drive', 'http', 'GET', '/todos', '--expect', '201', '--expect-json', '.=[]', env=env, expected=1)
+            wrong_status = record()
+            self.ensure(wrong_status['assertions'][0]['ok'] and not wrong_status['execution_ok'] and not wrong_status['ok'],
+                        'matching response JSON cannot override a wrong HTTP status')
+            self.run(control, 'drive', 'http', 'GET', '/health', '--expect-json', 'missing=null', env=env, expected=1)
+            self.ensure(record()['assertions'][0]['got'] == {'missing': True}, 'missing JSON path is distinct from null')
+            for expression in ('ok=1', 'ok="true"'):
+                self.run(control, 'drive', 'http', 'GET', '/health', '--expect-json', expression, env=env, expected=1)
+                self.ensure(not record()['ok'], f'JSON assertion distinguishes true from {expression.split("=", 1)[1]}')
+            self.run(control, 'drive', '--expect-text', '<title>todos</title>', 'cli', '--read-only',
+                     '--expect-no-text', 'Discard me', '--', sys.executable, '-c',
+                     'print("<title>todos</title>")', '--expect-json', 'application-argument', env=env)
+            self.ensure(record()['argv'][-2:] == ['--expect-json', 'application-argument'],
+                        'CLI -- preserves application flags and arguments verbatim')
+            self.run(control, 'drive', 'cli', '--read-only', '--expect-json', 'value=null', '--expect-json', 'items.0=true',
+                     '--', sys.executable, '-c', 'print(\'{"value":null,"items":[true]}\')', env=env)
+            self.ensure(record()['ok'], 'existing null and nested array paths assert successfully on CLI JSON')
+            self.run(control, 'drive', 'cli', '--read-only', '--expect-text', 'missing', '--', sys.executable, '-c',
+                     'print("present")', env=env, expected=1)
+            self.ensure(not record()['ok'] and record()['execution_ok'], 'text mismatch fails even with CLI exit zero')
+            self.run(control, 'drive', 'cli', '--read-only', '--expect-no-text', 'present', '--', sys.executable, '-c',
+                     'print("present")', env=env, expected=1)
+            self.ensure(not record()['ok'], 'absence assertion fails when stdout contains the forbidden text')
+            self.run(control, 'drive', 'cli', '--read-only', '--expect-json', 'x=1', '--', sys.executable, '-c',
+                     'print("not JSON")', env=env, expected=1)
+            self.ensure(not record()['assertions'][0]['ok'], 'JSON assertions reject non-JSON stdout')
+        finally:
+            self.run(control, 'cleanup', env=env)
+        # Isolated manifests ensure an older passing run cannot hide bad evidence.
+        proof_root = self.scratch / 'proof-records'
+        run_dir = proof_root / 'case'
+        run_dir.mkdir(parents=True)
+        path = run_dir / '001-adhoc-http.json'
+        (run_dir / 'manifest.json').write_text(json.dumps({'files': [{'path': path.name}]}))
+        self.run(gate, self.skill, '--require-proof', proof_root, expected=1)
+        self.ensure(True, 'manifest pointing to a nonexistent record cannot count as proof')
+        variants = [
+            ('assertion-free evidence', dict(good, assertions=[])),
+            ('failed assertion evidence', dict(good, assertions=[dict(good['assertions'][0], ok=False)])),
+            ('failed overall evidence', dict(good, ok=False)),
+            ('wrong status with passing assertions', wrong_status),
+            ('wrong status with forged overall flags', dict(wrong_status, ok=True, execution_ok=True)),
+        ]
+        for label, bad in variants:
+            path.write_text(json.dumps(bad))
+            self.run(gate, self.skill, '--require-proof', proof_root, expected=1)
+            self.ensure(True, f'proof gate rejects {label}')
+        path.write_text('{invalid')
+        self.run(gate, self.skill, '--require-proof', proof_root, expected=1)
+        self.ensure(True, 'malformed proof record fails without crashing')
+        path.write_text(json.dumps(good))
+        self.run(gate, self.skill, '--require-proof', proof_root)
+        self.ensure(True, 'proof gate accepts actual successful asserted read evidence')
+        # Break the real persistence code; the success response still contains the new row.
+        store = self.repo / 'todo/store.py'
+        original = store.read_text()
+        broken_root = self.scratch / 'lost-write-evidence'
+        broken_env = dict(env, VERIFY_RUN_ID='lost-write', VERIFY_ARTIFACTS_DIR=str(broken_root))
+        try:
+            self.ensure('os.replace(name, self.path)' in original, 'scratch mutant targets the actual persistence boundary')
+            store.write_text(original.replace('os.replace(name, self.path)', 'pass  # skip the durable write'))
+            self.json(control, 'launch', env=broken_env)
+            self.run(control, 'drive', '--feature', 'create-todo', '--write', 'lost', 'http', 'POST', '/todos',
+                     '{"title":"verify HTTP"}', '--expect', '201', '--expect-json', 'title=verify HTTP', env=broken_env)
+            self.ensure(True, 'skipped-replace mutant still returns 201 with the expected response title')
+            self.run(control, 'drive', '--feature', 'create-todo', '--read-back', 'lost', 'http', 'GET', '/todos',
+                     '--expect-json', '0.title=verify HTTP', env=broken_env, expected=1)
+            self.ensure(True, 'asserted GET second view catches the skipped-replace persistence bug')
+            self.run(control, 'evidence', '--copy-data', env=broken_env)
+            self.run(gate, self.skill, '--require-proof', broken_root, expected=1)
+            self.ensure(True, 'a successful write response and failed stored read-back cannot count as proof')
+        finally:
+            try:
+                self.run(control, 'cleanup', env=broken_env)
+            finally:
+                store.write_text(original)
+        prove_env = dict(env, VERIFY_RUN_ID='prove-read', VERIFY_ARTIFACTS_DIR=str(self.scratch / 'prove-evidence'))
+        self.run(control, 'prove', '--feature', 'list-todos', 'http', 'GET', '/todos', '--expect-json', '.=[]', env=prove_env)
+        self.run(gate, self.skill, '--require-proof', self.scratch / 'prove-evidence')
+        self.ensure(True, 'read-only prove shortcut keeps passing asserted evidence through cleanup')
+        self.run(control, 'prove', 'http', 'GET', '/todos', env=dict(prove_env, VERIFY_RUN_ID='prove-unasserted'), expected=1)
+        self.ensure(True, 'prove rejects an unasserted read and still cleans up')
+        self.run(control, 'prove', '--write', 'mutation', 'http', 'POST', '/todos', '{"title":"x"}',
+                 '--expect', '201', '--expect-json', 'id=1', env=dict(prove_env, VERIFY_RUN_ID='prove-write'), expected=1)
+        self.ensure(True, 'prove rejects mutation-only shortcuts and still cleans up')
 
     def grok_trial_regressions(self):
         """Regressions from the Grok CLI trial on a Rust repo (logs/grok-trial/)."""
@@ -240,21 +388,51 @@ class Examples:
             self.ensure(doctor['ok'] and all(c['ok'] for c in doctor['checks']), 'doctor checks owned process, health and read route')
             def drive(feature, *args):
                 self.run(control, 'drive', '--feature', feature, *args, env=env)
-            drive('health', 'http', 'GET', '/health', '--expect', '200')
-            drive('create-todo', 'http', 'POST', '/todos', '{"title":"verify HTTP"}', '--expect', '201')
-            drive('create-todo', 'cli', '--', sys.executable, '-m', 'todo', 'add', 'verify CLI', '--data', '{DATA_DIR}')
-            drive('list-todos', 'http', 'GET', '/todos', '--expect', '200')
-            drive('list-todos', 'cli', '--', sys.executable, '-m', 'todo', 'list', '--data', '{DATA_DIR}')
-            drive('delete-todo', 'http', 'DELETE', '/todos/1', '--expect', '409')
-            drive('done-todo', 'http', 'POST', '/todos/1/done', '--expect', '200')
-            drive('done-todo', 'http', 'POST', '/todos/1/done', '--expect', '409')
-            drive('done-todo', 'cli', '--', sys.executable, '-m', 'todo', 'done', '2', '--data', '{DATA_DIR}')
-            drive('delete-todo', 'http', 'DELETE', '/todos/1', '--expect', '200')
-            drive('delete-todo', 'cli', '--', sys.executable, '-m', 'todo', 'rm', '2', '--data', '{DATA_DIR}')
-            drive('list-todos', 'http', 'GET', '/todos', '--expect', '200')
+            drive('health', '--expect-json', 'ok=true', 'http', 'GET', '/health', '--expect', '200')
+            drive('create-todo', '--write', 'create-http', 'http', 'POST', '/todos', '{"title":"verify HTTP"}',
+                  '--expect', '201', '--expect-json', 'id=1', '--expect-json', 'status=open')
+            drive('create-todo', '--read-back', 'create-http', 'http', 'GET', '/todos',
+                  '--expect-json', '0.title=verify HTTP', '--expect-json', '0.status=open')
+            drive('create-todo', 'cli', '--write', 'create-cli', '--expect-json', 'id=2', '--expect-json', 'status=open',
+                  '--', sys.executable, '-m', 'todo', 'add', 'verify CLI', '--data', '{DATA_DIR}')
+            drive('create-todo', 'cli', '--read-back', 'create-cli', '--expect-json', '1.title=verify CLI',
+                  '--expect-json', '1.status=open', '--', sys.executable, '-m', 'todo', 'list', '--data', '{DATA_DIR}')
+            drive('list-todos', 'http', 'GET', '/todos', '--expect', '200', '--expect-json', '0.id=1', '--expect-json', '1.id=2')
+            drive('list-todos', 'cli', '--read-only', '--expect-json', '1.id=2',
+                  '--', sys.executable, '-m', 'todo', 'list', '--data', '{DATA_DIR}')
+            drive('delete-todo', '--write', 'reject-http', 'http', 'DELETE', '/todos/1',
+                  '--expect', '409', '--expect-json', 'error=cannot move open to archived')
+            drive('delete-todo', '--read-back', 'reject-http', 'http', 'GET', '/todos', '--expect-json', '0.status=open')
+            drive('delete-todo', 'cli', '--write', 'reject-cli', '--expect-exit', '1', '--expect-no-text', 'archived',
+                  '--', sys.executable, '-m', 'todo', 'rm', '2', '--data', '{DATA_DIR}')
+            drive('delete-todo', 'cli', '--read-back', 'reject-cli', '--expect-json', '1.status=open',
+                  '--', sys.executable, '-m', 'todo', 'list', '--data', '{DATA_DIR}')
+            drive('done-todo', '--write', 'done-http', 'http', 'POST', '/todos/1/done',
+                  '--expect', '200', '--expect-json', 'status=done')
+            drive('done-todo', '--read-back', 'done-http', 'http', 'GET', '/todos', '--expect-json', '0.status=done')
+            drive('done-todo', '--write', 'retry-http', 'http', 'POST', '/todos/1/done',
+                  '--expect', '409', '--expect-text', 'cannot move done to done')
+            drive('done-todo', '--read-back', 'retry-http', 'http', 'GET', '/todos', '--expect-json', '0.status=done')
+            drive('done-todo', 'cli', '--write', 'done-cli', '--expect-json', 'status=done',
+                  '--', sys.executable, '-m', 'todo', 'done', '2', '--data', '{DATA_DIR}')
+            drive('done-todo', 'cli', '--read-back', 'done-cli', '--expect-json', '1.status=done',
+                  '--', sys.executable, '-m', 'todo', 'list', '--data', '{DATA_DIR}')
+            drive('delete-todo', '--write', 'archive-http', 'http', 'DELETE', '/todos/1',
+                  '--expect', '200', '--expect-json', 'status=archived')
+            drive('delete-todo', '--read-back', 'archive-http', 'http', 'GET', '/todos', '--expect-json', '0.status=archived')
+            drive('delete-todo', 'cli', '--write', 'archive-cli', '--expect-json', 'status=archived',
+                  '--', sys.executable, '-m', 'todo', 'rm', '2', '--data', '{DATA_DIR}')
+            drive('delete-todo', 'cli', '--read-back', 'archive-cli', '--expect-json', '1.status=archived',
+                  '--', sys.executable, '-m', 'todo', 'list', '--data', '{DATA_DIR}')
+            drive('list-todos', 'http', 'GET', '/todos', '--expect', '200',
+                  '--expect-json', '0.status=archived', '--expect-json', '1.status=archived')
             evidence = self.json(control, 'evidence', '--copy-data', env=env)
             evdir = Path(launch['evidence_dir'])
             records = [json.loads(p.read_text()) for p in sorted(evdir.glob('[0-9]*.json'))]
+            self.ensure(all(r['ok'] and r['execution_ok'] and r['assertions'] and all(a['ok'] for a in r['assertions'])
+                            for r in records), 'every live drive records execution success and passing state assertions')
+            self.ensure(any(r.get('expect_exit') == 1 and r['exit_code'] == 1 and r['ok'] for r in records),
+                        'expected CLI rejection (rm 2 on an open todo) exits 0 from the harness')
             http = [r for r in records if r['kind'] == 'http']
             created = next(r for r in http if r['method'] == 'POST' and r['url'].endswith('/todos'))
             self.ensure(created['request_body'] == {'title':'verify HTTP'} and created['response_body'] ==

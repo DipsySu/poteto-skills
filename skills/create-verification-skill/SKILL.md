@@ -49,6 +49,8 @@ grep -rn 'TODO(verify)' .claude/skills/verify-<name>
 - Launch must reach a usable state from an empty data dir, including migrations and seed data. Ready means usable, not just "the process answers". Keep a real read (`READ_PATH`) in doctor.
 - Use stable handles: route paths, subcommand names, JSON fields, ARIA roles. Never coordinates or tab order.
 - Evidence follows the real user path: the action, then the resulting state through a second view, then the side effect (`evidence --copy-data`). Mock only at production boundaries. Check what a dry-run mode really skips by observing it.
+- Assert bodies or stdout with repeatable `--expect-json 'PATH=VALUE'`, `--expect-text TEXT`, or `--expect-no-text TEXT`. Dot paths include array indexes; `.` is the root. Missing paths fail; JSON types must match. `--expect STATUS` and CLI `--expect-exit N` (default 0) combine with the assertions. Put CLI harness flags before `--`; application arguments follow it.
+- Label each HTTP or CLI write `--write KEY`; follow it with an asserted GET or CLI read/list using `--read-back KEY` and the same feature ID. Assert the stored value, including unchanged state after rejection. HTTP read-backs must address that resource or a non-root parent path. Declare other CLI reads `--read-only`; these declarations must match the command's real behavior.
 - If the seed data lacks a journey's precondition, the journey fails and the reason goes in that feature's Gotchas. Never weaken a journey to make it pass.
 - An irrelevant missing asset that blocks startup may be created by the skill, marked as verification scaffolding, and removed in cleanup.
 - Extend `control.sh` when the surface needs it (a browser or PTY subcommand). Keep every helper executable and show its invocation in SKILL.md.
@@ -57,9 +59,13 @@ grep -rn 'TODO(verify)' .claude/skills/verify-<name>
 
 ```bash
 C=.claude/skills/verify-<name>/scripts/control.sh
-$C launch && $C doctor && $C drive --feature <id> http GET <route> && $C evidence --copy-data && $C cleanup
+$C launch
+$C doctor
+# Follow the feature recipe: a --write KEY drive, then an asserted --read-back KEY drive.
+$C evidence --copy-data
+$C cleanup                                 # also after failure
 ls artifacts/verify/<run-id>/              # the evidence must survive cleanup
-$C prove --feature <id> http GET <route>    # the same sequence as one command
+$C prove --feature <id> http GET <route> --expect-json 'PATH=VALUE'  # read-only shortcut
 ```
 
 Drive one mapped feature exactly as its recipe says. Fix what fails, and run `cleanup` after every failed attempt so no process or port is left behind. A skill that was never executed is a draft, not a deliverable. If you proved it in a stand-in (a container instead of the real host), list the setup steps the stand-in did that the real target won't.
@@ -70,7 +76,7 @@ Drive one mapped feature exactly as its recipe says. Fix what fails, and run `cl
 python3 $SKILL_DIR/scripts/check_verify_skill.py .claude/skills/verify-<name> --require-proof artifacts/verify    # must exit 0
 ```
 
-The structural checks pass on a skill that never ran; `--require-proof` is what fails until a proof run left a manifest with a drive record. The scaffold also writes `FEATURE_MAP.md`, the entry point that lists the feature files; keep it in sync with `features/README.md`.
+The gate requires asserted recipes and second views for HTTP and CLI writes. `--require-proof` opens manifested drive records: execution and nonempty assertions must pass, and writes must have asserted read-backs. Older harnesses need `control.sh` regenerated and their CONFIG reapplied. The scaffold also writes `FEATURE_MAP.md`; keep it in sync with `features/README.md`.
 
 Commit the skill so every person and agent drives the app the same way, and add `artifacts/` to `.gitignore`. Point the user at /maintain-verification-skill to keep the map honest. Suggest a cadence only if asked.
 

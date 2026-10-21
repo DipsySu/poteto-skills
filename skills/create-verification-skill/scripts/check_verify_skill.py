@@ -8,6 +8,7 @@ Fails when:
   * features/README.md is missing, or a feature file does not have exactly these H2s in order:
     Sub-features / How to get to it (user POV) / Driving it with <harness> / Gotchas
   * a drive command in a feature's `Driving it with` section still has a `<placeholder>`
+  * a feature has no asserted drive, or an HTTP/CLI write lacks an associated asserted read-back
   * an index link is dead, or a feature file is not linked from features/README.md
   * a TODO(verify) marker remains anywhere in the skill
   * a file in scripts/ is not executable, has no shebang, fails `bash -n` / py_compile,
@@ -21,9 +22,11 @@ import argparse
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
+from urllib.parse import urlsplit
 
 REQUIRED_SECTIONS = ["Launch", "Doctor", "Drive", "Evidence", "Cleanup", "Helpers"]
 FEATURE_H2 = ["Sub-features", "How to get to it (user POV)", "Driving it with <harness>", "Gotchas"]
@@ -74,16 +77,137 @@ def h2_contract_errors(text: str) -> list[str]:
     return errs
 
 
-def recipe_placeholders(text: str) -> list[str]:
-    """`<id>`-style placeholders left in commands of the `Driving it with ...` section."""
+ASSERT_FLAGS = {"--expect-json", "--expect-text", "--expect-no-text"}
+VALUE_FLAGS = ASSERT_FLAGS | {"--feature", "--expect", "--expect-exit", "--write", "--read-back"}
+
+
+def code_commands(text: str) -> list[list[str]]:
+    """Literal commands in inline spans or fenced lines; never execute Markdown."""
+    out, fence, pending = [], False, ""
+    for line in text.splitlines():
+        if re.match(r"^\s*(```|~~~)", line):
+            fence = not fence
+            continue
+        spans = [line.strip()] if fence else re.findall(r"`([^`\n]+)`", line)
+        for code in spans:
+            code = pending + code
+            if fence and code.endswith("\\"):
+                pending = code[:-1] + " "
+                continue
+            pending = ""
+            try:
+                out.append(shlex.split(code))
+            except ValueError:
+                out.append([code])
+    return out
+
+
+def driving_section(text: str) -> str:
     m = re.search(r"^##\s+Driving it with[^\n]*\n(.*?)(?=^##\s|\Z)", text, re.M | re.S)
-    if not m:
-        return []
+    return m.group(1) if m else ""
+
+
+def parse_drive(tokens: list[str]) -> dict | None:
+    """Parse harness options up to CLI --, preserving application arguments."""
+    if "drive" not in tokens:
+        return None
+    args = tokens[tokens.index("drive") + 1:]
+    rec = {"kind": None, "feature": "adhoc", "write": None, "read_back": [], "read_only": False,
+           "assertions": [], "argv": [], "positional": [], "errors": []}
+    while args:
+        arg, args = args[0], args[1:]
+        if arg == "--":
+            rec["argv"] = args
+            break
+        if arg in VALUE_FLAGS:
+            if not args:
+                rec["errors"].append(f"{arg} needs a value")
+                break
+            value, args = args[0], args[1:]
+            if arg in ASSERT_FLAGS:
+                rec["assertions"].append((arg, value))
+                if arg == "--expect-json" and ("=" not in value or not value.split("=", 1)[0]):
+                    rec["errors"].append("--expect-json needs PATH=VALUE")
+            elif arg == "--read-back": rec["read_back"].append(value)
+            elif arg in ("--feature", "--write"): rec[arg[2:]] = value
+        elif arg == "--read-only": rec["read_only"] = True
+        elif rec["kind"] is None and arg in ("http", "cli"): rec["kind"] = arg
+        elif rec["kind"] == "http" and not arg.startswith("--"): rec["positional"].append(arg)
+        else: rec["errors"].append(f"unexpected drive argument {arg}")
+    if rec["write"] and (rec["read_only"] or rec["read_back"]):
+        rec["errors"].append("a drive cannot be both a write and a read")
+    if rec["kind"] == "http" and len(rec["positional"]) in (2, 3) and not rec["argv"]:
+        rec["method"], rec["url"] = rec["positional"][:2]
+        rec["method"] = rec["method"].upper()
+        if (rec["read_only"] or rec["read_back"]) and rec["method"] != "GET":
+            rec["errors"].append("HTTP read-backs must use GET")
+        rec["read_only"] = rec["method"] == "GET"
+    elif rec["kind"] == "cli" and rec["argv"] and not rec["positional"]:
+        rec["read_only"] |= bool(rec["read_back"])
+    else:
+        rec["errors"].append("expected http METHOD PATH [JSON] or cli [flags] -- CMD [ARGS...]")
+    return rec
+
+
+def recipe_drives(text: str) -> list[dict]:
+    return [drive for tokens in code_commands(driving_section(text)) if (drive := parse_drive(tokens)) is not None]
+
+
+def recipe_placeholders(text: str) -> list[str]:
+    """Check command operands, excluding literal assertion payloads such as HTML."""
     found = []
-    for span in re.findall(r"`([^`\n]+)`", m.group(1)):
-        if re.search(r"\b(drive|curl|control\.sh|python3?|npm|go|make)\b", span):
-            found += [p for p in re.findall(r"<[A-Za-z_*][\w*-]*>", span) if p not in found]
+    for tokens in code_commands(driving_section(text)):
+        if not any(re.search(r"\b(drive|curl|control\.sh|python3?|npm|go|make)\b", t) for t in tokens[:2]):
+            continue
+        operands, app = [], False
+        while tokens:
+            token, tokens = tokens[0], tokens[1:]
+            if token == "--": app = True
+            if not app and token in ASSERT_FLAGS:
+                tokens = tokens[1:]
+            else:
+                operands.append(token)
+        for operand in operands:
+            found += [p for p in re.findall(r"<[A-Za-z_*][\w*-]*>", operand) if p not in found]
     return found
+
+
+def second_view_errors(drives: list[dict]) -> list[str]:
+    """Pair each declared write with a later asserted read in the same feature."""
+    errors, pending = [], {}
+    for drive in drives:
+        write, reads = drive.get("write"), drive.get("read_back", [])
+        feature = drive.get("feature", "adhoc")
+        is_read = drive.get("read_only") is True
+        mutation = (drive.get("kind") == "http" and drive.get("method") in ("POST", "PUT", "PATCH", "DELETE")) or \
+                   (drive.get("kind") == "cli" and not is_read)
+        if mutation and not write:
+            errors.append("mutation needs --write KEY and a later asserted --read-back KEY")
+        if write:
+            if is_read or reads:
+                errors.append("a write cannot also declare a read")
+            key = (feature, write)
+            if key in pending:
+                errors.append(f"write {write} was not read back before the next write")
+            pending[key] = drive
+        for label in reads:
+            key = (feature, label)
+            previous = pending.get(key)
+            if not previous:
+                errors.append(f"read-back {label} has no preceding write in this feature")
+                continue
+            if not is_read or not drive.get("assertions"):
+                errors.append(f"read-back {label} needs an asserted GET or CLI read command")
+                continue
+            if previous.get("kind") == drive.get("kind") == "http":
+                written = urlsplit(previous.get("url", "")).path.rstrip("/")
+                read = urlsplit(drive.get("url", "")).path.rstrip("/")
+                if not read or not (written == read or written.startswith(read + "/")):
+                    errors.append(f"read-back {label} must observe the written resource, not {read or '/'}")
+                    continue
+            del pending[key]
+    errors += [f"write {label} needs a later asserted --read-back {label}" for _, label in pending]
+    return errors
 
 
 def feature_files(skill: Path) -> list[Path]:
@@ -160,6 +284,12 @@ def check(skill: Path) -> list[dict]:
         holes = recipe_placeholders(ftext)
         add(f"literal recipes {f.name}", not holes,
             f"placeholder(s) {', '.join(holes)} in a drive command; write the real value" if holes else "")
+        drives = recipe_drives(ftext)
+        errors = [error for drive in drives for error in drive['errors']]
+        errors += second_view_errors(drives)
+        if not any(drive['assertions'] for drive in drives):
+            errors.append("add --expect-json, --expect-text, or --expect-no-text to a drive")
+        add(f"asserted recipes {f.name}", not errors, "; ".join(errors))
     idx = index_report(skill)
     for kind in ("dead", "missing", "duplicate", "extra"):
         vals = idx[kind]
@@ -175,6 +305,9 @@ def check(skill: Path) -> list[dict]:
         if todos else "")
 
     scripts = sorted(p for p in (skill / "scripts").rglob("*") if p.is_file() and "__pycache__" not in p.parts and p.suffix not in (".pyc", ".pyo")) if (skill / "scripts").is_dir() else []
+    control = skill / 'scripts/control.sh'
+    add("assertion-capable harness", control.is_file() and "--expect-json" in control.read_text(encoding="utf-8", errors="replace"),
+        "regenerate control.sh with scaffold.py, then reapply the app's CONFIG values if assertion flags are missing")
     for s in scripts:
         rel = s.relative_to(skill).as_posix()
         execable = os.access(s, os.X_OK)
@@ -196,26 +329,54 @@ def check(skill: Path) -> list[dict]:
 
 
 def proof_result(root: Path) -> dict:
-    """A proof run left a manifest whose files include a drive record (NNN-<feature>-http|cli.json)."""
+    """Open manifested drive records; require execution success, assertions, and read-backs."""
     runs = []
     for m in sorted(root.glob("*/manifest.json")) if root.is_dir() else []:
         try:
-            files = json.loads(m.read_text(encoding="utf-8")).get("files", [])
-        except (OSError, json.JSONDecodeError):
+            manifest = json.loads(m.read_text(encoding="utf-8"))
+            files = manifest["files"]
+            if not isinstance(files, list):
+                continue
+            paths = [f["path"] for f in files if isinstance(f, dict) and isinstance(f.get("path"), str)
+                     and re.fullmatch(r"\d{3,}-(?:[A-Za-z0-9_-]+-)?(?:http|cli)\.json", f["path"])]
+            drives = []
+            for path in sorted(paths):
+                record_path = m.parent / path
+                if record_path.is_symlink():
+                    raise ValueError("drive record is a symlink")
+                drive = json.loads(record_path.read_text(encoding="utf-8"))
+                assertions = drive.get("assertions")
+                if (drive.get("ok") is not True or drive.get("execution_ok") is not True or
+                        not isinstance(assertions, list) or not assertions or
+                        any(not isinstance(a, dict) or a.get("ok") is not True or not a.get("expr") or 'got' not in a
+                            for a in assertions)):
+                    raise ValueError("drive failed execution or has missing/failed assertions")
+                if drive.get('kind') == 'http':
+                    status, expected = drive.get('status', 0), drive.get('expect')
+                    if type(status) is not int or status == 0 or not (str(status) == str(expected) if expected is not None else 200 <= status < 400):
+                        raise ValueError("HTTP status failed")
+                elif drive.get('kind') == 'cli':
+                    if type(drive.get('exit_code')) is not int or drive['exit_code'] != drive.get('expect_exit', 0):
+                        raise ValueError("CLI exit failed")
+                else:
+                    raise ValueError("unknown drive kind")
+                drives.append(drive)
+            if second_view_errors(drives):
+                continue
+        except (OSError, ValueError, KeyError, TypeError, AttributeError):
             continue
-        drives = [f["path"] for f in files if re.fullmatch(r"\d{3}-(.+-)?(http|cli)\.json", f.get("path", ""))]
         if drives:
             runs.append(f"{m.parent.name} ({len(drives)} drive records)")
     return {"check": "proof run with evidence", "ok": bool(runs),
-            "detail": "; ".join(runs[-3:]) if runs else f"no {root}/<run-id>/manifest.json with a drive record: "
-                                                         "run the end-to-end proof (control.sh prove) first"}
+            "detail": "; ".join(runs[-3:]) if runs else f"no {root}/<run-id>/manifest.json with successful, asserted drive records "
+                                                         "and mutation read-backs: run the end-to-end proof first"}
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         prog="check_verify_skill.py",
         description="Check a verify-<app> skill: frontmatter, Launch/Doctor/Drive/Evidence/Cleanup/Helpers sections, "
-                    "feature files with the four ordered H2s, live index links, no TODO(verify) left, and executable, "
+                    "asserted feature recipes with write read-backs and the four ordered H2s, live index links, no TODO(verify) left, and executable, "
                     "documented scripts. Exit 1 on any failure.",
         epilog="example:\n  check_verify_skill.py .claude/skills/verify-todo",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -223,8 +384,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("skill_dir", type=Path, help="the verify-<app> skill directory")
     ap.add_argument("--json", action="store_true", help="machine-readable output")
     ap.add_argument("--require-proof", metavar="EVIDENCE_ROOT", type=Path,
-                    help="also require a proof run: some EVIDENCE_ROOT/<run-id>/manifest.json listing at least one "
-                         "drive record (e.g. artifacts/verify). A skill whose proof never ran is a draft.")
+                    help="also open the drive records in a proof manifest: every drive must pass execution and "
+                         "nonempty assertions, with read-backs for mutations (e.g. artifacts/verify).")
     args = ap.parse_args(argv)
     if not args.skill_dir.is_dir():
         print(f"check_verify_skill: {args.skill_dir} is not a directory", file=sys.stderr)

@@ -194,15 +194,27 @@ def drift(skill: Path, repo: Path) -> dict:
             if seq and seq not in p["seqs"]:
                 p["seqs"].append(seq)
     # A removed CLI still appears in the map. Recover its invocation vocabulary from the
-    # recipes' `drive ... cli -- PROG` commands (not incidental ones like `python3 -m unittest`)
+    # recipes' CLI drives, including assertion flags before -- (not incidental unit tests),
     # so deleting the final subcommand cannot look clean.
     for text in feat_texts.values():
-        for _, code in code_lines(text):
-            for match in re.finditer(r"\bcli\s+--\s+(python3?\s+-m\s+[\w.]+|python3?\s+[\w./-]+\.py|node\s+[\w./-]+\.[cm]?js)\s+", code):
-                prog = match.group(1)
-                if prog not in progs:
-                    progs[prog] = {"subs": set(), "seqs": [prog_tokens(prog)],
-                                   "value_flags": {"--data", "--port", "--data-dir"}}
+        for tokens in cvs.code_commands(text):
+            drive = cvs.parse_drive(tokens)
+            if drive is None or drive['kind'] != 'cli':
+                continue
+            argv = drive['argv']
+            if len(argv) >= 3 and re.fullmatch(r'python3?', argv[0]) and argv[1] == '-m':
+                size = 3
+            elif len(argv) >= 2 and ((re.fullmatch(r'python3?', argv[0]) and argv[1].endswith('.py')) or
+                                    (argv[0] == 'node' and re.search(r'\.[cm]?js$', argv[1]))):
+                size = 2
+            else:
+                continue
+            if len(argv) <= size:
+                continue
+            prog = shlex.join(argv[:size])
+            if prog not in progs:
+                progs[prog] = {"subs": set(), "seqs": [prog_tokens(prog)],
+                               "value_flags": {"--data", "--port", "--data-dir"}}
     launch_subs = {(c["prog"], c["name"]) for c in inv["cli_commands"] if c.get("launch")}
     feat_cmds = {name: command_mentions(t, progs) for name, t in feat_texts.items()}
     infra_cmds = command_mentions(infra_text, progs) + [

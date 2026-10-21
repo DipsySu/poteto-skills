@@ -1,6 +1,6 @@
 # Refactor plan: make repeated feedback impossible
 
-Generated 2026-10-19 by `plan.py` from `/tmp/poteto-examples-25d2flg6/feedback.json` (13 items: 3 chat, 6 commit, 4 review). Repo: `/tmp/poteto-examples-25d2flg6/todo-app`.
+Generated 2026-10-21 by `plan.py` from `/tmp/poteto-examples-q85kbr94/feedback.json` (13 items: 3 chat, 6 commit, 4 review). Repo: `/tmp/poteto-examples-q85kbr94/todo-app`.
 
 Each theme is a cluster of feedback seen at least 2 times. Its level is the highest that can work: architecture > types > lint whose message names the fix > test > docs. Target designs are drafts; refine them with /architect before implementing.
 
@@ -39,18 +39,18 @@ Make `Store` the single owner: callers use `Store.add`, nothing else touches wha
 ### Steps
 
 1. Run /architect on the owner boundary: sketch the owner API (Store.add) and the module layout, two candidates.
-2. Route every call site through the owner; list them with the lint: `python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-25d2flg6/plan/lint-rules.json --root /tmp/poteto-examples-25d2flg6/todo-app /tmp/poteto-examples-25d2flg6/todo-app`.
+2. Route every call site through the owner; list them with the lint: `python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-q85kbr94/plan/lint-rules.json --root /tmp/poteto-examples-q85kbr94/todo-app /tmp/poteto-examples-q85kbr94/todo-app`.
 3. Delete the old path and any helper an agent could copy.
 4. Keep the lint with a baseline while migrating; drop the AGENTS.md rule once the lint makes the mistake unmergeable.
 
 ### Proof
 
-Rule `no-rows-append-outside-store` in `/tmp/poteto-examples-25d2flg6/plan/lint-rules.json`: regex `(?:\brows\.append\b|\bstore\.path\.write_text\b)`, include ['**/*.py'], message: Use `Store.add` instead of `rows.append`, `store.path.write_text` (todo/store.py owns this). Theme T1: store.py / bypassing / direct.
-- fix 2fd7988731: 2 hit(s) at `2fd7988731eb^`, 0 at `2fd7988731eb`: fires on the mistake and not on the fix. Rerun: `python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-25d2flg6/plan/lint-rules.json --root /tmp/poteto-examples-25d2flg6/todo-app --rev '2fd7988731eb^' todo/api.py`
-- fix dbd4400868: 0 hit(s) at `dbd440086858^`, 2 at `dbd440086858`: does NOT distinguish mistake from fix. Rerun: `python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-25d2flg6/plan/lint-rules.json --root /tmp/poteto-examples-25d2flg6/todo-app --rev 'dbd440086858^' todo/api.py`
-- revert 97a3f30001: 2 hit(s) at `97a3f3000122^`, 0 at `97a3f3000122`: fires on the mistake and not on the fix. Rerun: `python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-25d2flg6/plan/lint-rules.json --root /tmp/poteto-examples-25d2flg6/todo-app --rev '97a3f3000122^' todo/__main__.py`
-- reverted 570c1e91c2: 2 hit(s) at `570c1e91c258`, 0 at `570c1e91c258^`: fires on the mistake and not on the fix. Rerun: `python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-25d2flg6/plan/lint-rules.json --root /tmp/poteto-examples-25d2flg6/todo-app --rev 570c1e91c258 todo/__main__.py`
-- HEAD: 0 hit(s) now. Rerun: `python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-25d2flg6/plan/lint-rules.json --root /tmp/poteto-examples-25d2flg6/todo-app /tmp/poteto-examples-25d2flg6/todo-app`. After the refactor this must be 0, or held by a ratchet baseline.
+Rule `no-rows-append-outside-store` in `/tmp/poteto-examples-q85kbr94/plan/lint-rules.json`: regex `(?:\brows\.append\b|\bstore\.path\.write_text\b)`, include ['**/*.py'], message: Use `Store.add` instead of `rows.append`, `store.path.write_text` (todo/store.py owns this). Theme T1: store.py / bypassing / direct.
+- fix 2fd7988731: 2 hit(s) at `2fd7988731eb^`, 0 at `2fd7988731eb`: fires on the mistake and not on the fix. Rerun: `python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-q85kbr94/plan/lint-rules.json --root /tmp/poteto-examples-q85kbr94/todo-app --rev '2fd7988731eb^' todo/api.py`
+- fix dbd4400868: 0 hit(s) at `dbd440086858^`, 2 at `dbd440086858`: does NOT distinguish mistake from fix. Rerun: `python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-q85kbr94/plan/lint-rules.json --root /tmp/poteto-examples-q85kbr94/todo-app --rev 'dbd440086858^' todo/api.py`
+- revert 97a3f30001: 2 hit(s) at `97a3f3000122^`, 0 at `97a3f3000122`: fires on the mistake and not on the fix. Rerun: `python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-q85kbr94/plan/lint-rules.json --root /tmp/poteto-examples-q85kbr94/todo-app --rev '97a3f3000122^' todo/__main__.py`
+- reverted 570c1e91c2: 2 hit(s) at `570c1e91c258`, 0 at `570c1e91c258^`: fires on the mistake and not on the fix. Rerun: `python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-q85kbr94/plan/lint-rules.json --root /tmp/poteto-examples-q85kbr94/todo-app --rev 570c1e91c258 todo/__main__.py`
+- HEAD: 0 hit(s) now. Rerun: `python3 /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-q85kbr94/plan/lint-rules.json --root /tmp/poteto-examples-q85kbr94/todo-app /tmp/poteto-examples-q85kbr94/todo-app`. After the refactor this must be 0, or held by a ratchet baseline.
 Record the enforcement: `rule_table.py add AGENTS.md --rule "..." --enforced-by "..."` (from the correct skill).
 
 ## T2: done / status / transition

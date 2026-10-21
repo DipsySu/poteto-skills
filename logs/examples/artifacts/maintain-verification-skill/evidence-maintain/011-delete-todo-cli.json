@@ -1,17 +1,32 @@
 {
   "feature": "delete-todo",
   "kind": "cli",
+  "write": null,
+  "read_back": [
+    "reject-cli"
+  ],
+  "read_only": true,
+  "started": "2026-10-21T02:49:18Z",
   "argv": [
     "/usr/bin/python3",
     "-m",
     "todo",
-    "rm",
-    "2",
+    "list",
     "--data",
-    "/tmp/poteto-examples-25d2flg6/verify-state-maintain/maintain/data"
+    "/tmp/poteto-examples-q85kbr94/verify-state-maintain/maintain/data"
   ],
   "exit_code": 0,
-  "stdout": "{\"id\": 2, \"status\": \"archived\", \"title\": \"verify CLI\"}\n",
+  "stdout": "[{\"id\": 1, \"status\": \"open\", \"title\": \"verify HTTP\"}, {\"id\": 2, \"status\": \"open\", \"title\": \"verify CLI\"}]\n",
   "stderr": "",
-  "finished": "2026-10-19T07:59:28Z"
+  "expect_exit": 0,
+  "assertions": [
+    {
+      "expr": "--expect-json 1.status=open",
+      "ok": true,
+      "got": "open"
+    }
+  ],
+  "execution_ok": true,
+  "ok": true,
+  "elapsed_ms": 51.1
 }

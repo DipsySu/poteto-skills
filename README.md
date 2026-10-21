@@ -17,7 +17,7 @@ From Lauren Tan's [post](https://x.com/poteto/status/2111133080526495985) (S1 in
 
 | Skill | Use it for | Leaves behind |
 |---|---|---|
-| [`/create-verification-skill`](skills/create-verification-skill/SKILL.md) | an app agents can't yet launch, drive, and prove | `verify-<app>/` with a feature map and a `control.sh` harness (launch, doctor, drive, evidence, cleanup, prove) |
+| [`/create-verification-skill`](skills/create-verification-skill/SKILL.md) | an app agents can't yet launch, drive, and prove | `verify-<app>/` with asserted HTTP/CLI recipes, write read-backs, and a `control.sh` harness (launch, doctor, drive, evidence, cleanup, prove) |
 | [`/maintain-verification-skill`](skills/maintain-verification-skill/SKILL.md) | keeping that map honest, daily | a drift report (exit 1), a live pass, at most one PR |
 | [`/correct`](skills/correct/SKILL.md) | mistakes agents repeat | mistake classes from history, `patlint` rules proven on past mistakes, an enforced rule table |
 | [`/feedback-to-architecture`](skills/feedback-to-architecture/SKILL.md) | review feedback that keeps coming back | `REFACTOR_PLAN.md` plus lint rules replayed against git history |

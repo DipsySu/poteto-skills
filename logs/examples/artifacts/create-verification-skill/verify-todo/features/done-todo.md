@@ -13,11 +13,13 @@ On a fresh run use the create recipe to seed open records 1 and 2.
 
 ## Driving it with control.sh
 
-- `.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo http POST /todos/1/done --expect 200` returns ID 1, status done.
-- `.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo http POST /todos/1/done --expect 409` reports an illegal repeated completion.
-- `.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo cli -- python3 -m todo done 2 --data {DATA_DIR}` exits 0 with ID 2, status done.
-- `.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo http GET /todos --expect 200` shows both records done.
-- `.claude/skills/verify-todo/scripts/control.sh evidence --copy-data` preserves the rejected retry and the stored done states.
+- `.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo --write done-http http POST /todos/1/done --expect 200 --expect-json 'id=1' --expect-json 'status=done'` completes the first record.
+- `.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo --read-back done-http http GET /todos --expect-json '0.status=done'` observes completion.
+- `.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo --write done-retry http POST /todos/1/done --expect 409 --expect-json 'error=cannot move done to done'` rejects repeated completion.
+- `.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo --read-back done-retry http GET /todos --expect-json '0.status=done'` checks that rejection changes nothing.
+- `.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo cli --write done-cli --expect-json 'id=2' --expect-json 'status=done' -- python3 -m todo done 2 --data {DATA_DIR}` completes the second record.
+- `.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo cli --read-back done-cli --expect-json '1.status=done' -- python3 -m todo list --data {DATA_DIR}` observes the CLI completion.
+- `.claude/skills/verify-todo/scripts/control.sh evidence --copy-data` retains the requests, assertions, read-backs, and stored todos.json.
 
 ## Gotchas
 

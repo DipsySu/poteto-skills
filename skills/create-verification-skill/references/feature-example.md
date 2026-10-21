@@ -1,32 +1,28 @@
 # Mark a todo done
 
-A user marks an open todo as done from the HTTP API or the terminal. The todo keeps its id and title, its status becomes `done`, and it still appears in the list.
+Move an open task to done. A second completion is rejected.
 
 ## Sub-features
 
-- `done-todo-http`: `POST /todos/<id>/done` marks one todo done.
-- `done-todo-cli`: `python3 -m todo done <id>` does the same from a terminal.
-- `done-todo-twice`: marking a done todo again is rejected and changes nothing.
+- `POST /todos/<id>/done` completes an open record.
+- `python3 -m todo done` performs the same transition through the CLI.
 
 ## How to get to it (user POV)
 
-- HTTP API: `POST /todos/<id>/done` on the running server.
-- Terminal: `python3 -m todo --data <dir> done <id>`.
+On a fresh run, follow the create-todo recipe to seed open records 1 and 2, then run doctor. IDs stay stable through completion.
 
 ## Driving it with control.sh
 
-Preconditions:
-
-- `.claude/skills/verify-todo/scripts/control.sh doctor` exits 0.
-- Todo `1` exists: on a fresh run, `.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo http POST /todos '{"title": "Buy milk"}'` returns `201` with `"id": 1`.
-
-- **HTTP.** Run `.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo http POST /todos/1/done --expect 200`. The body is `{"id": 1, "status": "done"}`.
-- **Twice.** Run the same command again with `--expect 409`. The body names the illegal transition `done -> done`.
-- **CLI.** Create todo `2` the same way, then run `.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo cli -- python3 -m todo --data {DATA_DIR} done 2`. Exit code `0`; stdout lists todo `2` with `"status": "done"`.
-- **Proof.** Run `.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo http GET /todos` and `.claude/skills/verify-todo/scripts/control.sh evidence --copy-data`. The list shows todos `1` and `2` as `done`, and the snapshot's `todos.json` has the same statuses.
+- `.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo --write done-http http POST /todos/1/done --expect 200 --expect-json 'id=1' --expect-json 'status=done'` completes the first record.
+- `.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo --read-back done-http http GET /todos --expect-json '0.status=done'` observes completion.
+- `.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo --write done-retry http POST /todos/1/done --expect 409 --expect-json 'error=cannot move done to done'` rejects repeated completion.
+- `.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo --read-back done-retry http GET /todos --expect-json '0.status=done'` checks that rejection changes nothing.
+- `.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo cli --write done-cli --expect-json 'id=2' --expect-json 'status=done' -- python3 -m todo done 2 --data {DATA_DIR}` completes the second record.
+- `.claude/skills/verify-todo/scripts/control.sh drive --feature done-todo cli --read-back done-cli --expect-json '1.status=done' -- python3 -m todo list --data {DATA_DIR}` observes the CLI completion.
+- `.claude/skills/verify-todo/scripts/control.sh evidence --copy-data` retains the requests, assertions, read-backs, and stored todos.json.
 
 ## Gotchas
 
-- Ids start at `1` only on an empty data dir. On a reused run, read the id from the create response.
-- The CLI defaults to `./data` without `--data {DATA_DIR}` and would edit the developer's real list.
-- A `200` alone proves nothing about storage; the read-back and the snapshot are the proof.
+Only open -> done is legal. Completion of a missing ID returns 404. Start a new run before replaying literal IDs.
+
+A status alone does not prove storage. Each labelled read-back asserts the stored value; `--expect-no-text TEXT` can check absence after a hard delete. Use `--expect-json '.=[]'` for an empty list.

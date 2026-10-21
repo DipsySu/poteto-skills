@@ -1,4 +1,4 @@
-scratch: /tmp/poteto-examples-25d2flg6
+scratch: /tmp/poteto-examples-q85kbr94
 $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_model.py --mutants --json
 {
   "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_model.py",

@@ -20,6 +20,8 @@ def main():
     if marker not in text:
         ap.error("expected scaffold seed-data question is missing")
     index.write_text(text.replace(marker, '- None at launch. Each mutation recipe names its seed command; a fresh store starts IDs at 1.'))
+    entry = args.skill_dir / 'SKILL.md'
+    entry.write_text(entry.read_text().replace("--expect-json 'TODO(verify)'", "--expect-json '.=[]'"))
     for fixture in fixtures.glob("*.md"):
         shutil.copyfile(fixture, args.skill_dir / "features" / fixture.name)
     print(f"filled {len(expected)} feature recipes with the example's real commands")

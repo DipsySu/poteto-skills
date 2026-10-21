@@ -1,6 +1,6 @@
 # Brief: Prevent lost todo writes and invalid status transitions
 
-Written 2026-10-19. Fill in every blank below, then run `brief.py --check` on this file. Keep it short: the point is better work, not a bigger plan.
+Written 2026-10-21. Fill in every blank below, then run `brief.py --check` on this file. Keep it short: the point is better work, not a bigger plan.
 
 ## In my own words
 

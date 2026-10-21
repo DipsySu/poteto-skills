@@ -13,10 +13,11 @@ Launch with `.claude/skills/verify-todo/scripts/control.sh launch`, then doctor.
 
 ## Driving it with control.sh
 
-- `.claude/skills/verify-todo/scripts/control.sh drive --feature create-todo http POST /todos '{"title":"verify HTTP"}' --expect 201` returns ID 1, title verify HTTP, status open.
-- `.claude/skills/verify-todo/scripts/control.sh drive --feature create-todo cli -- python3 -m todo add 'verify CLI' --data {DATA_DIR}` exits 0 and returns ID 2, status open.
-- `.claude/skills/verify-todo/scripts/control.sh drive --feature create-todo http GET /todos --expect 200` returns both records, matching the CLI output.
-- `.claude/skills/verify-todo/scripts/control.sh evidence --copy-data` retains the requests, responses and todos.json containing both records.
+- `.claude/skills/verify-todo/scripts/control.sh drive --feature create-todo --write create-http http POST /todos '{"title":"verify HTTP"}' --expect 201 --expect-json 'id=1' --expect-json 'status=open'` returns the new record.
+- `.claude/skills/verify-todo/scripts/control.sh drive --feature create-todo --read-back create-http http GET /todos --expect 200 --expect-json '0.title=verify HTTP' --expect-json '0.status=open'` observes the stored title and status.
+- `.claude/skills/verify-todo/scripts/control.sh drive --feature create-todo cli --write create-cli --expect-json 'id=2' --expect-json 'status=open' -- python3 -m todo add 'verify CLI' --data {DATA_DIR}` returns the second record.
+- `.claude/skills/verify-todo/scripts/control.sh drive --feature create-todo cli --read-back create-cli --expect-json '1.title=verify CLI' --expect-json '1.status=open' -- python3 -m todo list --data {DATA_DIR}` observes the CLI write.
+- `.claude/skills/verify-todo/scripts/control.sh evidence --copy-data` retains the requests, assertions, read-backs, and stored todos.json.
 
 ## Gotchas
 

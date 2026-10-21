@@ -27,7 +27,8 @@ Prove behavior on the running app, not a proxy. Every step goes through `.claude
 
 ## Evidence
 
-- Every drive writes `artifacts/verify/<run-id>/NNN-<feature>-<http|cli>.json`: the request or argv, the status or exit code, the response body or stdout/stderr, and timing.
+- Every drive writes `artifacts/verify/<run-id>/NNN-<feature>-<http|cli>.json`: the request or argv, the status or exit code, the response body or stdout/stderr, timing, assertions, execution_ok, and overall ok. Overall ok requires successful execution and every assertion passing.
+- Use repeatable `--expect-json 'PATH=VALUE'` (`.` for the root), `--expect-text TEXT`, or `--expect-no-text TEXT`; CLI `--expect-exit N` defaults to 0. Put harness flags before the CLI `--`. See the feature index for assertion and write/read-back conventions.
 - `.claude/skills/verify-todo/scripts/control.sh evidence --copy-data` snapshots the data dir (the side effect) and writes `manifest.json` with a sha256 per file.
 - Proof standard: the real user path (no internal setters or test-only endpoints); the action and the resulting state, read back through a second view; side effects checked, not inferred; mocks only at production boundaries. If a dry-run or test mode is used, observe what it really skips.
 
@@ -38,6 +39,6 @@ Prove behavior on the running app, not a proxy. Every step goes through `.claude
 ## Helpers
 
 - `scripts/control.sh`: `launch | doctor | drive | evidence | cleanup | status | prove`. `.claude/skills/verify-todo/scripts/control.sh --help` lists the arguments.
-- One-shot proof: `.claude/skills/verify-todo/scripts/control.sh prove --feature <id> http GET /todos` runs launch, doctor, drive, evidence, and cleanup, then checks the evidence survived.
+- One-shot proof: `.claude/skills/verify-todo/scripts/control.sh prove --feature <id> http GET /todos --expect-json '.=[]'` runs launch, doctor, drive, evidence, and cleanup, then checks the evidence survived. This shortcut accepts read-only drives. For mutations, run launch, doctor, the recipe's `--write KEY` drive and asserted `--read-back KEY` drive, evidence --copy-data, then cleanup; cleanup is required after a failed attempt too.
 - Contract check: `python3 /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py .claude/skills/verify-todo`.
 - Drift check: `python3 /home/box/developer/poteto-skills/skills/maintain-verification-skill/scripts/drift_check.py .claude/skills/verify-todo --repo .`.
