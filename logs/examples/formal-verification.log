@@ -1,4 +1,4 @@
-scratch: /tmp/poteto-examples-4dfshnbm
+scratch: /tmp/poteto-examples-3y9j5k2w
 $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_model.py --mutants --json
 {
   "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_model.py",
@@ -1045,3 +1045,412 @@ $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/tla_avail
 
 [exit 1; expected (0, 1)]
 ASSERT PASS: TLA availability exit code matches its report and advertises the stdlib fallback
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json
+{
+  "seed": 0,
+  "ok": true,
+  "properties": {
+    "round_trip": {
+      "result": "pass",
+      "accepted": 96,
+      "generated": 100,
+      "rejected": 5,
+      "counterexample": null,
+      "detail": null,
+      "shrink_attempts": 0
+    }
+  },
+  "called": [
+    "todo/store.py:Store.__init__",
+    "todo/store.py:Store._transaction",
+    "todo/store.py:Store.add",
+    "todo/store.py:Store.add.<locals>.change",
+    "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
+    "todo/store.py:Store.list_all"
+  ],
+  "missing_targets": []
+}
+
+[exit 0; expected 0]
+ASSERT PASS: real Store round trip checks title.strip() and independent persistence after pinned examples
+ASSERT PASS: scratch break identifies only the persisted title assignment
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --expect-fail round_trip
+gen_check: /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_props.py (seed 0)
+  round_trip: fail (1 accepted, 0/0 generated rejected)
+    reduced counterexample: 'l '
+    AssertionError:  (10 shrink attempts)
+  repo functions run: todo/store.py:Store.__init__, todo/store.py:Store._transaction, todo/store.py:Store.add, todo/store.py:Store.add.<locals>.change, todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>, todo/store.py:Store.list_all
+PASS
+
+[exit 0; expected 0]
+ASSERT PASS: scratch break prints a reduced counterexample and replay seed
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --expect-fail round_trip --json
+{
+  "seed": 0,
+  "ok": true,
+  "properties": {
+    "round_trip": {
+      "result": "fail",
+      "accepted": 1,
+      "generated": 0,
+      "rejected": 0,
+      "counterexample": "'l '",
+      "detail": "AssertionError: ",
+      "shrink_attempts": 10
+    }
+  },
+  "called": [
+    "todo/store.py:Store.__init__",
+    "todo/store.py:Store._transaction",
+    "todo/store.py:Store.add",
+    "todo/store.py:Store.add.<locals>.change",
+    "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
+    "todo/store.py:Store.list_all"
+  ],
+  "missing_targets": []
+}
+
+[exit 0; expected 0]
+ASSERT PASS: removing assignment strip shrinks to a nonblank title with surrounding whitespace
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --expect-fail round_trip --json
+{
+  "seed": 0,
+  "ok": true,
+  "properties": {
+    "round_trip": {
+      "result": "fail",
+      "accepted": 1,
+      "generated": 0,
+      "rejected": 0,
+      "counterexample": "'l '",
+      "detail": "AssertionError: ",
+      "shrink_attempts": 10
+    }
+  },
+  "called": [
+    "todo/store.py:Store.__init__",
+    "todo/store.py:Store._transaction",
+    "todo/store.py:Store.add",
+    "todo/store.py:Store.add.<locals>.change",
+    "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
+    "todo/store.py:Store.list_all"
+  ],
+  "missing_targets": []
+}
+
+[exit 0; expected 0]
+ASSERT PASS: same seed replays the same reduced counterexample and call report
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json
+{
+  "seed": 0,
+  "ok": true,
+  "properties": {
+    "round_trip": {
+      "result": "pass",
+      "accepted": 96,
+      "generated": 100,
+      "rejected": 5,
+      "counterexample": null,
+      "detail": null,
+      "shrink_attempts": 0
+    }
+  },
+  "called": [
+    "todo/store.py:Store.__init__",
+    "todo/store.py:Store._transaction",
+    "todo/store.py:Store.add",
+    "todo/store.py:Store.add.<locals>.change",
+    "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
+    "todo/store.py:Store.list_all"
+  ],
+  "missing_targets": []
+}
+
+[exit 0; expected 0]
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --expect-fail round_trip
+gen_check: /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_props.py (seed 0)
+  round_trip: pass (96 accepted, 5/100 generated rejected)
+  repo functions run: todo/store.py:Store.__init__, todo/store.py:Store._transaction, todo/store.py:Store.add, todo/store.py:Store.add.<locals>.change, todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>, todo/store.py:Store.list_all
+FAIL
+
+[exit 1; expected 1]
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_copy.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {
+    "copy": {
+      "result": "pass",
+      "accepted": 100,
+      "generated": 100,
+      "rejected": 0,
+      "counterexample": null,
+      "detail": null,
+      "shrink_attempts": 0
+    }
+  },
+  "called": [],
+  "missing_targets": [
+    "todo/store.py:Store.add"
+  ]
+}
+
+[exit 1; expected 1]
+ASSERT PASS: copy: pasted add cannot satisfy declared Store.add even with imports/construction
+ASSERT PASS: property-module functions are outside the repo call report
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_imported_copy.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {
+    "copy": {
+      "result": "pass",
+      "accepted": 100,
+      "generated": 100,
+      "rejected": 0,
+      "counterexample": null,
+      "detail": null,
+      "shrink_attempts": 0
+    }
+  },
+  "called": [],
+  "missing_targets": [
+    "todo/store.py:Store.add"
+  ]
+}
+
+[exit 1; expected 1]
+ASSERT PASS: imported_copy: pasted add cannot satisfy declared Store.add even with imports/construction
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_filter.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {
+    "filtered": {
+      "result": "filter_too_much",
+      "accepted": 1,
+      "generated": 100,
+      "rejected": 100,
+      "counterexample": null,
+      "detail": null,
+      "shrink_attempts": 0
+    }
+  },
+  "called": [
+    "todo/store.py:Store.__init__",
+    "todo/store.py:Store._transaction",
+    "todo/store.py:Store.add",
+    "todo/store.py:Store.add.<locals>.change",
+    "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
+    "todo/store.py:Store.list_all"
+  ],
+  "missing_targets": []
+}
+
+[exit 1; expected 1]
+ASSERT PASS: over-half generated rejection fails even when pinned accepted input covers targets
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_filter_expected.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json --expect-fail filtered
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {
+    "filtered": {
+      "result": "filter_too_much",
+      "accepted": 1,
+      "generated": 100,
+      "rejected": 100,
+      "counterexample": null,
+      "detail": null,
+      "shrink_attempts": 0
+    }
+  },
+  "called": [
+    "todo/store.py:Store.__init__",
+    "todo/store.py:Store._transaction",
+    "todo/store.py:Store.add",
+    "todo/store.py:Store.add.<locals>.change",
+    "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
+    "todo/store.py:Store.list_all"
+  ],
+  "missing_targets": []
+}
+
+[exit 1; expected 1]
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_never.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {
+    "ok": {
+      "result": "pass",
+      "accepted": 100,
+      "generated": 100,
+      "rejected": 0,
+      "counterexample": null,
+      "detail": null,
+      "shrink_attempts": 0
+    }
+  },
+  "called": [
+    "todo/store.py:Store.__init__",
+    "todo/store.py:Store._transaction",
+    "todo/store.py:Store.add",
+    "todo/store.py:Store.add.<locals>.change",
+    "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
+    "todo/store.py:Store.list_all"
+  ],
+  "missing_targets": [
+    "todo/store.py:Store.transition"
+  ]
+}
+
+[exit 1; expected 1]
+ASSERT PASS: one uncalled declared target fails despite other repo functions running
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_import_call.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {
+    "ok": {
+      "result": "pass",
+      "accepted": 100,
+      "generated": 100,
+      "rejected": 0,
+      "counterexample": null,
+      "detail": null,
+      "shrink_attempts": 0
+    }
+  },
+  "called": [],
+  "missing_targets": [
+    "todo/store.py:Store.add"
+  ]
+}
+
+[exit 1; expected 1]
+ASSERT PASS: target calls made during imports do not count
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_hook_call.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {
+    "ok": {
+      "result": "pass",
+      "accepted": 100,
+      "generated": 100,
+      "rejected": 0,
+      "counterexample": null,
+      "detail": null,
+      "shrink_attempts": 0
+    }
+  },
+  "called": [],
+  "missing_targets": [
+    "todo/store.py:Store.add"
+  ]
+}
+
+[exit 1; expected 1]
+ASSERT PASS: target calls made during setup/reset do not count
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_rejected_call.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {
+    "ok": {
+      "result": "filter_too_much",
+      "accepted": 0,
+      "generated": 100,
+      "rejected": 100,
+      "counterexample": null,
+      "detail": null,
+      "shrink_attempts": 0
+    }
+  },
+  "called": [],
+  "missing_targets": [
+    "todo/store.py:Store.add"
+  ]
+}
+
+[exit 1; expected 1]
+ASSERT PASS: target calls made only in rejected checks do not count
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_import_error.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json --expect-fail broken
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {},
+  "called": [],
+  "missing_targets": [],
+  "result": "error",
+  "error": "RuntimeError: import"
+}
+
+[exit 2; expected 2]
+ASSERT PASS: import_error: infrastructure error never satisfies --expect-fail
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_setup_error.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json --expect-fail broken
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {},
+  "called": [],
+  "missing_targets": [],
+  "result": "error",
+  "error": "RuntimeError: setup"
+}
+
+[exit 2; expected 2]
+ASSERT PASS: setup_error: infrastructure error never satisfies --expect-fail
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_reset_error.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json --expect-fail broken
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {},
+  "called": [],
+  "missing_targets": [],
+  "result": "error",
+  "error": "RuntimeError: reset"
+}
+
+[exit 2; expected 2]
+ASSERT PASS: reset_error: infrastructure error never satisfies --expect-fail
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_hook_exit.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json --expect-fail broken
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {},
+  "called": [],
+  "missing_targets": [],
+  "result": "error",
+  "error": "SystemExit: 0"
+}
+
+[exit 2; expected 2]
+ASSERT PASS: hook_exit: infrastructure error never satisfies --expect-fail
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_generation_error.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json --expect-fail broken
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {},
+  "called": [],
+  "missing_targets": [],
+  "result": "error",
+  "error": "RuntimeError: draw"
+}
+
+[exit 2; expected 2]
+ASSERT PASS: generation_error: infrastructure error never satisfies --expect-fail
+$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_shrink_error.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json --expect-fail broken
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {},
+  "called": [],
+  "missing_targets": [],
+  "result": "error",
+  "error": "RuntimeError: shrink"
+}
+
+[exit 2; expected 2]
+ASSERT PASS: shrink_error: infrastructure error never satisfies --expect-fail
+ASSERT PASS: all seven combinators generate and shrink bounded nested inputs

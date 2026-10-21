@@ -1,0 +1,24 @@
+{
+  "seed": 0,
+  "ok": true,
+  "properties": {
+    "round_trip": {
+      "result": "pass",
+      "accepted": 96,
+      "generated": 100,
+      "rejected": 5,
+      "counterexample": null,
+      "detail": null,
+      "shrink_attempts": 0
+    }
+  },
+  "called": [
+    "todo/store.py:Store.__init__",
+    "todo/store.py:Store._transaction",
+    "todo/store.py:Store.add",
+    "todo/store.py:Store.add.<locals>.change",
+    "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
+    "todo/store.py:Store.list_all"
+  ],
+  "missing_targets": []
+}

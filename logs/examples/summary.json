@@ -212,7 +212,27 @@
       "repeat_done produces a real legal_status counterexample trace",
       "empty initial states and invalid bounds are rejected",
       "deadlock alone does not prove an invariant mutant was killed",
-      "TLA availability exit code matches its report and advertises the stdlib fallback"
+      "TLA availability exit code matches its report and advertises the stdlib fallback",
+      "real Store round trip checks title.strip() and independent persistence after pinned examples",
+      "scratch break identifies only the persisted title assignment",
+      "scratch break prints a reduced counterexample and replay seed",
+      "removing assignment strip shrinks to a nonblank title with surrounding whitespace",
+      "same seed replays the same reduced counterexample and call report",
+      "copy: pasted add cannot satisfy declared Store.add even with imports/construction",
+      "property-module functions are outside the repo call report",
+      "imported_copy: pasted add cannot satisfy declared Store.add even with imports/construction",
+      "over-half generated rejection fails even when pinned accepted input covers targets",
+      "one uncalled declared target fails despite other repo functions running",
+      "target calls made during imports do not count",
+      "target calls made during setup/reset do not count",
+      "target calls made only in rejected checks do not count",
+      "import_error: infrastructure error never satisfies --expect-fail",
+      "setup_error: infrastructure error never satisfies --expect-fail",
+      "reset_error: infrastructure error never satisfies --expect-fail",
+      "hook_exit: infrastructure error never satisfies --expect-fail",
+      "generation_error: infrastructure error never satisfies --expect-fail",
+      "shrink_error: infrastructure error never satisfies --expect-fail",
+      "all seven combinators generate and shrink bounded nested inputs"
     ]
   },
   "maintain-verification-skill": {

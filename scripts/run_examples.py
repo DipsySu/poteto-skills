@@ -752,6 +752,119 @@ class Examples:
             availability = self.json(self.script(self.name,'tla_available.sh'),'--json',expected=(0,1))
             self.ensure(self.last_returncode == (0 if availability['available'] else 1), 'TLA availability exit code matches its report and advertises the stdlib fallback')
             self.save('tla-availability.json', availability)
+            self.generated_properties()
+
+    def generated_properties(self):
+        checker = self.script(self.name, 'gen_check.py')
+        props = self.copy(ROOT/'examples/fixtures/todo_props.py')
+        command = [checker, props, '--repo', self.repo]
+        good = self.json(*command, '--json')
+        self.ensure(good['ok'] and good['properties']['round_trip']['generated'] == 100,
+                    'real Store round trip checks title.strip() and independent persistence after pinned examples')
+        self.save('generated-result.json', good)
+        source = self.repo/'todo/store.py'
+        original = source.read_text()
+        assignment = '"title": title.strip()'
+        self.ensure(original.count(assignment) == 1, 'scratch break identifies only the persisted title assignment')
+        try:
+            source.write_text(original.replace(assignment, '"title": title'))
+            output = self.run(*command, '--expect-fail', 'round_trip')
+            self.ensure('reduced counterexample:' in output and 'seed 0' in output,
+                        'scratch break prints a reduced counterexample and replay seed')
+            broken = self.json(*command, '--expect-fail', 'round_trip', '--json')
+            import ast
+            title = ast.literal_eval(broken['properties']['round_trip']['counterexample'])
+            self.ensure(title.strip() and title != title.strip() and len(title) < len('  pinned title  '),
+                        'removing assignment strip shrinks to a nonblank title with surrounding whitespace')
+            replay = self.json(*command, '--expect-fail', 'round_trip', '--json')
+            self.ensure(replay == broken, 'same seed replays the same reduced counterexample and call report')
+            self.save('generated-counterexample.json', broken)
+        finally:
+            source.write_text(original)
+        self.json(*command, '--json')
+        self.run(*command, '--expect-fail', 'round_trip', expected=1)
+
+        def case(name, body, expected=1, *flags):
+            path = self.art/f'props_{name}.py'
+            path.write_text(body)
+            return self.json(checker, path, '--repo', self.repo, '--json', *flags, expected=expected)
+
+        header = 'from gen_check import *\nTARGETS = ["todo/store.py:Store.add"]\n'
+        pasted = '''
+def add(title):
+    if not isinstance(title, str) or not title.strip():
+        raise ValueError("title must be a nonempty string")
+    rows = []
+    row = {"id": max((r["id"] for r in rows), default=0) + 1,
+           "title": title.strip(), "status": "open"}
+    rows.append(row)
+    return row
+def check(title):
+    assert add(title)["title"] == title.strip()
+properties = {"copy": (sampled_from([" title "]), check)}
+'''
+        for name, extra in [('copy', ''), ('imported_copy', 'import todo.store\nfrom pathlib import Path\nimport tempfile\n_temp = tempfile.TemporaryDirectory()\nstore = todo.store.Store(_temp.name)\n')]:
+            result = case(name, header + extra + pasted)
+            self.ensure(result['missing_targets'] == ['todo/store.py:Store.add'],
+                        f'{name}: pasted add cannot satisfy declared Store.add even with imports/construction')
+            if not extra:
+                self.ensure(not result['called'], 'property-module functions are outside the repo call report')
+
+        active = ('from todo_props import reset, round_trip\n'
+                  'def check(x):\n    round_trip("valid")\n')
+        result = case('filter', header + active.replace('    round_trip("valid")',
+                      '    round_trip("valid")\n    if x: reject()') +
+                      'properties = {"filtered": (sampled_from([True]), check)}\n'
+                      'examples = {"filtered": [False]}\n')
+        self.ensure(result['properties']['filtered']['result'] == 'filter_too_much' and not result['missing_targets'],
+                    'over-half generated rejection fails even when pinned accepted input covers targets')
+        case('filter_expected', (self.art/'props_filter.py').read_text(), 1, '--expect-fail', 'filtered')
+
+        result = case('never', header + active + 'TARGETS += ["todo/store.py:Store.transition"]\n'
+                      'properties = {"ok": (ints(), check)}\n')
+        self.ensure(result['missing_targets'] == ['todo/store.py:Store.transition'],
+                    'one uncalled declared target fails despite other repo functions running')
+        result = case('import_call', header + 'from todo_props import reset, round_trip\n'
+                      'reset()\nround_trip("imported")\n'
+                      'properties = {"ok": (ints(), lambda x: None)}\n')
+        self.ensure(not result['called'], 'target calls made during imports do not count')
+        result = case('hook_call', header + 'from todo_props import reset, round_trip\n'
+                      'def setup():\n    reset()\n    round_trip("setup")\n'
+                      'properties = {"ok": (ints(), lambda x: None)}\n')
+        self.ensure(not result['called'], 'target calls made during setup/reset do not count')
+        result = case('rejected_call', header + active.replace('    round_trip("valid")',
+                      '    round_trip("valid")\n    reject()') + 'properties = {"ok": (ints(), check)}\n')
+        self.ensure(not result['called'], 'target calls made only in rejected checks do not count')
+
+        # An exception in the check is a violation; exceptions in the runner's
+        # import, hook, generation or shrinking paths are infrastructure errors.
+        for name, extra, gen in [
+            ('import_error', 'raise RuntimeError("import")\n', 'ints()'),
+            ('setup_error', 'def setup(): raise RuntimeError("setup")\n', 'ints()'),
+            ('reset_error', 'def reset(): raise RuntimeError("reset")\n', 'ints()'),
+            ('hook_exit', 'def setup(): raise SystemExit(0)\n', 'ints()'),
+            ('generation_error', 'def draw(rng): raise RuntimeError("draw")\n', 'Generator(draw, lambda x: [])'),
+            ('shrink_error', 'def shrink(x): raise RuntimeError("shrink")\n', 'Generator(lambda rng: 1, shrink)'),
+        ]:
+            body = header + active.replace('    round_trip("valid")',
+                    '    round_trip("valid")\n    raise AssertionError("violation")')
+            body += extra + f'properties = {{"broken": ({gen}, check)}}\n'
+            result = case(name, body, 2, '--expect-fail', 'broken')
+            self.ensure(result['result'] == 'error' and not result['ok'],
+                        f'{name}: infrastructure error never satisfies --expect-fail')
+
+        # Exercise nested generators and shrinkers against a real repo call.
+        module = load_module(checker, 'example_gen_check')
+        generators = [module.ints(1, 20), module.text(' ab', 1, 8),
+                      module.lists(module.ints(), 1, 4), module.tuples(module.ints(), module.text()),
+                      module.dicts(module.ints(), module.text(), 1, 4),
+                      module.one_of(module.ints(), module.text()), module.sampled_from([1, 2, 3])]
+        import random
+        for gen in generators:
+            for _ in range(10):
+                value = gen.draw(random.Random(_))
+                list(gen.shrink(value))
+        self.ensure(True, 'all seven combinators generate and shrink bounded nested inputs')
 
     def docs(self):
         """Mutate a disposable collection; keep doc checks under curator's key."""

@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file. The format is b
 
 ## [Unreleased]
 
+### Added
+
+- Proposal 1: Python-only, stdlib `gen_check.py` with seeded generators and shrinkers, pinned examples, repeatable setup/reset, declared repo targets traced only during accepted checks, excessive-rejection failure, JSON reports, and `--expect-fail` for real counterexamples only. Added the todo persistence/title property fixture and scratch-break/regression examples.
+- Review consensus: deferred harness mode and the cross-language JSON protocol; chose declared `TARGETS` over accepting any tracked function. Other languages use an installed repo property-testing library with a fixed seed, or a real-code scratch break caught by a test.
+
 ### Fixed
 
 - Proposal 3: patlint `--record RULE --commit FIX_SHA` retains raw diff cases after whole-file history proof; `--test` replays every rule's cases with the lint's flags and scope, requires a matching bad case, and validates explicit `fix` references (Python symbols via AST). Ordinary lint and ratchets keep their behavior.
