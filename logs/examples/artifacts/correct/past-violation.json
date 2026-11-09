@@ -4,8 +4,9 @@
     "no-direct-json-write"
   ],
   "files_scanned": 3,
+  "untracked": [],
   "rev": null,
-  "root": "/tmp/poteto-examples-imj4eqch/past-direct-write",
+  "root": "/tmp/poteto-examples-nh6_xegi/past-direct-write",
   "failing": [
     {
       "rule": "no-direct-json-write",

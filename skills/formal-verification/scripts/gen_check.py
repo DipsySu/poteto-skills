@@ -3,11 +3,15 @@
 
 PROPS.py imports combinators and reject from gen_check, defines
 properties = {name: (generator, check)}, and TARGETS = ["path.py:Class.method"].
-Optional examples = {name: [inputs]}, setup(), reset(). Hooks run before each
-input and shrink attempt. Only check(input) is profiled; rejected inputs do not
-count toward target coverage. A failure is reduced with at most 500 attempts,
-not guaranteed minimal. Exit 0 pass, 1 property/filter/target failure, 2 usage
-or infrastructure error. --expect-fail never accepts infrastructure failures.
+Optional examples = {name: [inputs]}, setup(), reset(), TIMEOUT (seconds for the
+run). Hooks run before each input and shrink attempt. Only check(input) is
+profiled; rejected and timed-out inputs do not count toward target coverage. A
+failure is reduced with at most 500 attempts, not guaranteed minimal. An input
+whose hooks and check run past --call-timeout ends its property as timeout; the
+other properties still run. Exit 0 pass, 1 property/filter/target failure, 2
+usage or infrastructure error, 3 inconclusive: a time limit or Ctrl-C stopped a
+check and nothing failed outright. --expect-fail never accepts infrastructure
+failures or timeouts.
 """
 from __future__ import annotations
 
@@ -17,13 +21,84 @@ import importlib.util
 import itertools
 import json
 import random
+import signal
 import string
 import sys
+import threading
+import time
 from pathlib import Path
+
+DEFAULT_TIMEOUT = 90.0
+DEFAULT_CALL_TIMEOUT = 10.0
 
 
 class PropsError(Exception):
     pass
+
+
+class Timeout(BaseException):
+    """A time limit stopped a call or the run: not a failure and not a proof.
+
+    A BaseException, like KeyboardInterrupt, so a check's `except Exception` cannot swallow it.
+    """
+
+    def __init__(self, scope, seconds):
+        super().__init__(f"no return within {seconds:g} s" if scope == 'call'
+                         else f"stopped at the {seconds:g} s limit")
+        self.scope = scope
+
+
+class Limits:
+    """Run and per-call limits, checked by a SIGALRM tick from signal.setitimer.
+
+    Where setitimer is missing (Windows) or off the main thread, the limits are skipped.
+    """
+    TICK = 0.05
+
+    def __init__(self, run_seconds, call_seconds):
+        self.call_seconds = call_seconds
+        self.begun = time.monotonic()
+        self.limit_run(run_seconds)
+        self.started = None
+        self.expired = False
+        self.previous = None
+        self.active = (hasattr(signal, 'setitimer') and hasattr(signal, 'SIGALRM')
+                       and threading.current_thread() is threading.main_thread())
+
+    def limit_run(self, seconds):
+        self.run_seconds = seconds
+        self.deadline = self.begun + seconds
+
+    def __enter__(self):
+        if self.active:
+            self.previous = signal.signal(signal.SIGALRM, self.tick)
+            signal.setitimer(signal.ITIMER_REAL, self.TICK, self.TICK)
+        return self
+
+    def __exit__(self, *exc):
+        self.started, self.expired = None, True
+        if self.active:
+            signal.setitimer(signal.ITIMER_REAL, 0)
+            signal.signal(signal.SIGALRM, self.previous if self.previous is not None else signal.SIG_DFL)
+        return False
+
+    def tick(self, signum, frame):
+        now = time.monotonic()
+        # Inside a call, keep raising until it unwinds, even past a bare `except:`.
+        if self.started is not None and now - self.started >= self.call_seconds:
+            raise Timeout('call', self.call_seconds)
+        if now >= self.deadline and (self.started is not None or not self.expired):
+            self.expired = True
+            raise Timeout('run', self.run_seconds)
+
+
+LIMIT_CODES = {Limits.tick.__code__, Timeout.__init__.__code__}
+
+
+def seconds(value, name):
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not 0 < value < float('inf'):
+        raise PropsError(f"{name} must be a positive number of seconds")
+    return float(value)
 
 
 class Rejected(Exception):
@@ -221,84 +296,111 @@ def load_props(path, repo):
     return mod, normalized
 
 
-def attempt(mod, check, value, repo):
-    for name in ('setup', 'reset'):
-        hook = getattr(mod, name, None)
-        if hook is not None:
-            hook()
-    value = copy.deepcopy(value)
-    called = set()
-    profile_error = None
-
-    def profile(frame, event, arg):
-        nonlocal profile_error
-        code = frame.f_code
-        if event == 'call' and code.co_name != '<module>' and not code.co_filename.startswith('<'):
-            try:
-                path = Path(code.co_filename).resolve()
-                if path.is_relative_to(repo):
-                    called.add(f"{path.relative_to(repo).as_posix()}:{code.co_qualname}")
-            except Exception as error:
-                profile_error = error
-                raise
-
-    previous = sys.getprofile()
+def attempt(mod, check, value, repo, limits):
+    """Run one input's hooks and check under the per-call limit; a Timeout propagates."""
+    limits.started = time.monotonic()
     try:
-        sys.setprofile(profile)
+        for name in ('setup', 'reset'):
+            hook = getattr(mod, name, None)
+            if hook is not None:
+                hook()
+        value = copy.deepcopy(value)
+        called = set()
+        profile_error = None
+
+        def profile(frame, event, arg):
+            nonlocal profile_error
+            code = frame.f_code
+            if (event == 'call' and code.co_name != '<module>' and not code.co_filename.startswith('<')
+                    and code not in LIMIT_CODES):
+                try:
+                    path = Path(code.co_filename).resolve()
+                    if path.is_relative_to(repo):
+                        called.add(f"{path.relative_to(repo).as_posix()}:{code.co_qualname}")
+                except Exception as error:
+                    profile_error = error
+                    raise
+
+        previous = sys.getprofile()
         try:
-            result = check(value)
-        except Rejected:
-            return 'reject', None, set()
-        except BaseException as error:
-            return 'fail', f"{type(error).__name__}: {error}", called
-        return ('fail', 'returned False', called) if result is False else ('pass', None, called)
+            sys.setprofile(profile)
+            try:
+                result = check(value)
+            except Rejected:
+                return 'reject', None, set()
+            except (Timeout, KeyboardInterrupt):
+                raise  # a time limit or Ctrl-C is not a counterexample
+            except BaseException as error:
+                return 'fail', f"{type(error).__name__}: {error}", called
+            return ('fail', 'returned False', called) if result is False else ('pass', None, called)
+        finally:
+            sys.setprofile(previous)
+            if profile_error is not None:
+                raise PropsError(f"profiling failed: {profile_error}")
     finally:
-        sys.setprofile(previous)
-        if profile_error is not None:
-            raise PropsError(f"profiling failed: {profile_error}")
+        limits.started = None
 
 
-def reduce_failure(mod, gen, check, value, detail, repo):
+def reduce_failure(mod, gen, check, value, detail, repo, limits):
+    """Shrink a failure; on the run limit, keep the reduction so far and return the Timeout."""
     seen = {repr(value)}
     attempts = 0
-    while attempts < 500:
-        for candidate in itertools.islice(gen.shrink(value), 500 - attempts):
-            attempts += 1
-            key = repr(candidate)
-            if key in seen:
-                continue
-            seen.add(key)
-            status, why, _ = attempt(mod, check, candidate, repo)
-            if status == 'fail':
-                value, detail = candidate, why
+    try:
+        while attempts < 500:
+            for candidate in itertools.islice(gen.shrink(value), 500 - attempts):
+                attempts += 1
+                key = repr(candidate)
+                if key in seen:
+                    continue
+                seen.add(key)
+                try:
+                    status, why, _ = attempt(mod, check, candidate, repo, limits)
+                except Timeout as error:
+                    if error.scope == 'run':
+                        raise
+                    continue  # a candidate that does not return is not a confirmed failure
+                if status == 'fail':
+                    value, detail = candidate, why
+                    break
+            else:
                 break
-        else:
-            break
-    return value, detail, attempts
+    except Timeout as error:
+        return value, detail, attempts, error
+    return value, detail, attempts, None
 
 
-def run_property(mod, name, gen, check, rng, count, repo):
+def run_property(mod, name, gen, check, rng, count, repo, limits):
+    """Return (result, called, stopped); stopped is the run-limit Timeout, if it fired."""
     result = {"result": "pass", "accepted": 0, "generated": 0, "rejected": 0,
               "counterexample": None, "detail": None, "shrink_attempts": 0}
     called = set()
+    stopped = checking = None
     pinned = getattr(mod, 'examples', {}).get(name, [])
     inputs = itertools.chain(((False, value) for value in pinned),
                              ((True, gen.draw(rng)) for _ in range(count)))
-    for generated, value in inputs:
-        status, detail, ran = attempt(mod, check, value, repo)
-        result['generated'] += int(generated)
-        if status == 'reject':
-            result['rejected'] += int(generated)
-            continue
-        result['accepted'] += 1
-        called.update(ran)
-        if status == 'fail':
-            value, detail, attempts = reduce_failure(mod, gen, check, value, detail, repo)
-            result.update(result='fail', counterexample=repr(value), detail=detail, shrink_attempts=attempts)
-            break
-    if result['rejected'] * 2 > result['generated']:
+    try:
+        for generated, value in inputs:
+            result['generated'] += int(generated)
+            checking = (value,)
+            status, detail, ran = attempt(mod, check, value, repo, limits)
+            checking = None
+            if status == 'reject':
+                result['rejected'] += int(generated)
+                continue
+            result['accepted'] += 1
+            called.update(ran)
+            if status == 'fail':
+                value, detail, attempts, stopped = reduce_failure(mod, gen, check, value, detail, repo, limits)
+                result.update(result='fail', counterexample=repr(value), detail=detail, shrink_attempts=attempts)
+                break
+    except Timeout as error:
+        # Not a failure and not a proof: keep the input so the seed replays it.
+        stopped = error if error.scope == 'run' else None
+        result.update(result='timeout', input=repr(checking[0]) if checking else None, detail=str(error))
+    # Too many rejections is a warning about a property that otherwise passed; it never hides a result.
+    if result['result'] == 'pass' and result['rejected'] * 2 > result['generated']:
         result['result'] = 'filter_too_much'
-    return result, called
+    return result, called, stopped
 
 
 def main(argv=None):
@@ -308,30 +410,60 @@ def main(argv=None):
     ap.add_argument('--seed', type=int, default=0, help='random seed (default: 0)')
     ap.add_argument('--examples', type=int, default=100, help='generated inputs per property after pinned examples (default: 100)')
     ap.add_argument('--expect-fail', metavar='NAME', help='exit 0 only for a counterexample to this property')
+    ap.add_argument('--timeout', type=float, metavar='S',
+                    help='seconds for the whole run, then exit 3 (default: PROPS.TIMEOUT or 90)')
+    ap.add_argument('--call-timeout', type=float, default=DEFAULT_CALL_TIMEOUT, metavar='S',
+                    help="seconds for one input's hooks and check; over it the property is timeout (default: 10)")
     ap.add_argument('--json', action='store_true', help='machine-readable output')
     args = ap.parse_args(argv)
-    report = {"seed": args.seed, "ok": False, "properties": {}, "called": [], "missing_targets": []}
+    report = {"seed": args.seed, "ok": False, "properties": {}, "called": [], "missing_targets": [],
+              "timeout": args.timeout, "call_timeout": args.call_timeout, "incomplete": None}
     try:
         repo = args.repo.resolve()
         if not repo.is_dir() or not args.props.is_file() or args.examples < 0:
             raise PropsError("repo must be a directory, PROPS.py a file, and examples nonnegative")
-        mod, targets = load_props(args.props, repo)
-        if args.expect_fail is not None and args.expect_fail not in mod.properties:
-            raise PropsError(f"unknown property: {args.expect_fail}")
-        rng = random.Random(args.seed)
-        called = set()
-        for name, (gen, check) in mod.properties.items():
-            result, ran = run_property(mod, name, gen, check, rng, args.examples, repo)
-            report['properties'][name] = result
-            called.update(ran)
-        report['called'] = sorted(called)
-        report['missing_targets'] = sorted(targets - called)
-        ok = not report['missing_targets']
-        for name, result in report['properties'].items():
-            expected = 'fail' if name == args.expect_fail else 'pass'
-            ok = ok and result['result'] == expected
-        report['ok'] = ok
-        code = 0 if ok else 1
+        if args.timeout is not None:
+            seconds(args.timeout, '--timeout')
+        limits = Limits(args.timeout or DEFAULT_TIMEOUT, seconds(args.call_timeout, '--call-timeout'))
+        mod, called = None, set()
+        try:
+            with limits:
+                mod, targets = load_props(args.props, repo)
+                if args.expect_fail is not None and args.expect_fail not in mod.properties:
+                    raise PropsError(f"unknown property: {args.expect_fail}")
+                if args.timeout is None:
+                    limits.limit_run(seconds(getattr(mod, 'TIMEOUT', DEFAULT_TIMEOUT), 'TIMEOUT'))
+                report['timeout'] = limits.run_seconds
+                if not args.json:  # --json output carries the seed; keep it parseable
+                    print(f"gen_check: seed {args.seed}; limits {limits.run_seconds:g} s per run, "
+                          f"{limits.call_seconds:g} s per call", file=sys.stderr, flush=True)
+                rng = random.Random(args.seed)
+                for name, (gen, check) in mod.properties.items():
+                    result, ran, stopped = run_property(mod, name, gen, check, rng, args.examples, repo, limits)
+                    report['properties'][name] = result
+                    called.update(ran)
+                    if stopped is not None:
+                        raise stopped
+        except Timeout as error:
+            where = f"in {list(report['properties'])[-1]}" if report['properties'] else "while importing PROPS.py"
+            report['incomplete'] = f"{error} {where}"
+        except KeyboardInterrupt:
+            report['incomplete'] = "interrupted"
+        code = 3
+        if mod is not None:
+            report['called'] = sorted(called)
+            report['missing_targets'] = sorted(targets - called)
+            results = report['properties']
+
+            def expected(name):
+                return 'fail' if name == args.expect_fail else 'pass'
+            ok = (report['incomplete'] is None and len(results) == len(mod.properties)
+                  and not report['missing_targets'] and all(r['result'] == expected(n) for n, r in results.items()))
+            inconclusive = report['incomplete'] is not None or any(r['result'] == 'timeout' for r in results.values())
+            definitive = any(r['result'] not in (expected(n), 'timeout') for n, r in results.items())
+            report['ok'] = ok
+            # A timeout is not a failure and not a proof: exit 3 unless something failed outright.
+            code = 0 if ok else 3 if inconclusive and not definitive else 1
     except (Exception, SystemExit) as error:
         report.update(result='error', error=f"{type(error).__name__}: {error}")
         code = 2
@@ -340,16 +472,24 @@ def main(argv=None):
     else:
         print(f"gen_check: {args.props} (seed {args.seed})")
         for name, result in report['properties'].items():
-            print(f"  {name}: {result['result']} ({result['accepted']} accepted, {result['rejected']}/{result['generated']} generated rejected)")
+            if result['result'] == 'fail':
+                print(f"  {name}: fail ({result['rejected']} of {result['generated']} generated inputs rejected before the counterexample)")
+            else:
+                print(f"  {name}: {result['result']} ({result['accepted']} accepted, {result['rejected']}/{result['generated']} generated rejected)")
             if result['counterexample'] is not None:
                 print(f"    reduced counterexample: {result['counterexample']}")
                 print(f"    {result['detail']} ({result['shrink_attempts']} shrink attempts)")
+            if result['result'] == 'timeout':
+                print(f"    input: {result['input'] if result['input'] is not None else '(none; stopped between inputs)'}")
+                print(f"    {result['detail']}; replay with --seed {args.seed}")
         print("  repo functions run: " + (', '.join(report['called']) or '(none)'))
         if report['missing_targets']:
             print("  missing targets: " + ', '.join(report['missing_targets']))
+        if report['incomplete']:
+            print(f"  incomplete: {report['incomplete']}")
         if 'error' in report:
             print(f"  error: {report['error']}")
-        print('PASS' if report['ok'] else 'FAIL')
+        print('PASS' if report['ok'] else 'INCOMPLETE: a time limit is not a failure and not a proof' if code == 3 else 'FAIL')
     return code
 
 

@@ -1,7 +1,9 @@
 {
-  "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/repeat_done.py",
+  "model": "/home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/repeat_done.py",
   "depth": 20,
   "max_states": 10000,
+  "timeout": 90.0,
+  "call_timeout": 10.0,
   "invariants": [
     "no_lost_todo",
     "legal_status"

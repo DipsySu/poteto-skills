@@ -18,6 +18,10 @@ Heuristics (stdlib only, no execution of repo code):
   Go      HandleFunc("GET /x/{id}"), r.GET("/x"), ListenAndServe(":N"), cobra Use:.
   Make    targets (test/check, build/all, run/serve/start/dev).
 Test files and agent dirs (.claude, .cursor, ...) are not scanned for routes or commands.
+A path under a filesystem root (/home, /tmp, /Users, ...) is a route only where the source declares it: a router
+call, decorator, route table, "GET /x" string, or comparison with the request path. In a container or a generic
+call argument it is taken for a file path. Each CLI option records takes_value: false for argparse's store_true,
+store_false, store_const, append_const, count, help, version, and BooleanOptionalAction, and for click flags.
 """
 from __future__ import annotations
 
@@ -58,6 +62,8 @@ DATA_FLAGS = ("--data", "--data-dir", "--datadir", "--db", "--database", "--db-p
               "--state", "--state-dir", "--dir", "--root", "--path", "--file", "--home", "--data-path")
 FS_PREFIX = re.compile(r"^/(tmp|etc|usr|var|dev|proc|bin|sbin|home|opt|root|sys|Users|private|mnt|Volumes|lib)(/|$)")
 ROUTE_DECOS = {"route", "get", "post", "put", "patch", "delete", "head", "options", "api_route", "websocket"}
+NO_VALUE_ACTIONS = {"store_true", "store_false", "store_const", "append_const", "count", "help", "version",
+                    "BooleanOptionalAction"}  # argparse actions that consume no token
 RE_FUNCS = {"match", "fullmatch", "search", "compile"}
 SKIP_CALLS = {"split", "rsplit", "strip", "rstrip", "lstrip", "join", "replace", "send_header", "open", "Path",
               "exists", "isfile", "isdir", "mkdir", "makedirs", "write", "print", "log_message", "format", "encode",
@@ -112,7 +118,13 @@ def line_of(text: str, pos: int) -> int:
 
 # ---------------------------------------------------------------- routes
 
-def normalize_route(s: str, kind: str = "eq") -> str | None:
+def normalize_route(s: str, kind: str = "eq", declared: bool = False) -> str | None:
+    """Route template for a path string, or None when it does not look like a route.
+
+    declared=True is for paths the source declares as routes (router registrations, route decorators, route tables,
+    "GET /x" strings, comparisons with the request path): those keep /home, /Users and other names that are also
+    filesystem roots. Strings in containers or generic call arguments may be file paths, so FS_PREFIX drops them.
+    """
     s = s.strip()
     if kind == "regex" or re.search(r"[\^$()\[\]\\+?|]", s):
         s = re.sub(r"^(\^|\\A)", "", s)
@@ -126,7 +138,7 @@ def normalize_route(s: str, kind: str = "eq") -> str | None:
     s = re.sub(r"<(?:\w+:)?(\w+)>", r"<\1>", s)          # Flask <int:id>
     s = re.sub(r"\{(\w+)(?::[^}]*)?\}", r"<\1>", s)        # FastAPI/Go {id}
     s = re.sub(r"(?<=/):(\w+)", r"<\1>", s)                # Express :id
-    if not s.startswith("/") or not re.fullmatch(r"/[\w\-./<>*~]*", s) or FS_PREFIX.match(s):
+    if not s.startswith("/") or not re.fullmatch(r"/[\w\-./<>*~]*", s) or (not declared and FS_PREFIX.match(s)):
         return None
     if "." in s.rsplit("/", 1)[-1] and not s.endswith((".json", ".html", ".txt", ".ico", ".xml")):
         return None  # looks like a file path, not a route
@@ -229,6 +241,36 @@ def _usage(node) -> str | None:
     if isinstance(p, (ast.Compare, ast.Tuple, ast.List, ast.Set, ast.Dict, ast.MatchValue)):
         return "eq"
     return None
+
+
+def _compares_path(node) -> bool:
+    """True for a string compared with the request path (==, match/case, startswith, re.match): a declared route.
+    False for one in a container or passed to a generic call, where it may be a filesystem path."""
+    p = getattr(node, "_parent", None)
+    if isinstance(p, ast.Call):
+        return node is not p.func and (_call_name(p) == "startswith" or _call_name(p) in RE_FUNCS)
+    return isinstance(p, (ast.Compare, ast.MatchValue))
+
+
+def _takes_value(keywords: list[ast.keyword], default, names: list[str]) -> bool:
+    """Whether an argparse or click option consumes the next token. argparse supplies the default of store_true and
+    the other no-value actions, so read action= (or nargs=0) and click's is_flag=, count=, flag_value= and
+    --on/--off names instead of the default. A custom action class is opaque: guess from a bool default."""
+    kw = {k.arg: k.value for k in keywords if k.arg}
+    if any(_literal(kw[k]) is True for k in ("is_flag", "count") if k in kw):
+        return False
+    if "flag_value" in kw or any(n.startswith("-") and "/" in n for n in names):
+        return False
+    action = kw.get("action")
+    if action is None:
+        return True
+    if isinstance(action, ast.Constant):
+        return action.value not in NO_VALUE_ACTIONS  # store, append and extend take a value
+    if (action.attr if isinstance(action, ast.Attribute) else getattr(action, "id", None)) in NO_VALUE_ACTIONS:
+        return False  # argparse.BooleanOptionalAction
+    if "nargs" in kw:
+        return _literal(kw["nargs"]) != 0
+    return not isinstance(default, bool)
 
 
 def _enclosing_boolop(node):
@@ -337,11 +379,12 @@ def analyze_python(rel: str, text: str) -> dict:
                     else:
                         ms = [name.upper()] if name.upper() in HTTP_METHODS else ["GET"]
                     for m in ms:
-                        add_route(str(m).upper(), normalize_route(first), d, "decorator", _body_keys(node))
+                        add_route(str(m).upper(), normalize_route(first, declared=True), d, "decorator", _body_keys(node))
                 if name in ("option", "argument") and isinstance(d.func, ast.Attribute):
                     names = [s for s in (_str(a) for a in d.args) if s]
                     dflt = next((_literal(k.value) for k in d.keywords if k.arg == "default"), None)
-                    click_opts.append({"names": names, "default": dflt, "positional": bool(names) and not names[0].startswith("-")})
+                    click_opts.append({"names": names, "default": dflt, "positional": bool(names) and not names[0].startswith("-"),
+                                       "takes_value": _takes_value(d.keywords, dflt, names)})
             for d in node.decorator_list:
                 if isinstance(d, ast.Call) and _call_name(d) in ("command", "group") and isinstance(d.func, ast.Attribute):
                     if not ({"click", "typer"} & {i.split(".")[0] for i in info["imports"]}):
@@ -358,7 +401,8 @@ def analyze_python(rel: str, text: str) -> dict:
         if name in ("path", "re_path") and rel.endswith("urls.py") and node.args:
             s = _str(node.args[0])
             if s is not None:
-                add_route("ANY", normalize_route("/" + s.lstrip("^/"), "regex" if name == "re_path" else "eq"), node, "django")
+                add_route("ANY", normalize_route("/" + s.lstrip("^/"), "regex" if name == "re_path" else "eq", declared=True),
+                          node, "django")
         # argparse
         if name == "add_parser" and node.args and _str(node.args[0]):
             p = getattr(node, "_parent", None)
@@ -371,7 +415,8 @@ def analyze_python(rel: str, text: str) -> dict:
             if names:
                 dflt = next((_literal(k.value) for k in node.keywords if k.arg == "default"), None)
                 info["parser_options"].setdefault(node.func.value.id, []).append(
-                    {"names": names, "default": dflt, "positional": not names[0].startswith("-")})
+                    {"names": names, "default": dflt, "positional": not names[0].startswith("-"),
+                     "takes_value": _takes_value(node.keywords, dflt, names)})
         # ports
         if name in ("HTTPServer", "ThreadingHTTPServer", "TCPServer", "ThreadingTCPServer", "make_server") and node.args:
             addr = _literal(node.args[0])
@@ -402,7 +447,7 @@ def analyze_python(rel: str, text: str) -> dict:
         s = _str(node)
         m = re.fullmatch(r"(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+(/\S*)", s or "")
         if m:
-            add_route(m.group(1), normalize_route(m.group(2)), node, "method-path string")
+            add_route(m.group(1), normalize_route(m.group(2), declared=True), node, "method-path string")
 
     if info["server"]:
         # route tables: ("GET", r"^/todos/(\d+)$", handler)
@@ -415,7 +460,7 @@ def analyze_python(rel: str, text: str) -> dict:
                     if s is None and isinstance(e, ast.Call) and _call_name(e) in RE_FUNCS and e.args:
                         s = _str(e.args[0])
                     if s and s not in HTTP_METHODS:
-                        paths.append(normalize_route(s, "regex" if re.search(r"[\^$()\\]", s) else "eq"))
+                        paths.append(normalize_route(s, "regex" if re.search(r"[\^$()\\]", s) else "eq", declared=True))
                 for m in ms[:1]:
                     for p in paths:
                         add_route(m, p, node, "route table")
@@ -429,7 +474,7 @@ def analyze_python(rel: str, text: str) -> dict:
                     seg = _segment_route(node.test)
                     if seg:
                         for m in _method_context(node.test) or ["ANY"]:
-                            add_route(m, normalize_route(seg), node, "path segments", body)
+                            add_route(m, normalize_route(seg, declared=True), node, "path segments", body)
                 s = _str(node)
                 if not s or not (s.startswith("/") or s.startswith("^/") or s.startswith("\\A/")):
                     continue
@@ -451,10 +496,11 @@ def analyze_python(rel: str, text: str) -> dict:
                     paths = [base + "/<*>" + "/" + x.lstrip("/") for x in suffixes] or [base + "/<*>"]
                     for m in methods:
                         for p in paths:
-                            add_route(m, normalize_route(p), node, "startswith", body)
+                            add_route(m, normalize_route(p, declared=True), node, "startswith", body)
                     continue
+                declared = _compares_path(node)
                 for m in methods:
-                    add_route(m, normalize_route(s, kind), node, kind, body)
+                    add_route(m, normalize_route(s, kind, declared=declared), node, kind, body)
     return info
 
 
@@ -754,7 +800,8 @@ def scan(repo: Path, max_files: int = 20000) -> dict:
             text = read(repo, rel)
             for m in NODE_ROUTE.finditer(text):
                 method = m.group(1).upper()
-                routes.append({"method": "ANY" if method == "ALL" else method, "path": normalize_route(m.group(3)),
+                routes.append({"method": "ANY" if method == "ALL" else method,
+                               "path": normalize_route(m.group(3), declared=True),
                                "source": f"{rel}:{line_of(text, m.start())}", "how": "node router"})
             for m in NODE_CLI.finditer(text):
                 commands.append({"prog": (f"npx {bin_names[0]}" if bin_names else f"node {rel}"), "aliases": bin_names,
@@ -784,10 +831,10 @@ def scan(repo: Path, max_files: int = 20000) -> dict:
                 method, path = (mm_.group(1), mm_.group(2)) if mm_ else ("ANY", raw)
                 if path.endswith("/") and len(path) > 1:
                     path = path + "<*>"
-                routes.append({"method": method, "path": normalize_route(path), "source": f"{rel}:{line_of(text, m.start())}",
-                               "how": "net/http"})
+                routes.append({"method": method, "path": normalize_route(path, declared=True),
+                               "source": f"{rel}:{line_of(text, m.start())}", "how": "net/http"})
             for m in GO_ROUTER.finditer(text):
-                routes.append({"method": m.group(1).upper(), "path": normalize_route(m.group(2)),
+                routes.append({"method": m.group(1).upper(), "path": normalize_route(m.group(2), declared=True),
                                "source": f"{rel}:{line_of(text, m.start())}", "how": "go router"})
             for pat in GO_PORTS:
                 for m in pat.finditer(text):

@@ -59,3 +59,4 @@ Adapted from pstack by Lauren Tan (MIT, © 2026 Lauren Tan). `drift_check.py` is
 - S5 pstack `maintain-verification-skill`: https://github.com/cursor/plugins/blob/main/pstack/skills/maintain-verification-skill/SKILL.md
 - S13 Guide 06, verify and ship ("keep the verification skill honest", run at least daily): https://github.com/cursor/plugins/blob/main/pstack/docs/guide/06-verify-and-ship.md
 - S20 Barnaby Robson, "On pstack" (verification as the most important skill; daily maintenance), secondary: https://barnabyrobson.org/on-pstack/
+- `drift_check.py` compares the map with every route the source declares, including names that are also filesystem roots, such as SCIM's `/Users` (RFC 7644, Table 2). It reads each option's `takes_value`, because argparse's `store_true` options take no value, so `--json list` maps `list`: https://www.rfc-editor.org/rfc/rfc7644, https://docs.python.org/3/library/argparse.html

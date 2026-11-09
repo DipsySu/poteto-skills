@@ -22,10 +22,20 @@ Globs: `**/` spans directories, `*` stays inside one path segment, and a pattern
 without `/` matches the file name at any depth (like .gitignore). Paths are
 matched relative to --root (default: the git toplevel of the current directory).
 
+Files: inside a git checkout a directory argument means the files git would
+commit, as `git ls-files --cached --others --exclude-standard` lists them:
+tracked files plus untracked ones that .gitignore doesn't exclude. Files inside
+a nested checkout (a directory with its own .git entry, as every linked worktree
+such as a leftover .claude/worktrees/NAME/ has) and index entries deleted from
+disk are left out, so `patlint.py ... .` sees what a CI clone sees. A file named
+on the command line is linted as given. Outside git, directories are walked.
+
 Ratchet: with --baseline FILE, only (rule, file) counts above the baseline
 fail, so an already-common pattern can't grow. --update-baseline records
 current counts for new rules and lowers counts that went down; it refuses to
-raise a count (exit 1).
+raise a count (exit 1). Inside git it adopts and lowers counts only for files
+git tracks, so an untracked scratch file can't raise a floor; its hits keep
+failing until they are fixed or the file is committed.
 
 Kept proof: --record RULE --commit FIX_SHA records raw diff cases after a
 whole-file replay (parent must hit, fix must be quiet). --test replays every
@@ -233,29 +243,81 @@ def rel_to(root: Path, p: Path) -> str:
         return p.as_posix()
 
 
+def git_names(cwd: Path, *args: str) -> list[str] | None:
+    """NUL-separated names printed by a git command run in CWD; None outside a git checkout."""
+    try:
+        res = subprocess.run(["git", "-C", str(cwd), "--literal-pathspecs", *args], capture_output=True)
+    except OSError:
+        return None
+    if res.returncode != 0:
+        return None
+    return [os.fsdecode(n) for n in res.stdout.split(b"\0") if n]
+
+
+def git_file_set(directory: Path) -> tuple[list[str], set[str]] | None:
+    """Files git would commit under DIRECTORY (relative to it) and the tracked subset; None outside git.
+
+    Tracked plus untracked-and-not-ignored files: the set a CI clone has. Leaves out
+    index entries deleted from disk, SKIP_DIRS, and anything inside a nested checkout
+    (a directory with its own .git entry, such as a linked worktree).
+    """
+    tracked = git_names(directory, "ls-files", "-z", "--cached", "--", ".")
+    if tracked is None:
+        return None
+    others = git_names(directory, "ls-files", "-z", "--others", "--exclude-standard", "--", ".") or []
+    nested: dict[Path, bool] = {}
+
+    def in_nested_checkout(name: str) -> bool:
+        d = directory
+        for part in Path(name).parts[:-1]:
+            d = d / part
+            if d not in nested:
+                nested[d] = os.path.lexists(d / ".git")
+            if nested[d]:
+                return True
+        return False
+
+    names = [n for n in sorted(set(tracked) | set(others))
+             if not any(part in SKIP_DIRS for part in Path(n).parts[:-1])
+             and not in_nested_checkout(n) and (directory / n).is_file()]
+    return names, set(tracked)
+
+
 def walk(paths: list[Path], root: Path):
-    """Yield (rel_path, reader) for files under PATHS in the working tree."""
+    """Yield (rel_path, reader, tracked) for the files PATHS name in the working tree.
+
+    A file argument is linted as given. Inside a git checkout a directory argument
+    expands to git_file_set(); outside git it is walked, skipping SKIP_DIRS.
+    `tracked` says whether git tracks the file (always true outside git); only
+    tracked files may enter or lower a ratchet baseline.
+    """
     seen = set()
     for p in paths:
         if not p.exists():
             raise FileNotFoundError(f"path not found: {p}")
         if p.is_file():
-            cand = [p]
+            listed = git_names(p.parent, "ls-files", "-z", "--cached", "--", p.name)
+            cand = [(p, listed is None or bool(listed))]
         else:
-            cand = []
-            for dirpath, dirnames, filenames in os.walk(p):
-                dirnames[:] = sorted(d for d in dirnames if d not in SKIP_DIRS)
-                cand.extend(Path(dirpath) / f for f in sorted(filenames))
-        for f in cand:
+            listing = git_file_set(p)
+            if listing is None:
+                cand = []
+                for dirpath, dirnames, filenames in os.walk(p):
+                    dirnames[:] = sorted(d for d in dirnames if d not in SKIP_DIRS)
+                    cand.extend((Path(dirpath) / f, True) for f in sorted(filenames))
+            else:
+                names, tracked = listing
+                cand = [(p / n, n in tracked) for n in names]
+        for f, is_tracked in cand:
             rel = rel_to(root, f)
             if rel in seen:
                 continue
             seen.add(rel)
-            yield rel, (lambda f=f: f.read_bytes())
+            yield rel, (lambda f=f: f.read_bytes()), is_tracked
 
 
 def walk_rev(paths: list[Path], root: Path, rev: str):
-    """Yield (rel_path, reader) for files under PATHS as of git revision REV."""
+    """Yield (rel_path, reader, tracked=True) for files under PATHS as of git revision REV."""
     top = git_toplevel(root)
     if top is None:
         raise RuntimeError(f"--rev needs a git repo; {root} is not inside one")
@@ -270,7 +332,7 @@ def walk_rev(paths: list[Path], root: Path, rev: str):
     if not names:
         raise RuntimeError(f"no files match {' '.join(rels)} at {rev}")
     for name in sorted(set(names)):
-        yield name, (lambda name=name: git(top, "show", f"{rev}:{name}", binary=True))
+        yield name, (lambda name=name: git(top, "show", f"{rev}:{name}", binary=True)), True
 
 
 # ---------------------------------------------------------------- linting
@@ -547,7 +609,9 @@ def main(argv: list[str] | None = None) -> int:
     mode.add_argument("--test", action="store_true", help="replay all rule tests and validate explicit fix references")
     mode.add_argument("--record", metavar="RULE", help="record a rule's diff cases after whole-file proof")
     ap.add_argument("--commit", metavar="FIX_SHA", help="fix commit for --record (parent must hit, fix must be quiet)")
-    ap.add_argument("paths", nargs="*", type=Path, metavar="PATH", help="files or directories to lint")
+    ap.add_argument("paths", nargs="*", type=Path, metavar="PATH",
+                    help="files or directories to lint; inside git a directory means the files git would commit "
+                         "(tracked, plus untracked and not ignored; nested checkouts left out)")
     args = ap.parse_args(argv)
 
     proof_mode = args.test or args.record is not None
@@ -588,16 +652,18 @@ def main(argv: list[str] | None = None) -> int:
             return 2
 
     report = {"violations": [], "allowed": [], "expired": [], "invalid_exceptions": [], "stale_exceptions": []}
-    scanned = []
+    scanned, tracked = [], set()  # tracked: scanned files git tracks (all of them outside git)
     try:
         files = walk_rev(args.paths, root, args.rev) if args.rev else walk(args.paths, root)
-        for rel, read in files:
+        for rel, read, is_tracked in files:
             if not any(applies(r, rel) for r in rules):
                 continue
             data = read()
             if len(data) > MAX_BYTES or b"\0" in data[:8192]:
                 continue
             scanned.append(rel)
+            if is_tracked:
+                tracked.add(rel)
             lint_text(rel, data.decode("utf-8", errors="replace"), rules, today, report)
     except (FileNotFoundError, RuntimeError) as e:
         print(f"patlint: {e}", file=sys.stderr)
@@ -612,7 +678,6 @@ def main(argv: list[str] | None = None) -> int:
     baseline = load_baseline(args.baseline) if ratchet else {}
     over, improved, refused = [], [], []
     if ratchet:
-        scanned_set = set(scanned)
         for rid, files in counts.items():
             for path, n in files.items():
                 b = baseline.get(rid, {}).get(path, 0)
@@ -621,7 +686,7 @@ def main(argv: list[str] | None = None) -> int:
         for rid, files in baseline.items():
             for path, b in files.items():
                 n = counts.get(rid, {}).get(path, 0)
-                if path in scanned_set and n < b:
+                if path in tracked and n < b:
                     improved.append({"rule": rid, "path": path, "count": n, "baseline": b})
 
     if args.update_baseline:
@@ -631,17 +696,19 @@ def main(argv: list[str] | None = None) -> int:
         for rid in rule_ids:
             cur = counts.get(rid, {})
             if rid not in baseline:
-                new[rid] = dict(cur)  # adopting a new rule at its current count
+                # Adopt a new rule at its current counts, in tracked files only.
+                new[rid] = {path: n for path, n in cur.items() if path in tracked}
                 continue
             for path in scanned_set:
                 n, b = cur.get(path, 0), baseline[rid].get(path, 0)
                 if n > b:
                     refused.append({"rule": rid, "path": path, "count": n, "baseline": b})
-                else:
+                elif path in tracked:
                     new[rid][path] = n
         new = {r: f for r, f in new.items() if r in rule_ids}
         write_baseline(args.baseline, new)
-        over = [o for o in over if o["rule"] in baseline]  # adopted rules are not "over"
+        # Adopted counts are not "over"; hits in an untracked file stay over.
+        over = [o for o in over if o["rule"] in baseline or o["path"] not in tracked]
 
     over_keys = {(o["rule"], o["path"]) for o in over}
     if ratchet:
@@ -653,6 +720,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.json:
         print(json.dumps({"ok": ok, "rules": [r["id"] for r in rules], "files_scanned": len(scanned),
+                          "untracked": sorted(set(scanned) - tracked),
                           "rev": args.rev, "root": str(root), "failing": failing, **report,
                           "baseline": {"path": str(args.baseline) if args.baseline else None, "over": over,
                                        "improved": improved, "refused": refused,
@@ -670,7 +738,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"{v['path']}:{v['line']}: {v['rule']}: invalid exception, {v['exception']}. "
               f"Format: patlint: allow {v['rule']} reason=... expires=YYYY-MM-DD approved-by=...")
     for o in over:
-        print(f"ratchet: {o['rule']} in {o['path']}: {o['count']} found, baseline {o['baseline']}")
+        untracked = "" if o["path"] in tracked else " (not tracked by git, so --update-baseline never adopts it)"
+        print(f"ratchet: {o['rule']} in {o['path']}: {o['count']} found, baseline {o['baseline']}{untracked}")
     for r in refused:
         print(f"ratchet: refused to raise {r['rule']} in {r['path']} from {r['baseline']} to {r['count']}; fix the new violations")
     for s in report["stale_exceptions"]:

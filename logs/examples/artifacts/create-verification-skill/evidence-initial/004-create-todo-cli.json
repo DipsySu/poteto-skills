@@ -4,7 +4,7 @@
   "write": "create-cli",
   "read_back": [],
   "read_only": false,
-  "started": "2026-10-21T03:10:09Z",
+  "started": "2026-11-09T02:27:25Z",
   "argv": [
     "/usr/bin/python3",
     "-m",
@@ -12,7 +12,7 @@
     "add",
     "verify CLI",
     "--data",
-    "/tmp/poteto-examples-4dfshnbm/verify-state-initial/initial/data"
+    "/tmp/poteto-examples-nh6_xegi/verify-state-initial/initial/data"
   ],
   "exit_code": 0,
   "stdout": "{\"id\": 2, \"title\": \"verify CLI\", \"status\": \"open\"}\n",
@@ -32,5 +32,5 @@
   ],
   "execution_ok": true,
   "ok": true,
-  "elapsed_ms": 73.9
+  "elapsed_ms": 58.8
 }

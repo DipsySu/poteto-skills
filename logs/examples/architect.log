@@ -1,5 +1,5 @@
-scratch: /tmp/poteto-examples-4dfshnbm
-$ /home/box/developer/poteto-skills/skills/architect/scripts/sketch_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/architect/SKETCH.md --json
+scratch: /tmp/poteto-examples-nh6_xegi
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/architect/scripts/sketch_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/architect/SKETCH.md --json
 {
   "candidates": [
     {
@@ -79,7 +79,7 @@ $ /home/box/developer/poteto-skills/skills/architect/scripts/sketch_check.py /ho
 
 [exit 0; expected 0]
 ASSERT PASS: two distinct ownership sketches pass the design gate
-$ /home/box/developer/poteto-skills/skills/architect/scripts/sketch_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/architect/ONE-CANDIDATE.md --json
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/architect/scripts/sketch_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/architect/ONE-CANDIDATE.md --json
 {
   "candidates": [
     {

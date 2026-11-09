@@ -41,6 +41,7 @@ python3 $SKILL_DIR/scripts/bounded_check.py MODEL.py               # shortest co
 python3 $SKILL_DIR/scripts/bounded_check.py MODEL.py --mutants     # every broken variant must be killed
 python3 $SKILL_DIR/scripts/bounded_check.py MODEL.py --deadlock --depth 30
 python3 $SKILL_DIR/scripts/bounded_check.py MODEL.py --expect-violation <name>   # exit 0 only if it fails
+python3 $SKILL_DIR/scripts/bounded_check.py MODEL.py --timeout 60 --call-timeout 5   # defaults: MODEL.TIMEOUT or 90 s per run, 10 s per call
 ```
 
 ### gen_check.py
@@ -60,7 +61,7 @@ python3 $SKILL_DIR/scripts/gen_check.py PROPS.py --repo . --expect-fail round_tr
 python3 $SKILL_DIR/scripts/gen_check.py PROPS.py --repo . --json
 ```
 
-`--examples` counts generated inputs after pinned examples. The seed is printed for replay, including on failure. Rejecting more than 50% of attempted generated inputs fails with `filter_too_much`; this threshold is our project policy, not Hypothesis's published threshold. Exit codes: 0 pass, 1 property failure / excessive rejection / missing target, 2 usage or infrastructure error (imports, hooks, generation, shrinking). `--expect-fail NAME` requires that property's counterexample, all other properties passing, target coverage, and no infrastructure or filter failure. For an able-to-fail proof, scratch-break the real implementation and restore it in `finally`.
+`--examples` counts generated inputs after pinned examples. The seed is printed for replay, including on failure; text mode also prints it to stderr before the first check. A property that otherwise passes but rejected more than 50% of its attempted generated inputs fails with `filter_too_much`; this threshold is our project policy, not Hypothesis's published threshold. A failure or timeout keeps its own result, and a failure reports how many generated inputs were rejected before its counterexample. `--call-timeout S` (default 10) limits each input's hooks and check: a check over it ends that property as `timeout`, printing the input and seed, and the other properties still run. `--timeout S` (default `TIMEOUT` in PROPS.py, else 90) limits the whole run. Exit codes: 0 pass, 1 property failure / excessive rejection / missing target, 2 usage or infrastructure error (imports, hooks, generation, shrinking), 3 inconclusive: a time limit (or Ctrl-C) stopped a check and nothing failed outright. A timeout is not a failure and not a proof. `--expect-fail NAME` requires that property's counterexample, all other properties passing, target coverage, and no infrastructure, filter, or timeout result. For an able-to-fail proof, scratch-break the real implementation and restore it in `finally`.
 
 ## 3. The quality bar
 
@@ -69,7 +70,7 @@ python3 $SKILL_DIR/scripts/gen_check.py PROPS.py --repo . --json
 - **Findings stay findings.** If the current code breaks the property, report the counterexample as steps in the code's own terms. Never weaken the property or the model until it passes, and don't change product code unless the user asks.
 - **Honest scope.** Say what is verified, under which bounds (clients, depth, input size) and assumptions, and what is left out. A pass covers the model or the bound, not the whole system.
 - **Readable without the tool.** The property and the harm fit in one sentence each. A counterexample is a short list of numbered steps.
-- **Cheap to rerun.** One command, a pinned tool version, seconds rather than minutes.
+- **Cheap to rerun.** One command, a pinned tool version, seconds rather than minutes. Give every run a limit shorter than your shell's: both stdlib checkers stop at `--timeout` (default 90 s, or `TIMEOUT` in MODEL.py or PROPS.py) and exit 3 with the state count or the input and seed, and stop a call at `--call-timeout` (default 10 s), which `bounded_check.py` reports as a model error (exit 2) with the trace to that state and `gen_check.py` as a `timeout` property (exit 3). Exit 3 is inconclusive, not a failure and not a proof: report it as such and rerun with a smaller bound or after a fix.
 - **Kept in step.** The generated skill lists the source files the model mirrors. A change to those files means rerunning the check, and updating the model when the change is intended.
 
 ## 4. Leave a project-local skill
@@ -89,3 +90,5 @@ Adapted from pstack by Lauren Tan (MIT, © 2026 Lauren Tan). `bounded_check.py`,
 - S6 pstack `create-formal-verification-skill`: https://github.com/cursor/plugins/blob/main/pstack/skills/create-formal-verification-skill/SKILL.md
 - S2 /create-formal-verification-skill launch post: https://x.com/poteto/status/2111926622278521253
 - S13 Guide 06, verify and ship ("prove a property with a formal verification skill"): https://github.com/cursor/plugins/blob/main/pstack/docs/guide/06-verify-and-ship.md
+- Kani's draft agent plugin (kani#5059) @ `49a7a03` says to "give every run a limit" because "shell tools often have a 2 to 10 minute limit", and "A TIMEOUT or OUT_OF_MEMORY verdict is not a failure and not a proof". Its `guarded-run.py` gives "a killed run, which writes none," "an export with `run_state` KILLED or TIMEOUT, so the result is not lost.": https://github.com/model-checking/kani/blob/49a7a03905b5e676e6a4796caf114169a7ae6ad0/agent-plugin/skills/verify-rust/SKILL.md, https://github.com/model-checking/kani/blob/49a7a03905b5e676e6a4796caf114169a7ae6ad0/agent-plugin/scripts/guarded-run.py
+- Hypothesis: "A health check is a proactive warning, not an error." Its health checks "warn about performance problems, not correctness errors", so `gen_check.py`'s rejection limit never overwrites a counterexample: https://hypothesis.readthedocs.io/en/latest/reference/api.html

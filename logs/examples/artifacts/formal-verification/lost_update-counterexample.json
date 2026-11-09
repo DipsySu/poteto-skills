@@ -1,7 +1,9 @@
 {
-  "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/lost_update.py",
+  "model": "/home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/lost_update.py",
   "depth": 20,
   "max_states": 10000,
+  "timeout": 90.0,
+  "call_timeout": 10.0,
   "invariants": [
     "no_lost_todo",
     "legal_status"
@@ -141,7 +143,7 @@
       }
     ]
   },
-  "seconds": 0.0,
+  "seconds": 0.001,
   "mutants": {},
   "expect_violation": null
 }

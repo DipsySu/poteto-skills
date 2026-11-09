@@ -108,6 +108,15 @@ def prog_tokens(prog: str) -> list[str]:
     return toks
 
 
+def takes_value(option: dict) -> bool:
+    """Whether a flag consumes the next token, so `prog --flag sub` does not read `sub` as the subcommand.
+    scan_repo records takes_value from argparse's action and click's flag settings; an inventory without it
+    falls back to the old guess that only a bool default marks a flag."""
+    if "takes_value" in option:
+        return bool(option["takes_value"])
+    return not isinstance(option.get("default"), bool)
+
+
 def command_mentions(text: str, progs: dict[str, dict]) -> list[tuple[str, str, int]]:
     """(prog, subcommand, line) for each CLI invocation in code spans and fences."""
     found = []
@@ -187,7 +196,7 @@ def drift(skill: Path, repo: Path) -> dict:
         p["subs"].add(c["name"])
         p["subs"].update(c.get("aliases_sub", []))
         for o in c.get("options", []) + c.get("global_options", []):
-            if not o["positional"] and not isinstance(o.get("default"), bool):
+            if not o["positional"] and takes_value(o):
                 p["value_flags"].update(n for n in o["names"] if n.startswith("-"))
         for inv_ in [c["prog"], *c.get("aliases", [])]:
             seq = prog_tokens(inv_)

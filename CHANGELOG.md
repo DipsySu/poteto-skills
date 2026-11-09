@@ -4,6 +4,10 @@ All notable changes to this project are documented in this file. The format is b
 
 ## [Unreleased]
 
+### Changed
+
+- curator 2026-11-09: proposals 1, 2 and 4: patlint lints the files git would commit (tracked plus untracked, not ignored; nested checkouts such as a leftover .claude/worktrees/NAME/ left out) and --update-baseline adopts only tracked files; scan_repo keeps declared routes named like filesystem roots (/home, SCIM's /Users) and records takes_value per option, so drift_check no longer reads a store_true flag as swallowing the subcommand; gen_check and bounded_check get --timeout/--call-timeout with an inconclusive exit 3, a Ctrl-C is never a counterexample, and filter_too_much no longer overwrites a found failure. Sources: see proposals/2026-11-09.md.
+
 ### Added
 
 - Proposal 1: Python-only, stdlib `gen_check.py` with seeded generators and shrinkers, pinned examples, repeatable setup/reset, declared repo targets traced only during accepted checks, excessive-rejection failure, JSON reports, and `--expect-fail` for real counterexamples only. Added the todo persistence/title property fixture and scratch-break/regression examples.

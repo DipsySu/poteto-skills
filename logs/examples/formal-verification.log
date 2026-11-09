@@ -1,9 +1,11 @@
-scratch: /tmp/poteto-examples-3y9j5k2w
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_model.py --mutants --json
+scratch: /tmp/poteto-examples-nh6_xegi
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/bounded_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/todo_model.py --mutants --json
 {
-  "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_model.py",
+  "model": "/home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/todo_model.py",
   "depth": 20,
   "max_states": 10000,
+  "timeout": 90.0,
+  "call_timeout": 10.0,
   "invariants": [
     "no_lost_todo",
     "legal_status"
@@ -292,11 +294,13 @@ $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_c
 [exit 0; expected 0]
 ASSERT PASS: correct status and locked-writer model exhausts its finite reachable states without violation
 ASSERT PASS: checker kills unlocked writers, skipped done and repeated done mutants
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/lost_update.py --json
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/bounded_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/lost_update.py --json
 {
-  "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/lost_update.py",
+  "model": "/home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/lost_update.py",
   "depth": 20,
   "max_states": 10000,
+  "timeout": 90.0,
+  "call_timeout": 10.0,
   "invariants": [
     "no_lost_todo",
     "legal_status"
@@ -436,18 +440,20 @@ $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_c
       }
     ]
   },
-  "seconds": 0.0,
+  "seconds": 0.001,
   "mutants": {},
   "expect_violation": null
 }
 
 [exit 1; expected 1]
 ASSERT PASS: lost_update produces a real no_lost_todo counterexample trace
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/lost_update.py --expect-violation no_lost_todo --json
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/bounded_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/lost_update.py --expect-violation no_lost_todo --json
 {
-  "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/lost_update.py",
+  "model": "/home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/lost_update.py",
   "depth": 20,
   "max_states": 10000,
+  "timeout": 90.0,
+  "call_timeout": 10.0,
   "invariants": [
     "no_lost_todo",
     "legal_status"
@@ -587,17 +593,19 @@ $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_c
       }
     ]
   },
-  "seconds": 0.0,
+  "seconds": 0.001,
   "mutants": {},
   "expect_violation": "no_lost_todo"
 }
 
 [exit 0; expected 0]
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/skip_done.py --json
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/bounded_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/skip_done.py --json
 {
-  "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/skip_done.py",
+  "model": "/home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/skip_done.py",
   "depth": 20,
   "max_states": 10000,
+  "timeout": 90.0,
+  "call_timeout": 10.0,
   "invariants": [
     "no_lost_todo",
     "legal_status"
@@ -670,11 +678,13 @@ $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_c
 
 [exit 1; expected 1]
 ASSERT PASS: skip_done produces a real legal_status counterexample trace
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/skip_done.py --expect-violation legal_status --json
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/bounded_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/skip_done.py --expect-violation legal_status --json
 {
-  "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/skip_done.py",
+  "model": "/home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/skip_done.py",
   "depth": 20,
   "max_states": 10000,
+  "timeout": 90.0,
+  "call_timeout": 10.0,
   "invariants": [
     "no_lost_todo",
     "legal_status"
@@ -746,11 +756,13 @@ $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_c
 }
 
 [exit 0; expected 0]
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/repeat_done.py --json
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/bounded_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/repeat_done.py --json
 {
-  "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/repeat_done.py",
+  "model": "/home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/repeat_done.py",
   "depth": 20,
   "max_states": 10000,
+  "timeout": 90.0,
+  "call_timeout": 10.0,
   "invariants": [
     "no_lost_todo",
     "legal_status"
@@ -853,11 +865,13 @@ $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_c
 
 [exit 1; expected 1]
 ASSERT PASS: repeat_done produces a real legal_status counterexample trace
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/repeat_done.py --expect-violation legal_status --json
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/bounded_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/repeat_done.py --expect-violation legal_status --json
 {
-  "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/repeat_done.py",
+  "model": "/home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/repeat_done.py",
   "depth": 20,
   "max_states": 10000,
+  "timeout": 90.0,
+  "call_timeout": 10.0,
   "invariants": [
     "no_lost_todo",
     "legal_status"
@@ -959,11 +973,13 @@ $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_c
 }
 
 [exit 0; expected 0]
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_model.py --depth 0 --json
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/bounded_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/todo_model.py --depth 0 --json
 {
-  "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_model.py",
+  "model": "/home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/todo_model.py",
   "depth": 0,
   "max_states": 10000,
+  "timeout": 90.0,
+  "call_timeout": 10.0,
   "invariants": [
     "no_lost_todo",
     "legal_status"
@@ -983,20 +999,23 @@ $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_c
 }
 
 [exit 0; expected 0]
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_model.py --depth -1
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/bounded_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/todo_model.py --depth -1
 bounded_check: depth must be nonnegative and max-states must be positive
 
 [exit 2; expected 2]
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/empty.py
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/bounded_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/empty.py
+bounded_check: /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/empty.py: depth <= 25, max 200000 states, 90 s run limit, 10 s per call
 bounded_check: model has no initial states
 
 [exit 2; expected 2]
 ASSERT PASS: empty initial states and invalid bounds are rejected
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/dead.py --mutants --deadlock --json
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/bounded_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/dead.py --mutants --deadlock --json
 {
-  "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/dead.py",
+  "model": "/home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/dead.py",
   "depth": 25,
   "max_states": 200000,
+  "timeout": 90.0,
+  "call_timeout": 10.0,
   "invariants": [
     "ok"
   ],
@@ -1030,7 +1049,7 @@ $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_c
 
 [exit 1; expected 1]
 ASSERT PASS: deadlock alone does not prove an invariant mutant was killed
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/tla_available.sh --json
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/tla_available.sh --json
 {
   "available": false,
   "java": null,
@@ -1038,14 +1057,14 @@ $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/tla_avail
   "tla2tools_jar": null,
   "tlc_wrapper": null,
   "run": null,
-  "fallback": "python3 /home/box/developer/poteto-skills/skills/formal-verification/scripts/bounded_check.py MODEL.py",
+  "fallback": "python3 /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/bounded_check.py MODEL.py",
   "get_tla2tools": "https://github.com/tlaplus/tlaplus/releases (tla2tools.jar), plus a JDK 11+",
   "other_verifiers": {}
 }
 
 [exit 1; expected (0, 1)]
 ASSERT PASS: TLA availability exit code matches its report and advertises the stdlib fallback
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --json
 {
   "seed": 0,
   "ok": true,
@@ -1068,15 +1087,19 @@ $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check
     "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
     "todo/store.py:Store.list_all"
   ],
-  "missing_targets": []
+  "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": null
 }
 
 [exit 0; expected 0]
 ASSERT PASS: real Store round trip checks title.strip() and independent persistence after pinned examples
 ASSERT PASS: scratch break identifies only the persisted title assignment
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --expect-fail round_trip
-gen_check: /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_props.py (seed 0)
-  round_trip: fail (1 accepted, 0/0 generated rejected)
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --expect-fail round_trip
+gen_check: seed 0; limits 90 s per run, 10 s per call
+gen_check: /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/todo_props.py (seed 0)
+  round_trip: fail (0 of 0 generated inputs rejected before the counterexample)
     reduced counterexample: 'l '
     AssertionError:  (10 shrink attempts)
   repo functions run: todo/store.py:Store.__init__, todo/store.py:Store._transaction, todo/store.py:Store.add, todo/store.py:Store.add.<locals>.change, todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>, todo/store.py:Store.list_all
@@ -1084,7 +1107,7 @@ PASS
 
 [exit 0; expected 0]
 ASSERT PASS: scratch break prints a reduced counterexample and replay seed
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --expect-fail round_trip --json
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --expect-fail round_trip --json
 {
   "seed": 0,
   "ok": true,
@@ -1107,12 +1130,15 @@ $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check
     "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
     "todo/store.py:Store.list_all"
   ],
-  "missing_targets": []
+  "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": null
 }
 
 [exit 0; expected 0]
 ASSERT PASS: removing assignment strip shrinks to a nonblank title with surrounding whitespace
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --expect-fail round_trip --json
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --expect-fail round_trip --json
 {
   "seed": 0,
   "ok": true,
@@ -1135,12 +1161,15 @@ $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check
     "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
     "todo/store.py:Store.list_all"
   ],
-  "missing_targets": []
+  "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": null
 }
 
 [exit 0; expected 0]
 ASSERT PASS: same seed replays the same reduced counterexample and call report
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --json
 {
   "seed": 0,
   "ok": true,
@@ -1163,18 +1192,22 @@ $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check
     "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
     "todo/store.py:Store.list_all"
   ],
-  "missing_targets": []
+  "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": null
 }
 
 [exit 0; expected 0]
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --expect-fail round_trip
-gen_check: /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_props.py (seed 0)
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --expect-fail round_trip
+gen_check: seed 0; limits 90 s per run, 10 s per call
+gen_check: /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/todo_props.py (seed 0)
   round_trip: pass (96 accepted, 5/100 generated rejected)
   repo functions run: todo/store.py:Store.__init__, todo/store.py:Store._transaction, todo/store.py:Store.add, todo/store.py:Store.add.<locals>.change, todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>, todo/store.py:Store.list_all
 FAIL
 
 [exit 1; expected 1]
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_copy.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/props_copy.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --json
 {
   "seed": 0,
   "ok": false,
@@ -1192,13 +1225,16 @@ $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check
   "called": [],
   "missing_targets": [
     "todo/store.py:Store.add"
-  ]
+  ],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": null
 }
 
 [exit 1; expected 1]
 ASSERT PASS: copy: pasted add cannot satisfy declared Store.add even with imports/construction
 ASSERT PASS: property-module functions are outside the repo call report
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_imported_copy.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/props_imported_copy.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --json
 {
   "seed": 0,
   "ok": false,
@@ -1216,12 +1252,15 @@ $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check
   "called": [],
   "missing_targets": [
     "todo/store.py:Store.add"
-  ]
+  ],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": null
 }
 
 [exit 1; expected 1]
 ASSERT PASS: imported_copy: pasted add cannot satisfy declared Store.add even with imports/construction
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_filter.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/props_filter.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --json
 {
   "seed": 0,
   "ok": false,
@@ -1244,12 +1283,15 @@ $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check
     "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
     "todo/store.py:Store.list_all"
   ],
-  "missing_targets": []
+  "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": null
 }
 
 [exit 1; expected 1]
 ASSERT PASS: over-half generated rejection fails even when pinned accepted input covers targets
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_filter_expected.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json --expect-fail filtered
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/props_filter_expected.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --json --expect-fail filtered
 {
   "seed": 0,
   "ok": false,
@@ -1272,11 +1314,14 @@ $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check
     "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
     "todo/store.py:Store.list_all"
   ],
-  "missing_targets": []
+  "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": null
 }
 
 [exit 1; expected 1]
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_never.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/props_never.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --json
 {
   "seed": 0,
   "ok": false,
@@ -1301,12 +1346,15 @@ $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check
   ],
   "missing_targets": [
     "todo/store.py:Store.transition"
-  ]
+  ],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": null
 }
 
 [exit 1; expected 1]
 ASSERT PASS: one uncalled declared target fails despite other repo functions running
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_import_call.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/props_import_call.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --json
 {
   "seed": 0,
   "ok": false,
@@ -1324,12 +1372,15 @@ $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check
   "called": [],
   "missing_targets": [
     "todo/store.py:Store.add"
-  ]
+  ],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": null
 }
 
 [exit 1; expected 1]
 ASSERT PASS: target calls made during imports do not count
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_hook_call.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/props_hook_call.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --json
 {
   "seed": 0,
   "ok": false,
@@ -1347,12 +1398,15 @@ $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check
   "called": [],
   "missing_targets": [
     "todo/store.py:Store.add"
-  ]
+  ],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": null
 }
 
 [exit 1; expected 1]
 ASSERT PASS: target calls made during setup/reset do not count
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_rejected_call.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/props_rejected_call.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --json
 {
   "seed": 0,
   "ok": false,
@@ -1370,83 +1424,104 @@ $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check
   "called": [],
   "missing_targets": [
     "todo/store.py:Store.add"
-  ]
+  ],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": null
 }
 
 [exit 1; expected 1]
 ASSERT PASS: target calls made only in rejected checks do not count
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_import_error.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json --expect-fail broken
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/props_import_error.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --json --expect-fail broken
 {
   "seed": 0,
   "ok": false,
   "properties": {},
   "called": [],
   "missing_targets": [],
+  "timeout": null,
+  "call_timeout": 10.0,
+  "incomplete": null,
   "result": "error",
   "error": "RuntimeError: import"
 }
 
 [exit 2; expected 2]
 ASSERT PASS: import_error: infrastructure error never satisfies --expect-fail
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_setup_error.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json --expect-fail broken
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/props_setup_error.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --json --expect-fail broken
 {
   "seed": 0,
   "ok": false,
   "properties": {},
   "called": [],
   "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": null,
   "result": "error",
   "error": "RuntimeError: setup"
 }
 
 [exit 2; expected 2]
 ASSERT PASS: setup_error: infrastructure error never satisfies --expect-fail
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_reset_error.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json --expect-fail broken
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/props_reset_error.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --json --expect-fail broken
 {
   "seed": 0,
   "ok": false,
   "properties": {},
   "called": [],
   "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": null,
   "result": "error",
   "error": "RuntimeError: reset"
 }
 
 [exit 2; expected 2]
 ASSERT PASS: reset_error: infrastructure error never satisfies --expect-fail
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_hook_exit.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json --expect-fail broken
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/props_hook_exit.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --json --expect-fail broken
 {
   "seed": 0,
   "ok": false,
   "properties": {},
   "called": [],
   "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": null,
   "result": "error",
   "error": "SystemExit: 0"
 }
 
 [exit 2; expected 2]
 ASSERT PASS: hook_exit: infrastructure error never satisfies --expect-fail
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_generation_error.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json --expect-fail broken
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/props_generation_error.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --json --expect-fail broken
 {
   "seed": 0,
   "ok": false,
   "properties": {},
   "called": [],
   "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": null,
   "result": "error",
   "error": "RuntimeError: draw"
 }
 
 [exit 2; expected 2]
 ASSERT PASS: generation_error: infrastructure error never satisfies --expect-fail
-$ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check.py /home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/props_shrink_error.py --repo /tmp/poteto-examples-3y9j5k2w/todo-app --json --expect-fail broken
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/props_shrink_error.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --json --expect-fail broken
 {
   "seed": 0,
   "ok": false,
   "properties": {},
   "called": [],
   "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": null,
   "result": "error",
   "error": "RuntimeError: shrink"
 }
@@ -1454,3 +1529,212 @@ $ /home/box/developer/poteto-skills/skills/formal-verification/scripts/gen_check
 [exit 2; expected 2]
 ASSERT PASS: shrink_error: infrastructure error never satisfies --expect-fail
 ASSERT PASS: all seven combinators generate and shrink bounded nested inputs
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/bounded_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/hang_model.py --call-timeout 1 --json
+{
+  "model": "/home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/hang_model.py",
+  "depth": 25,
+  "max_states": 200000,
+  "timeout": 90.0,
+  "call_timeout": 1.0,
+  "invariants": [
+    "ok"
+  ],
+  "ok": false,
+  "result": "error",
+  "states": 2,
+  "transitions": 1,
+  "max_depth": 1,
+  "hit_depth_bound": false,
+  "hit_state_bound": false,
+  "violation": {
+    "kind": "error",
+    "name": "actions",
+    "detail": "no return within 1 s",
+    "trace": [
+      {
+        "step": 0,
+        "action": "init",
+        "state": 0,
+        "describe": null
+      },
+      {
+        "step": 1,
+        "action": "step",
+        "state": 1,
+        "describe": null
+      }
+    ],
+    "timeout": true
+  },
+  "seconds": 1.05,
+  "mutants": {},
+  "expect_violation": null
+}
+
+[exit 2; expected 2]
+ASSERT PASS: an actions() call that never returns on the second state is a model error with the two-state trace to it
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/bounded_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/counter_model.py --timeout 2
+bounded_check: /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/counter_model.py: depth <= 1000000000, max 1000000000 states, 2 s run limit, 10 s per call
+bounded_check: /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/counter_model.py (depth <= 1000000000, 1 invariant(s): nonnegative)
+INCOMPLETE: stopped at the 2 s limit after 1816 states (1815 transitions, max depth 1815); not a failure and not a proof
+
+[exit 3; expected 3]
+ASSERT PASS: a search over a billion-state bound stops at the 2 s run limit as inconclusive, after printing its bounds
+ASSERT PASS: scratch looping module does not shadow a real todo module
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/props_strip_leading.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --call-timeout 1 --json
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {
+    "strip_leading": {
+      "result": "timeout",
+      "accepted": 2,
+      "generated": 3,
+      "rejected": 0,
+      "counterexample": null,
+      "detail": "no return within 1 s",
+      "shrink_attempts": 0,
+      "input": "' a  babb'"
+    },
+    "no_leading_space": {
+      "result": "pass",
+      "accepted": 100,
+      "generated": 100,
+      "rejected": 0,
+      "counterexample": null,
+      "detail": null,
+      "shrink_attempts": 0
+    }
+  },
+  "called": [
+    "todo/text.py:strip_leading"
+  ],
+  "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 1.0,
+  "incomplete": null
+}
+
+[exit 3; expected 3]
+ASSERT PASS: a check that never returns ends its property as timeout with the leading-space input and seed 0
+ASSERT PASS: the other property in the same file still runs and passes after the timeout
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/props_strip_leading.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --call-timeout 1 --expect-fail strip_leading --json
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {
+    "strip_leading": {
+      "result": "timeout",
+      "accepted": 2,
+      "generated": 3,
+      "rejected": 0,
+      "counterexample": null,
+      "detail": "no return within 1 s",
+      "shrink_attempts": 0,
+      "input": "' a  babb'"
+    },
+    "no_leading_space": {
+      "result": "pass",
+      "accepted": 100,
+      "generated": 100,
+      "rejected": 0,
+      "counterexample": null,
+      "detail": null,
+      "shrink_attempts": 0
+    }
+  },
+  "called": [
+    "todo/text.py:strip_leading"
+  ],
+  "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 1.0,
+  "incomplete": null
+}
+
+[exit 3; expected 3]
+ASSERT PASS: --expect-fail never accepts a timeout as the expected counterexample
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/props_strip_leading.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --call-timeout 1
+gen_check: seed 0; limits 90 s per run, 1 s per call
+gen_check: /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/props_strip_leading.py (seed 0)
+  strip_leading: timeout (2 accepted, 0/3 generated rejected)
+    input: ' a  babb'
+    no return within 1 s; replay with --seed 0
+  no_leading_space: pass (100 accepted, 0/100 generated rejected)
+  repo functions run: todo/text.py:strip_leading
+INCOMPLETE: a time limit is not a failure and not a proof
+
+[exit 3; expected 3]
+ASSERT PASS: text mode prints the seed before checking and the timed-out input in its report
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/props_filter_then_fail.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --json
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {
+    "rare": {
+      "result": "fail",
+      "accepted": 1,
+      "generated": 3,
+      "rejected": 2,
+      "counterexample": "60",
+      "detail": "AssertionError: above 50",
+      "shrink_attempts": 0
+    }
+  },
+  "called": [
+    "todo/store.py:Store.__init__",
+    "todo/store.py:Store._transaction",
+    "todo/store.py:Store.add",
+    "todo/store.py:Store.add.<locals>.change",
+    "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
+    "todo/store.py:Store.list_all"
+  ],
+  "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": null
+}
+
+[exit 1; expected 1]
+ASSERT PASS: a counterexample found after two rejected inputs reports fail with 60, not filter_too_much
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/props_filter_then_fail.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --expect-fail rare --json
+{
+  "seed": 0,
+  "ok": true,
+  "properties": {
+    "rare": {
+      "result": "fail",
+      "accepted": 1,
+      "generated": 3,
+      "rejected": 2,
+      "counterexample": "60",
+      "detail": "AssertionError: above 50",
+      "shrink_attempts": 0
+    }
+  },
+  "called": [
+    "todo/store.py:Store.__init__",
+    "todo/store.py:Store._transaction",
+    "todo/store.py:Store.add",
+    "todo/store.py:Store.add.<locals>.change",
+    "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
+    "todo/store.py:Store.list_all"
+  ],
+  "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": null
+}
+
+[exit 0; expected 0]
+$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/formal-verification/scripts/gen_check.py /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/props_filter_then_fail.py --repo /tmp/poteto-examples-nh6_xegi/todo-app
+gen_check: seed 0; limits 90 s per run, 10 s per call
+gen_check: /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/props_filter_then_fail.py (seed 0)
+  rare: fail (2 of 3 generated inputs rejected before the counterexample)
+    reduced counterexample: 60
+    AssertionError: above 50 (0 shrink attempts)
+  repo functions run: todo/store.py:Store.__init__, todo/store.py:Store._transaction, todo/store.py:Store.add, todo/store.py:Store.add.<locals>.change, todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>, todo/store.py:Store.list_all
+FAIL
+
+[exit 1; expected 1]
+ASSERT PASS: --expect-fail accepts that counterexample, and the report counts the rejections before it

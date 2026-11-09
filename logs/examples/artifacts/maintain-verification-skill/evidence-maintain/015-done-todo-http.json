@@ -6,14 +6,14 @@
     "retry-http"
   ],
   "read_only": true,
-  "started": "2026-10-21T03:10:16Z",
+  "started": "2026-11-09T02:27:33Z",
   "method": "GET",
-  "url": "http://127.0.0.1:34795/todos",
+  "url": "http://127.0.0.1:42683/todos",
   "request_body": null,
   "status": 200,
   "response_headers": {
     "Server": "BaseHTTP/0.6 Python/3.13.5",
-    "Date": "Wed, 21 Oct 2026 03:10:16 GMT",
+    "Date": "Mon, 09 Nov 2026 02:27:33 GMT",
     "Content-Type": "application/json",
     "Content-Length": "105"
   },
@@ -39,5 +39,5 @@
   ],
   "execution_ok": true,
   "ok": true,
-  "elapsed_ms": 10.0
+  "elapsed_ms": 8.3
 }

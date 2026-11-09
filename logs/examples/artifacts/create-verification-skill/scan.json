@@ -1,5 +1,5 @@
 {
-  "repo": "/tmp/poteto-examples-4dfshnbm/todo-app",
+  "repo": "/tmp/poteto-examples-nh6_xegi/todo-app",
   "languages": [
     {
       "name": "python",
@@ -115,14 +115,16 @@
             "title"
           ],
           "default": null,
-          "positional": true
+          "positional": true,
+          "takes_value": true
         },
         {
           "names": [
             "--data"
           ],
           "default": "data",
-          "positional": false
+          "positional": false,
+          "takes_value": true
         }
       ],
       "global_options": [],
@@ -149,14 +151,16 @@
             "id"
           ],
           "default": null,
-          "positional": true
+          "positional": true,
+          "takes_value": true
         },
         {
           "names": [
             "--data"
           ],
           "default": "data",
-          "positional": false
+          "positional": false,
+          "takes_value": true
         }
       ],
       "global_options": [],
@@ -183,7 +187,8 @@
             "--data"
           ],
           "default": "data",
-          "positional": false
+          "positional": false,
+          "takes_value": true
         }
       ],
       "global_options": [],
@@ -208,14 +213,16 @@
             "id"
           ],
           "default": null,
-          "positional": true
+          "positional": true,
+          "takes_value": true
         },
         {
           "names": [
             "--data"
           ],
           "default": "data",
-          "positional": false
+          "positional": false,
+          "takes_value": true
         }
       ],
       "global_options": [],
@@ -242,14 +249,16 @@
             "--port"
           ],
           "default": 8765,
-          "positional": false
+          "positional": false,
+          "takes_value": true
         },
         {
           "names": [
             "--data"
           ],
           "default": "data",
-          "positional": false
+          "positional": false,
+          "takes_value": true
         }
       ],
       "global_options": [],
@@ -296,14 +305,16 @@
                 "title"
               ],
               "default": null,
-              "positional": true
+              "positional": true,
+              "takes_value": true
             },
             {
               "names": [
                 "--data"
               ],
               "default": "data",
-              "positional": false
+              "positional": false,
+              "takes_value": true
             }
           ],
           "global_options": [],
@@ -347,7 +358,8 @@
                 "--data"
               ],
               "default": "data",
-              "positional": false
+              "positional": false,
+              "takes_value": true
             }
           ],
           "global_options": [],
@@ -392,14 +404,16 @@
                 "id"
               ],
               "default": null,
-              "positional": true
+              "positional": true,
+              "takes_value": true
             },
             {
               "names": [
                 "--data"
               ],
               "default": "data",
-              "positional": false
+              "positional": false,
+              "takes_value": true
             }
           ],
           "global_options": [],
@@ -443,14 +457,16 @@
                 "id"
               ],
               "default": null,
-              "positional": true
+              "positional": true,
+              "takes_value": true
             },
             {
               "names": [
                 "--data"
               ],
               "default": "data",
-              "positional": false
+              "positional": false,
+              "takes_value": true
             }
           ],
           "global_options": [],

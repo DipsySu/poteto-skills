@@ -1,0 +1,30 @@
+{
+  "skill_dir": "/tmp/poteto-examples-nh6_xegi/todo-app/.claude/skills/verify-todo",
+  "repo": "/tmp/poteto-examples-nh6_xegi/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 6,
+    "missing": [
+      {
+        "method": "GET",
+        "path": "/home",
+        "source": "todo/api.py:24"
+      }
+    ],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": true
+}

@@ -1,16 +1,16 @@
 {
   "version": 1,
   "tool": "collect_feedback",
-  "repo": "/tmp/poteto-examples-imj4eqch/todo-app",
-  "generated_at": "2026-10-21T03:28:02+00:00",
+  "repo": "/tmp/poteto-examples-nh6_xegi/todo-app",
+  "generated_at": "2026-11-09T02:27:35+00:00",
   "inputs": {
     "git": true,
     "since": null,
     "pr_comments": [
-      "/tmp/poteto-examples-imj4eqch/todo-app/review-comments.json"
+      "/tmp/poteto-examples-nh6_xegi/todo-app/review-comments.json"
     ],
     "chat": [
-      "/tmp/poteto-examples-imj4eqch/todo-app/chat-feedback.md"
+      "/tmp/poteto-examples-nh6_xegi/todo-app/chat-feedback.md"
     ]
   },
   "counts": {

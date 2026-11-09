@@ -44,12 +44,12 @@ class Examples:
         self.log.write(f"ASSERT PASS: {description}\n")
         self.log.flush()
 
-    def run(self, *argv, expected=0, cwd=None, env=None):
+    def run(self, *argv, expected=0, cwd=None, env=None, timeout=90):
         args = [str(a) for a in argv]
         self.log.write("$ " + shlex.join(args) + "\n")
         self.log.flush()
         result = subprocess.run(args, cwd=cwd or self.repo, env=env or self.env,
-                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=90)
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=timeout)
         self.log.write(result.stdout + f"\n[exit {result.returncode}; expected {expected}]\n")
         self.log.flush()
         self.last_output = result.stdout
@@ -503,8 +503,52 @@ class Examples:
                 self.ensure(not self.json(*command)['drift'], 'an incidental python command in a recipe is not a dead app command')
             finally:
                 feature.write_text(original)
+            self.maintain_scan_regressions()
             self.run(*command)
             self.live_pass('maintain')
+
+    def maintain_scan_regressions(self):
+        """Routes named like filesystem roots (/home) and store_true flags before the subcommand (curator 2026-11-09)."""
+        command = [self.script(self.name, 'drift_check.py'), self.skill, '--repo', self.repo, '--json']
+        api, listing = self.repo / 'todo/api.py', self.skill / 'features/list-todos.md'
+        originals = {path: path.read_text() for path in (api, listing)}
+        try:
+            api.write_text(originals[api].replace('if path == "/health":', 'if path == "/home":\n'
+                           '            self.server.store.export("/tmp/todo-export")\n'
+                           '            self.reply(200, {"page": "home"})\n        elif path == "/health":'))
+            drift = self.json(*command, expected=(0, 1))
+            self.save('home-route.json', drift)
+            missing = [(r['method'], r['path']) for r in drift['routes']['missing']]
+            self.ensure(('GET', '/home') in missing, 'a GET /home branch is reported missing from the map, though /home is also a filesystem root')
+            self.ensure(not any(path.startswith('/tmp') for _, path in missing), 'a /tmp path passed only to a generic call is still not a route')
+            listing.write_text(originals[listing] + '- `GET /home` serves the home page.\n')
+            mapped = self.json(*command, expected=(0, 1))
+            self.ensure(not mapped['routes']['dead'] and not mapped['drift'], 'a feature file that maps GET /home is not reported dead')
+        finally:
+            for path, text in originals.items():
+                path.write_text(text)
+        cli, create = self.repo / 'todo/__main__.py', self.skill / 'features/create-todo.md'
+        features = sorted((self.skill / 'features').glob('*.md'))
+        originals = {path: path.read_text() for path in (cli, *features)}
+        flag = 'parser.add_argument("--json", action="store_true")'
+        try:
+            cli.write_text(originals[cli].replace('    commands = parser.add_subparsers(', f'    {flag}\n    commands = parser.add_subparsers('))
+            for path in features:
+                path.write_text(originals[path].replace('python3 -m todo list', 'python3 -m todo --json list'))
+            create.write_text(create.read_text() + '- `python3 -m todo --json add milk --data {DATA_DIR}` adds a todo titled milk.\n')
+            texts = [path.read_text() for path in features]
+            self.ensure(flag in cli.read_text() and not any('-m todo list' in t for t in texts) and any('-m todo --json list' in t for t in texts),
+                        'scratch CLI declares a top-level store_true --json and every list recipe passes it before the subcommand')
+            drift = self.json(*command, expected=(0, 1))
+            self.save('store-true-flag.json', drift)
+            self.ensure(not any(c['name'] == 'list' for c in drift['commands']['missing']),
+                        'a store_true flag does not take the subcommand as its value: python3 -m todo --json list maps list')
+            self.ensure(not any(c['name'] == 'milk' for c in drift['commands']['dead']),
+                        'python3 -m todo --json add milk maps add instead of reporting milk as a dead command')
+            self.ensure(not drift['drift'], 'the map stays clean when its recipes pass the store_true --json before the subcommand')
+        finally:
+            for path, text in originals.items():
+                path.write_text(text)
 
     def correct_grok_regressions(self):
         """mine_mistakes false positives seen on pixel-agent-garden (logs/grok-trial/)."""
@@ -531,6 +575,43 @@ class Examples:
         self.ensure('layout-audit fixes' in texts, 'a typed feat subject that names its fixes still counts')
         self.ensure('keep the layout from overlapping again' not in texts, 'a test: subject with a weak word ("again") is not a fix')
         self.ensure(not any(c['repeat'] for c in mined['classes']), 'an orientation bullet sharing a file name does not mark a class as repeat')
+
+    def correct_git_file_set(self):
+        """patlint lints what git would commit, so a leftover worktree or an ignored dir can't fail it or enter the baseline."""
+        rules = ROOT / 'skills/correct/references/lint-rules.example.json'
+        past = self.repo / '.claude/worktrees/past'
+        gitignore, env, new = self.repo / '.gitignore', self.repo / 'env', self.repo / 'todo/new.py'
+        ignored = gitignore.read_text()
+        baseline, fresh = self.scratch / 'git-set-baseline.json', self.scratch / 'git-set-fresh.json'
+        self.run('git', 'worktree', 'add', '--detach', past, self.built['direct_write_commits'][1])
+        try:
+            self.ensure(any(v['path'] == 'todo/api.py' for v in self.lint(rules, past / 'todo', root=past, expected=1)['violations']),
+                        'a leftover worktree under .claude/worktrees/ holds the real past mistake, caught when linted as its own checkout')
+            whole = self.lint(rules, self.repo)
+            self.ensure(whole['ok'] and not any(v['path'].startswith('.claude/') for v in whole['violations']),
+                        'linting the main checkout skips the leftover worktree (a nested checkout CI never sees) and passes')
+            self.lint(rules, self.repo, extra=('--baseline', baseline, '--update-baseline'))
+            self.ensure(not any(p.startswith('.claude/') for f in json.loads(baseline.read_text())['counts'].values() for p in f),
+                        '--update-baseline writes no key for files inside a leftover worktree')
+            env.mkdir()
+            (env / 'x.py').write_text('store.path.write_text(payload)\n')
+            gitignore.write_text(ignored + 'env/\n')
+            self.ensure(self.lint(rules, self.repo)['ok'], 'a hit in a gitignored env/ directory stays quiet')
+            new.write_text('store.path.write_text(payload)\n')
+            hit = self.lint(rules, self.repo, expected=1)
+            self.ensure([v['path'] for v in hit['failing']] == ['todo/new.py'] and 'todo/new.py' in hit['untracked'],
+                        'a hit in an untracked, unignored todo/new.py still fails and is reported as untracked')
+            adopted = self.lint(rules, self.repo, extra=('--baseline', fresh, '--update-baseline'), expected=1)
+            self.ensure(not any('todo/new.py' in f for f in json.loads(fresh.read_text())['counts'].values())
+                        and any(o['path'] == 'todo/new.py' for o in adopted['baseline']['over']),
+                        'adopting a rule writes no count for an untracked file, whose hits keep failing')
+        finally:
+            new.unlink(missing_ok=True)
+            shutil.rmtree(env, ignore_errors=True)
+            gitignore.write_text(ignored)
+            self.run('git', 'worktree', 'remove', '--force', past)
+            if not any(past.parent.iterdir()):
+                past.parent.rmdir()
 
     def lint(self, rules, path, *, root=None, expected=0, extra=()):
         return self.json(self.script('correct', 'patlint.py'), '--rules', rules, '--root', root or self.repo,
@@ -629,6 +710,7 @@ class Examples:
             finally:
                 self.run('git', 'worktree', 'remove', '--force', old)
             self.ensure(self.lint(rules, self.repo / 'todo')['ok'], 'same persistence lint passes on HEAD')
+            self.correct_git_file_set()
             fixture = self.scratch / 'ratchet'
             (fixture / 'todo').mkdir(parents=True)
             file = fixture / 'todo/legacy.py'
@@ -753,6 +835,7 @@ class Examples:
             self.ensure(self.last_returncode == (0 if availability['available'] else 1), 'TLA availability exit code matches its report and advertises the stdlib fallback')
             self.save('tla-availability.json', availability)
             self.generated_properties()
+            self.formal_time_limits()
 
     def generated_properties(self):
         checker = self.script(self.name, 'gen_check.py')
@@ -865,6 +948,77 @@ properties = {"copy": (sampled_from([" title "]), check)}
                 value = gen.draw(random.Random(_))
                 list(gen.shrink(value))
         self.ensure(True, 'all seven combinators generate and shrink bounded nested inputs')
+
+    def formal_time_limits(self):
+        """Hung calls and slow runs end in a report, not a killed shell; filter_too_much never hides a result."""
+        bounded = self.script(self.name, 'bounded_check.py')
+        hang = self.art/'hang_model.py'
+        hang.write_text('def init(): return 0\n'
+                        'def actions(s):\n    while s == 1:\n        pass\n    return [("step", s + 1)] if s < 3 else []\n'
+                        'invariants = {"ok": lambda s: True}\n')
+        result = self.json(bounded, hang, '--call-timeout', '1', '--json', expected=2, timeout=30)
+        v = result['violation']
+        self.ensure(v['kind'] == 'error' and v['name'] == 'actions' and v['detail'] == 'no return within 1 s'
+                    and [step['state'] for step in v['trace']] == [0, 1],
+                    'an actions() call that never returns on the second state is a model error with the two-state trace to it')
+        counter = self.art/'counter_model.py'
+        # A 1 ms step keeps the 2 s search to about 2000 states instead of a million held in memory.
+        counter.write_text('import time\ndef init(): return 0\n'
+                           'def actions(s):\n    time.sleep(0.001)\n    return [("inc", s + 1)]\n'
+                           'invariants = {"nonnegative": lambda s: s >= 0}\nDEPTH = MAX_STATES = 10**9\n')
+        output = self.run(bounded, counter, '--timeout', '2', expected=3, timeout=30)
+        self.ensure(re.search(r'INCOMPLETE: stopped at the 2 s limit after [1-9]\d* states', output)
+                    and output.index('2 s run limit') < output.index('INCOMPLETE'),
+                    'a search over a billion-state bound stops at the 2 s run limit as inconclusive, after printing its bounds')
+
+        checker = self.script(self.name, 'gen_check.py')
+        source = self.repo/'todo/text.py'
+        self.ensure(not source.exists(), 'scratch looping module does not shadow a real todo module')
+        props = self.art/'props_strip_leading.py'
+        props.write_text('from gen_check import text\nfrom todo.text import strip_leading\n'
+                         'TARGETS = ["todo/text.py:strip_leading"]\n'
+                         'properties = {"strip_leading": (text(" ab", max_size=8), lambda t: strip_leading(t) == t.lstrip(" ")),\n'
+                         '              "no_leading_space": (text("ab", max_size=8), lambda t: strip_leading(t) == t)}\n')
+        try:
+            # The scratch break: the loop never advances i, so a leading space never returns.
+            source.write_text('def strip_leading(t):\n    i = 0\n    while i < len(t) and t[i] == " ":\n'
+                              '        pass\n    return t[i:]\n')
+            command = [checker, props, '--repo', self.repo, '--call-timeout', '1']
+            result = self.json(*command, '--json', expected=3, timeout=30)
+            hung = result['properties']['strip_leading']
+            import ast
+            self.ensure(hung['result'] == 'timeout' and ast.literal_eval(hung['input']).startswith(' ')
+                        and hung['detail'] == 'no return within 1 s' and result['seed'] == 0 and not result['ok'],
+                        'a check that never returns ends its property as timeout with the leading-space input and seed 0')
+            self.ensure(result['properties']['no_leading_space']['result'] == 'pass' and not result['missing_targets'],
+                        'the other property in the same file still runs and passes after the timeout')
+            result = self.json(*command, '--expect-fail', 'strip_leading', '--json', expected=3, timeout=30)
+            self.ensure(result['properties']['strip_leading']['result'] == 'timeout' and not result['ok'],
+                        '--expect-fail never accepts a timeout as the expected counterexample')
+            output = self.run(*command, expected=3, timeout=30)
+            self.ensure(output.startswith('gen_check: seed 0;') and f"input: {hung['input']}" in output
+                        and 'INCOMPLETE' in output,
+                        'text mode prints the seed before checking and the timed-out input in its report')
+        finally:
+            source.unlink(missing_ok=True)
+
+        # Two rejections, then a failing input: 2 x 2 > 3 must not turn the failure into filter_too_much.
+        rare = self.art/'props_filter_then_fail.py'
+        rare.write_text('from gen_check import *\nTARGETS = ["todo/store.py:Store.add"]\n'
+                        'from todo_props import reset, round_trip\n'
+                        '_values = [-1, -2, 60]\n'
+                        'def draw(rng):\n    return _values.pop(0) if _values else 0\n'
+                        'def check(x):\n    if x < 0:\n        reject()\n    round_trip("valid")\n    assert x <= 50, "above 50"\n'
+                        'properties = {"rare": (Generator(draw, lambda x: []), check)}\n')
+        result = self.json(checker, rare, '--repo', self.repo, '--json', expected=1, timeout=30)
+        found = result['properties']['rare']
+        self.ensure(found['result'] == 'fail' and found['counterexample'] == '60'
+                    and (found['rejected'], found['generated']) == (2, 3) and not result['missing_targets'],
+                    'a counterexample found after two rejected inputs reports fail with 60, not filter_too_much')
+        self.json(checker, rare, '--repo', self.repo, '--expect-fail', 'rare', '--json', timeout=30)
+        output = self.run(checker, rare, '--repo', self.repo, expected=1, timeout=30)
+        self.ensure('rare: fail (2 of 3 generated inputs rejected before the counterexample)' in output,
+                    '--expect-fail accepts that counterexample, and the report counts the rejections before it')
 
     def docs(self):
         """Mutate a disposable collection; keep doc checks under curator's key."""

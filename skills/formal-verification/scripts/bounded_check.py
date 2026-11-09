@@ -10,11 +10,14 @@ optional:
   describe(state) -> str     how a state prints in a trace
   mutants = {name: fn}       broken variants of actions(); --mutants requires each to break an invariant
   DEPTH, MAX_STATES          defaults for --depth / --max-states
+  TIMEOUT                    default for --timeout (seconds for the whole run)
 
 States must be hashable or built from dicts, lists, sets, tuples, namedtuples, or dataclasses.
 The checker explores breadth-first up to --depth steps, so the counterexample it prints is a
 shortest one. Exit 0 = every invariant holds within the bound (and every mutant was killed),
-1 = violation, deadlock, or surviving mutant, 2 = model or usage error.
+1 = violation, deadlock, or surviving mutant, 2 = model or usage error (including a call to
+actions(), an invariant, or a mutant that runs past --call-timeout), 3 = stopped at the
+--timeout run limit with nothing failed: not a failure and not a proof.
 """
 from __future__ import annotations
 
@@ -22,14 +25,85 @@ import argparse
 import dataclasses
 import importlib.util
 import json
+import signal
 import sys
+import threading
 import time
 from collections import deque
 from pathlib import Path
 
+DEFAULT_TIMEOUT = 90.0
+DEFAULT_CALL_TIMEOUT = 10.0
+
 
 class ModelError(Exception):
     pass
+
+
+class Timeout(BaseException):
+    """A time limit stopped a call or the run (a BaseException, so `except Exception` can't swallow it)."""
+
+    def __init__(self, scope, seconds):
+        super().__init__(f"no return within {seconds:g} s" if scope == "call"
+                         else f"stopped at the {seconds:g} s limit")
+        self.scope = scope
+
+
+class Limits:
+    """Run and per-call limits, checked by a SIGALRM tick from signal.setitimer.
+
+    Where setitimer is missing (Windows) or off the main thread, the limits are skipped.
+    """
+    TICK = 0.05
+
+    def __init__(self, run_seconds, call_seconds):
+        self.call_seconds = call_seconds
+        self.begun = time.monotonic()
+        self.limit_run(run_seconds)
+        self.started = None
+        self.expired = False
+        self.previous = None
+        self.active = (hasattr(signal, "setitimer") and hasattr(signal, "SIGALRM")
+                       and threading.current_thread() is threading.main_thread())
+
+    def limit_run(self, seconds):
+        self.run_seconds = seconds
+        self.deadline = self.begun + seconds
+
+    def __enter__(self):
+        if self.active:
+            self.previous = signal.signal(signal.SIGALRM, self.tick)
+            signal.setitimer(signal.ITIMER_REAL, self.TICK, self.TICK)
+        return self
+
+    def __exit__(self, *exc):
+        self.started, self.expired = None, True
+        if self.active:
+            signal.setitimer(signal.ITIMER_REAL, 0)
+            signal.signal(signal.SIGALRM, self.previous if self.previous is not None else signal.SIG_DFL)
+        return False
+
+    def tick(self, signum, frame):
+        now = time.monotonic()
+        # Inside a call, keep raising until it unwinds, even past a bare `except:`.
+        if self.started is not None and now - self.started >= self.call_seconds:
+            raise Timeout("call", self.call_seconds)
+        if now >= self.deadline and (self.started is not None or not self.expired):
+            self.expired = True
+            raise Timeout("run", self.run_seconds)
+
+    def call(self, fn, *args):
+        self.started = time.monotonic()
+        try:
+            return fn(*args)
+        finally:
+            self.started = None
+
+
+def seconds(value, name: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not 0 < value < float("inf"):
+        raise ModelError(f"{name} must be a positive number of seconds")
+    return float(value)
 
 
 def freeze(x):
@@ -94,14 +168,26 @@ def initial_states(mod) -> list:
     return [mod.init()]
 
 
-def explore(mod, actions_fn, invariants: dict, depth: int, max_states: int, deadlock: bool) -> dict:
-    describe = getattr(mod, "describe", None)
-    terminal = getattr(mod, "terminal", None)
+def explore(mod, actions_fn, invariants: dict, depth: int, max_states: int, deadlock: bool, limits: Limits) -> dict:
+    """Search breadth-first; the run limit returns result "timeout" with the states seen so far."""
     states: dict = {}
-    parent: dict = {}  # key -> (parent_key, action, depth)
-    queue: deque = deque()
     out = {"result": "pass", "states": 0, "transitions": 0, "max_depth": 0, "hit_depth_bound": False,
            "hit_state_bound": False, "violation": None}
+    try:
+        return search(mod, actions_fn, invariants, depth, max_states, deadlock, limits, states, out)
+    except Timeout as e:
+        if e.scope != "run":
+            raise
+        out.update(result="timeout", stopped=str(e), states=len(states), violation=None, exhaustive=False)
+        return out
+
+
+def search(mod, actions_fn, invariants: dict, depth: int, max_states: int, deadlock: bool, limits: Limits,
+           states: dict, out: dict) -> dict:
+    describe = getattr(mod, "describe", None)
+    terminal = getattr(mod, "terminal", None)
+    parent: dict = {}  # key -> (parent_key, action, depth)
+    queue: deque = deque()
 
     def trace(k) -> list[dict]:
         steps = []
@@ -113,16 +199,22 @@ def explore(mod, actions_fn, invariants: dict, depth: int, max_states: int, dead
             k = pk
         return list(reversed(steps))
 
-    def bad(k, kind: str, name: str, detail: str | None = None) -> dict:
+    def bad(k, kind: str, name: str, detail: str | None = None, timeout: bool = False) -> dict:
         out["result"] = "error" if kind == "error" else "violation"
         out["violation"] = {"kind": kind, "name": name, "detail": detail, "trace": trace(k)}
+        if timeout:  # a call over --call-timeout: a model error, with the trace to the state it hung on
+            out["violation"]["timeout"] = True
         out["states"] = len(states)
         return out
 
     def check(k, s):
         for name, fn in invariants.items():
             try:
-                ok = fn(s)
+                ok = limits.call(fn, s)
+            except Timeout as e:
+                if e.scope == "run":
+                    raise
+                return bad(k, "error", name, str(e), timeout=True)
             except Exception as e:  # noqa: BLE001 - an invariant that crashes is a model bug; show where
                 return bad(k, "error", name, f"invariant raised {type(e).__name__}: {e}")
             if not ok:
@@ -149,7 +241,11 @@ def explore(mod, actions_fn, invariants: dict, depth: int, max_states: int, dead
             out["hit_depth_bound"] = True
             continue
         try:
-            succ = list(actions_fn(s))
+            succ = limits.call(lambda: list(actions_fn(s)))
+        except Timeout as e:
+            if e.scope == "run":
+                raise
+            return bad(k, "error", "actions", str(e), timeout=True)
         except Exception as e:  # noqa: BLE001
             return bad(k, "error", "actions", f"actions() raised {type(e).__name__}: {e}")
         if not succ and deadlock and not (callable(terminal) and terminal(s)):
@@ -194,8 +290,10 @@ def main(argv: list[str] | None = None) -> int:
                "  bounded_check.py model.py --mutants                 # every broken variant must be caught\n"
                "  bounded_check.py model.py --expect-violation no_lost_todo   # exit 0 only if it fails\n\n"
                "MODEL.py: init() or inits(); actions(state) -> [(name, next_state)]; invariants = {name: fn};\n"
-               "optional terminal(state), describe(state), mutants = {name: actions_fn}, DEPTH, MAX_STATES.\n"
-               "exit: 0 holds within the bound, 1 violation/deadlock/surviving mutant, 2 model or usage error",
+               "optional terminal(state), describe(state), mutants = {name: actions_fn}, DEPTH, MAX_STATES, TIMEOUT.\n"
+               "exit: 0 holds within the bound, 1 violation/deadlock/surviving mutant, 2 model or usage error\n"
+               "(a call to actions(), an invariant, or a mutant past --call-timeout is a model error),\n"
+               "3 stopped at the --timeout run limit: not a failure and not a proof",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     ap.add_argument("model", type=Path, help="the MODEL.py file")
@@ -205,52 +303,79 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--deadlock", action="store_true", help="also fail on states with no enabled action (unless terminal)")
     ap.add_argument("--mutants", action="store_true", help="also run every MODEL.mutants entry; each must violate an invariant")
     ap.add_argument("--expect-violation", metavar="NAME", help="succeed only if invariant NAME is violated (able-to-fail proof)")
+    ap.add_argument("--timeout", type=float, metavar="S",
+                    help="seconds for the whole run, then exit 3 (default: MODEL.TIMEOUT or 90)")
+    ap.add_argument("--call-timeout", type=float, default=DEFAULT_CALL_TIMEOUT, metavar="S",
+                    help="seconds for one call to actions(), an invariant, or a mutant, then exit 2 (default: 10)")
     ap.add_argument("--json", action="store_true", help="machine-readable output")
     args = ap.parse_args(argv)
 
     try:
-        mod = load_model(args.model)
-        invariants = dict(mod.invariants)
-        if args.invariant:
-            unknown = [n for n in args.invariant if n not in invariants]
-            if unknown:
-                raise ModelError(f"unknown invariant(s): {', '.join(unknown)}; known: {', '.join(invariants)}")
-            invariants = {n: invariants[n] for n in args.invariant}
-        if args.expect_violation and args.expect_violation not in invariants:
-            raise ModelError(f"--expect-violation {args.expect_violation}: no such invariant; known: {', '.join(invariants)}")
-        depth = args.depth if args.depth is not None else getattr(mod, "DEPTH", 25)
-        max_states = args.max_states if args.max_states is not None else getattr(mod, "MAX_STATES", 200_000)
-        if depth < 0 or max_states < 1:
-            raise ModelError("depth must be nonnegative and max-states must be positive")
-        t0 = time.time()
-        main_res = explore(mod, mod.actions, invariants, depth, max_states, args.deadlock)
-        main_res["seconds"] = round(time.time() - t0, 3)
-        mutant_res = {}
-        if args.mutants:
+        if args.timeout is not None:
+            seconds(args.timeout, "--timeout")
+        limits = Limits(args.timeout or DEFAULT_TIMEOUT, seconds(args.call_timeout, "--call-timeout"))
+        with limits:
+            mod = load_model(args.model)
+            invariants = dict(mod.invariants)
+            if args.invariant:
+                unknown = [n for n in args.invariant if n not in invariants]
+                if unknown:
+                    raise ModelError(f"unknown invariant(s): {', '.join(unknown)}; known: {', '.join(invariants)}")
+                invariants = {n: invariants[n] for n in args.invariant}
+            if args.expect_violation and args.expect_violation not in invariants:
+                raise ModelError(f"--expect-violation {args.expect_violation}: no such invariant; known: {', '.join(invariants)}")
+            depth = args.depth if args.depth is not None else getattr(mod, "DEPTH", 25)
+            max_states = args.max_states if args.max_states is not None else getattr(mod, "MAX_STATES", 200_000)
+            if depth < 0 or max_states < 1:
+                raise ModelError("depth must be nonnegative and max-states must be positive")
             muts = getattr(mod, "mutants", None)
-            if not isinstance(muts, dict) or not muts:
+            if args.mutants and (not isinstance(muts, dict) or not muts):
                 raise ModelError("--mutants needs MODEL.mutants = {name: broken_actions_fn}")
-            for name, fn in muts.items():
-                r = explore(mod, fn, invariants, depth, max_states, args.deadlock)
-                mutant_res[name] = {"killed": r["result"] == "violation" and r["violation"]["kind"] == "invariant", "by": (r["violation"] or {}).get("name"),
-                                    "steps": len((r["violation"] or {}).get("trace", [])) - 1 if r["violation"] else None,
-                                    "result": r}
+            if args.timeout is None:
+                limits.limit_run(seconds(getattr(mod, "TIMEOUT", DEFAULT_TIMEOUT), "MODEL.TIMEOUT"))
+            if not args.json:  # --json output carries the bounds; keep it parseable
+                print(f"bounded_check: {args.model}: depth <= {depth}, max {max_states} states, "
+                      f"{limits.run_seconds:g} s run limit, {limits.call_seconds:g} s per call",
+                      file=sys.stderr, flush=True)
+            t0 = time.time()
+            main_res = explore(mod, mod.actions, invariants, depth, max_states, args.deadlock, limits)
+            main_res["seconds"] = round(time.time() - t0, 3)
+            mutant_res = {}
+            if args.mutants and main_res["result"] != "timeout":
+                for name, fn in muts.items():
+                    r = explore(mod, fn, invariants, depth, max_states, args.deadlock, limits)
+                    mutant_res[name] = {"killed": r["result"] == "violation" and r["violation"]["kind"] == "invariant", "by": (r["violation"] or {}).get("name"),
+                                        "steps": len((r["violation"] or {}).get("trace", [])) - 1 if r["violation"] else None,
+                                        "result": r}
+                    if r["result"] == "timeout":
+                        break
     except ModelError as e:
         print(f"bounded_check: {e}", file=sys.stderr)
         return 2
+    except Timeout as e:  # outside a search: while importing the model or between searches
+        print(f"bounded_check: INCOMPLETE: {e} outside the search; not a failure and not a proof", file=sys.stderr)
+        return 3
 
+    # The run limit is inconclusive, so exit 3 unless a completed search failed outright.
+    stopped = main_res["result"] == "timeout" or any(m["result"]["result"] == "timeout" for m in mutant_res.values())
+    hung = any(m["result"]["result"] == "error" and m["result"]["violation"].get("timeout") for m in mutant_res.values())
     if args.expect_violation:
         v = main_res["violation"]
         ok = bool(v) and v["name"] == args.expect_violation and v["kind"] == "invariant"
+        definitive = main_res["result"] != "timeout"
     else:
-        ok = main_res["result"] == "pass" and all(m["killed"] for m in mutant_res.values())
-    if main_res["result"] == "error":
+        ok = (main_res["result"] == "pass" and all(m["killed"] for m in mutant_res.values())
+              and len(mutant_res) == (len(muts) if args.mutants else 0))
+        definitive = main_res["result"] == "violation" or any(
+            not m["killed"] and m["result"]["result"] in ("pass", "violation") for m in mutant_res.values())
+    if main_res["result"] == "error" or hung:
         code = 2
     else:
-        code = 0 if ok else 1
+        code = 0 if ok else 3 if stopped and not definitive else 1
 
     if args.json:
         print(json.dumps({"model": str(args.model), "depth": depth, "max_states": max_states,
+                          "timeout": limits.run_seconds, "call_timeout": limits.call_seconds,
                           "invariants": list(invariants), "ok": ok, **main_res,
                           "mutants": {k: {kk: vv for kk, vv in m.items() if kk != "result"} | {
                               "trace": (m["result"]["violation"] or {}).get("trace")} for k, m in mutant_res.items()},
@@ -267,24 +392,38 @@ def main(argv: list[str] | None = None) -> int:
             scope = f"bound reached: holds up to depth {depth}, not beyond"
         print(f"PASS: invariants hold on {main_res['states']} states ({main_res['transitions']} transitions, "
               f"max depth {main_res['max_depth']}); {scope}")
+    elif main_res["result"] == "timeout":
+        print(f"INCOMPLETE: {main_res['stopped']} after {main_res['states']} states ({main_res['transitions']} "
+              f"transitions, max depth {main_res['max_depth']}); not a failure and not a proof")
     else:
         v = main_res["violation"]
         label = {"invariant": f'invariant "{v["name"]}" violated', "deadlock": "deadlock",
                  "error": f'model error in {v["name"]}'}[v["kind"]]
-        print(f"{'FAIL' if v['kind'] != 'error' else 'ERROR'}: {label} after {len(v['trace']) - 1} step(s)"
-              + (f": {v['detail']}" if v.get("detail") else ""))
+        if v.get("timeout"):
+            print(f"ERROR: {label}: {v['detail']}, {len(v['trace']) - 1} step(s) from the initial state")
+        else:
+            print(f"{'FAIL' if v['kind'] != 'error' else 'ERROR'}: {label} after {len(v['trace']) - 1} step(s)"
+                  + (f": {v['detail']}" if v.get("detail") else ""))
         print_trace(v)
         print(f"explored {main_res['states']} states")
     if mutant_res:
         print("mutants (each broken variant must be caught, or the check proves nothing):")
         for name, m in mutant_res.items():
+            r = m["result"]
             if m["killed"]:
                 print(f"  {name:<24} killed by {m['by']} after {m['steps']} step(s)")
+            elif r["result"] == "timeout":
+                print(f"  {name:<24} INCOMPLETE: {r['stopped']} after {r['states']} states")
+            elif r["result"] == "error" and r["violation"].get("timeout"):
+                print(f"  {name:<24} ERROR: model error in {m['by']}: {r['violation']['detail']} after {m['steps']} step(s)")
             else:
                 print(f"  {name:<24} SURVIVED: no invariant catches this broken variant; strengthen the property or the model")
         for name, m in mutant_res.items():
             if m["killed"]:
                 print(f"counterexample for mutant {name}:")
+                print_trace(m["result"]["violation"])
+            elif m["result"]["result"] == "error" and m["result"]["violation"].get("timeout"):
+                print(f"trace to the state where mutant {name} did not return:")
                 print_trace(m["result"]["violation"])
     if args.expect_violation:
         print(f"expect-violation {args.expect_violation}: {'met' if ok else 'NOT met'}")
