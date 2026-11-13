@@ -28,14 +28,17 @@ tracked files plus untracked ones that .gitignore doesn't exclude. Files inside
 a nested checkout (a directory with its own .git entry, as every linked worktree
 such as a leftover .claude/worktrees/NAME/ has) and index entries deleted from
 disk are left out, so `patlint.py ... .` sees what a CI clone sees. A file named
-on the command line is linted as given. Outside git, directories are walked.
+on the command line is linted as given. A git directory argument expanding to no
+files is a usage error (exit 2); name a file explicitly to lint an ignored file.
+Outside git, directories are walked.
 
 Ratchet: with --baseline FILE, only (rule, file) counts above the baseline
 fail, so an already-common pattern can't grow. --update-baseline records
 current counts for new rules and lowers counts that went down; it refuses to
 raise a count (exit 1). Inside git it adopts and lowers counts only for files
-git tracks, so an untracked scratch file can't raise a floor; its hits keep
-failing until they are fixed or the file is committed.
+git tracks, so an untracked scratch file can't raise a floor. Committing a file
+only makes its hits eligible for adoption when a rule is first adopted via
+--update-baseline; an existing rule still requires fixing hits above its baseline.
 
 Kept proof: --record RULE --commit FIX_SHA records raw diff cases after a
 whole-file replay (parent must hit, fix must be quiet). --test replays every
@@ -307,6 +310,9 @@ def walk(paths: list[Path], root: Path):
                     cand.extend((Path(dirpath) / f, True) for f in sorted(filenames))
             else:
                 names, tracked = listing
+                if not names:
+                    raise RuntimeError(f"no files to lint in directory: {p} (empty, ignored, or excluded by git); "
+                                       "name a file explicitly to lint it as given")
                 cand = [(p / n, n in tracked) for n in names]
         for f, is_tracked in cand:
             rel = rel_to(root, f)

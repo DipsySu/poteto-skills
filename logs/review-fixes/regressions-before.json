@@ -1,0 +1,52 @@
+[
+  {
+    "case": "maintain_path_comparisons",
+    "status": "FAIL",
+    "reason": "only request-path comparisons bypass filesystem filtering, including equality, prefix, regex and match/case"
+  },
+  {
+    "case": "maintain_zero_nargs",
+    "status": "FAIL",
+    "reason": "registered string argparse actions with explicit nargs=0 consume no value"
+  },
+  {
+    "case": "maintain_exit_contract",
+    "status": "FAIL",
+    "reason": "clean drift regression 1 rejects exit 1 even when its JSON reports no drift"
+  },
+  {
+    "case": "correct_git_file_set",
+    "status": "FAIL",
+    "reason": "/Users/dipsy/Developer/poteto-skills-review/skills/correct/scripts/patlint.py --rules /Users/dipsy/Developer/poteto-skills-review/skills/correct/references/lint-rules.example.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-2w14ymwp/todo-app --json /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-2w14ymwp/todo-app/env: exit 0, expected 2; see correct.log"
+  },
+  {
+    "case": "correct_baseline_contract",
+    "status": "FAIL",
+    "reason": "SKILL.md explains first adoption and the ratchet for existing rules"
+  },
+  {
+    "case": "formal_trace_timeout",
+    "status": "FAIL",
+    "reason": "/Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/before/formal_trace_timeout/slow_trace_model.py --timeout 0.2 --json: exit 3, expected 1; see formal-verification.log"
+  },
+  {
+    "case": "formal_shrink_interrupt",
+    "status": "FAIL",
+    "reason": "/Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/before/formal_shrink_interrupt/props_shrink_interrupt.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-2w14ymwp/todo-app --json: exit 3, expected 1; see formal-verification.log"
+  },
+  {
+    "case": "formal_property_seeds",
+    "status": "FAIL",
+    "reason": "each property has its own seeded stream: an earlier timeout cannot change later inputs or replay"
+  },
+  {
+    "case": "formal_import_timeout_json",
+    "status": "FAIL",
+    "reason": "Expecting value: line 1 column 1 (char 0)"
+  },
+  {
+    "case": "formal_limit_support",
+    "status": "FAIL",
+    "reason": "bounded_check.py warns that both limits are not enforced for no_timer, while stdout stays JSON"
+  }
+]

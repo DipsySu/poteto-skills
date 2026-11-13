@@ -1,0 +1,24 @@
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-2w14ymwp/todo-app/.claude/skills/verify-todo",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-2w14ymwp/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}

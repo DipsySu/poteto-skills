@@ -52,7 +52,7 @@ class Timeout(BaseException):
 class Limits:
     """Run and per-call limits, checked by a SIGALRM tick from signal.setitimer.
 
-    Where setitimer is missing (Windows) or off the main thread, the limits are skipped.
+    Where setitimer is missing (Windows) or off the main thread, warn that the limits are not enforced.
     """
     TICK = 0.05
 
@@ -63,7 +63,8 @@ class Limits:
         self.started = None
         self.expired = False
         self.previous = None
-        self.active = (hasattr(signal, "setitimer") and hasattr(signal, "SIGALRM")
+        self.active = (callable(getattr(signal, "setitimer", None)) and hasattr(signal, "SIGALRM")
+                       and hasattr(signal, "ITIMER_REAL")
                        and threading.current_thread() is threading.main_thread())
 
     def limit_run(self, seconds):
@@ -74,6 +75,10 @@ class Limits:
         if self.active:
             self.previous = signal.signal(signal.SIGALRM, self.tick)
             signal.setitimer(signal.ITIMER_REAL, self.TICK, self.TICK)
+        else:
+            print("bounded_check: WARNING: --timeout and --call-timeout are not enforced; "
+                  "SIGALRM/setitimer in the main thread is required. Use an external process deadline.",
+                  file=sys.stderr, flush=True)
         return self
 
     def __exit__(self, *exc):
@@ -178,7 +183,11 @@ def explore(mod, actions_fn, invariants: dict, depth: int, max_states: int, dead
     except Timeout as e:
         if e.scope != "run":
             raise
-        out.update(result="timeout", stopped=str(e), states=len(states), violation=None, exhaustive=False)
+        out.update(stopped=str(e), states=len(states), exhaustive=False)
+        if out["violation"] is None:
+            out["result"] = "timeout"
+        else:
+            out["violation"]["trace_incomplete"] = str(e)
         return out
 
 
@@ -189,22 +198,28 @@ def search(mod, actions_fn, invariants: dict, depth: int, max_states: int, deadl
     parent: dict = {}  # key -> (parent_key, action, depth)
     queue: deque = deque()
 
-    def trace(k) -> list[dict]:
-        steps = []
+    def trace(k, steps) -> None:
+        keys = []
         while k is not None:
+            keys.append(k)
+            k = parent[k][0]
+        keys.reverse()
+        # Retain raw states before invoking optional presentation code, which may time out.
+        for k in keys:
             pk, act, d = parent[k]
             s = states[k]
-            steps.append({"step": d, "action": act, "state": jsonable(s),
-                          "describe": describe(s) if callable(describe) else None})
-            k = pk
-        return list(reversed(steps))
+            steps.append({"step": d, "action": act, "state": jsonable(s), "describe": None})
+        if callable(describe):
+            for k, step in zip(keys, steps):
+                step["describe"] = describe(states[k])
 
     def bad(k, kind: str, name: str, detail: str | None = None, timeout: bool = False) -> dict:
         out["result"] = "error" if kind == "error" else "violation"
-        out["violation"] = {"kind": kind, "name": name, "detail": detail, "trace": trace(k)}
+        out["violation"] = {"kind": kind, "name": name, "detail": detail, "trace": []}
         if timeout:  # a call over --call-timeout: a model error, with the trace to the state it hung on
             out["violation"]["timeout"] = True
         out["states"] = len(states)
+        trace(k, out["violation"]["trace"])
         return out
 
     def check(k, s):
@@ -277,6 +292,8 @@ def print_trace(v: dict) -> None:
     for st in v["trace"]:
         shown = st["describe"] if st["describe"] is not None else json.dumps(st["state"])
         print(f"  {st['step']:>3}  {st['action']:<36} {shown}")
+    if v.get("trace_incomplete"):
+        print(f"  trace descriptions incomplete: {v['trace_incomplete']}; confirmed finding retained")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -353,7 +370,14 @@ def main(argv: list[str] | None = None) -> int:
         print(f"bounded_check: {e}", file=sys.stderr)
         return 2
     except Timeout as e:  # outside a search: while importing the model or between searches
-        print(f"bounded_check: INCOMPLETE: {e} outside the search; not a failure and not a proof", file=sys.stderr)
+        stopped = f"{e} outside the search"
+        if args.json:
+            print(json.dumps({"model": str(args.model), "ok": False, "result": "timeout", "violation": None,
+                              "timeout": limits.run_seconds, "call_timeout": limits.call_seconds,
+                              "stopped": stopped, "states": 0, "transitions": 0, "max_depth": 0,
+                              "exhaustive": False, "mutants": {}}, indent=2))
+        else:
+            print(f"bounded_check: INCOMPLETE: {stopped}; not a failure and not a proof", file=sys.stderr)
         return 3
 
     # The run limit is inconclusive, so exit 3 unless a completed search failed outright.

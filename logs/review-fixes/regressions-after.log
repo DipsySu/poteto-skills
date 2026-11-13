@@ -1,0 +1,1016 @@
+$ /Users/dipsy/Developer/poteto-skills-review/examples/build-todo-app.sh /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app",
+  "head": "4242a5ae43587ea1ed392b15775e2e3e3acc2aa4",
+  "direct_write_commits": [
+    "570c1e91c25878c9550969a1ba4072a0e1790d27",
+    "dbd44008685859312aee6a60154fd0258c1c063b"
+  ],
+  "direct_write_fix": "2fd7988731eb03a000207e269b441daeb22d2a3e",
+  "status_bug_commits": [
+    "41967033e461ea9fc00af5a5bb985a7bcb6149e0",
+    "2c383ecc2ce27c62d73d049228c0b2542683a1b9"
+  ]
+}
+
+[exit 0; expected 0]
+$ /Users/dipsy/Developer/poteto-skills-review/skills/create-verification-skill/scripts/scaffold.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app --app todo --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app/.claude/skills/verify-todo",
+  "files": [
+    "SKILL.md",
+    "features/README.md",
+    "FEATURE_MAP.md",
+    "features/create-todo.md",
+    "features/list-todos.md",
+    "features/done-todo.md",
+    "features/delete-todo.md",
+    "scripts/control.sh"
+  ],
+  "features": [
+    "create-todo",
+    "list-todos",
+    "done-todo",
+    "delete-todo"
+  ],
+  "not_mapped": [],
+  "launch": "python3 -m todo serve --data \"$DATA_DIR\" --port \"$PORT\"",
+  "health": "/health",
+  "read_path": "/todos",
+  "cli": "python3 -m todo",
+  "todo_markers": 24,
+  "todo_locations": [
+    "SKILL.md:42",
+    "features/README.md:10",
+    "features/create-todo.md:3",
+    "features/create-todo.md:22",
+    "features/create-todo.md:23",
+    "features/create-todo.md:24",
+    "features/create-todo.md:28",
+    "features/delete-todo.md:3",
+    "features/delete-todo.md:20",
+    "features/delete-todo.md:22",
+    "features/delete-todo.md:23",
+    "features/delete-todo.md:24",
+    "features/delete-todo.md:28",
+    "features/done-todo.md:3",
+    "features/done-todo.md:20",
+    "features/done-todo.md:22",
+    "features/done-todo.md:23",
+    "features/done-todo.md:24",
+    "features/done-todo.md:28",
+    "features/list-todos.md:3",
+    "features/list-todos.md:22",
+    "features/list-todos.md:23",
+    "features/list-todos.md:24",
+    "features/list-todos.md:28"
+  ],
+  "next": [
+    "replace every TODO(verify) (grep -rn 'TODO(verify)' .claude/skills/verify-todo)",
+    ".claude/skills/verify-todo/scripts/control.sh prove --feature <id> http GET /todos --expect-json 'TODO(verify)'",
+    "python3 /Users/dipsy/Developer/poteto-skills-review/skills/create-verification-skill/scripts/check_verify_skill.py .claude/skills/verify-todo"
+  ]
+}
+
+[exit 0; expected 0]
+$ /Users/dipsy/Developer/poteto-skills-review/examples/fill_verify.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app/.claude/skills/verify-todo
+filled 4 feature recipes with the example's real commands
+
+[exit 0; expected 0]
+ASSERT PASS: only request-path comparisons bypass filesystem filtering, including equality, prefix, regex and match/case
+$ /Users/dipsy/Developer/poteto-skills-review/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app/.claude/skills/verify-todo --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app/.claude/skills/verify-todo",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 0; expected 0]
+ASSERT PASS: filesystem equality and startswith checks introduce no phantom routes or drift
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 -m todo --zero list --data /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/zero-data
+[]
+
+[exit 0; expected 0]
+ASSERT PASS: registered string argparse actions with explicit nargs=0 consume no value
+$ /Users/dipsy/Developer/poteto-skills-review/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app/.claude/skills/verify-todo --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app/.claude/skills/verify-todo",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 0; expected 0]
+ASSERT PASS: a registered nargs=0 action before list keeps its command mapped and exits 0
+$ /Users/dipsy/Developer/poteto-skills-review/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app/.claude/skills/verify-todo --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app/.claude/skills/verify-todo",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 6,
+    "missing": [
+      {
+        "method": "GET",
+        "path": "/home",
+        "source": "todo/api.py:24"
+      }
+    ],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": true
+}
+
+[exit 1; expected 1]
+ASSERT PASS: a GET /home branch is reported missing from the map, though /home is also a filesystem root
+ASSERT PASS: a /tmp path passed only to a generic call is still not a route
+$ /Users/dipsy/Developer/poteto-skills-review/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app/.claude/skills/verify-todo --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app/.claude/skills/verify-todo",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 6,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 1; expected 0]
+ASSERT PASS: clean drift regression 1 rejects exit 1 even when its JSON reports no drift
+$ /Users/dipsy/Developer/poteto-skills-review/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app/.claude/skills/verify-todo --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app/.claude/skills/verify-todo",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 6,
+    "missing": [
+      {
+        "method": "GET",
+        "path": "/home",
+        "source": "todo/api.py:24"
+      }
+    ],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": true
+}
+
+[exit 1; expected 1]
+ASSERT PASS: a GET /home branch is reported missing from the map, though /home is also a filesystem root
+ASSERT PASS: a /tmp path passed only to a generic call is still not a route
+$ /Users/dipsy/Developer/poteto-skills-review/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app/.claude/skills/verify-todo --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app/.claude/skills/verify-todo",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 6,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 0; expected 0]
+ASSERT PASS: a feature file that maps GET /home is not reported dead
+ASSERT PASS: scratch CLI declares a top-level store_true --json and every list recipe passes it before the subcommand
+$ /Users/dipsy/Developer/poteto-skills-review/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app/.claude/skills/verify-todo --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app/.claude/skills/verify-todo",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 1; expected 0]
+ASSERT PASS: clean drift regression 2 rejects exit 1 even when its JSON reports no drift
+$ git worktree add --detach /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app/.claude/worktrees/past dbd44008685859312aee6a60154fd0258c1c063b
+Preparing worktree (detached HEAD dbd4400)
+HEAD is now at dbd4400 fix: persist API additions with direct JSON writes bypassing store.py
+
+[exit 0; expected 0]
+$ /Users/dipsy/Developer/poteto-skills-review/skills/correct/scripts/patlint.py --rules /Users/dipsy/Developer/poteto-skills-review/skills/correct/references/lint-rules.example.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app/.claude/worktrees/past --json /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app/.claude/worktrees/past/todo
+{
+  "ok": false,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 3,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app/.claude/worktrees/past",
+  "failing": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/api.py",
+      "line": 43,
+      "col": 17,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(json.dumps(rows))"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/api.py",
+      "line": 43,
+      "col": 17,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(json.dumps(rows))"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "updated": false
+  }
+}
+
+[exit 1; expected 1]
+ASSERT PASS: a leftover worktree under .claude/worktrees/ holds the real past mistake, caught when linted as its own checkout
+$ /Users/dipsy/Developer/poteto-skills-review/skills/correct/scripts/patlint.py --rules /Users/dipsy/Developer/poteto-skills-review/skills/correct/references/lint-rules.example.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app --json /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 3,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "updated": false
+  }
+}
+
+[exit 0; expected 0]
+ASSERT PASS: linting the main checkout skips the leftover worktree (a nested checkout CI never sees) and passes
+$ /Users/dipsy/Developer/poteto-skills-review/skills/correct/scripts/patlint.py --rules /Users/dipsy/Developer/poteto-skills-review/skills/correct/references/lint-rules.example.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app --json --baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/git-set-baseline.json --update-baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 3,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/git-set-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "updated": true
+  }
+}
+
+[exit 0; expected 0]
+ASSERT PASS: --update-baseline writes no key for files inside a leftover worktree
+$ /Users/dipsy/Developer/poteto-skills-review/skills/correct/scripts/patlint.py --rules /Users/dipsy/Developer/poteto-skills-review/skills/correct/references/lint-rules.example.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app --json /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 3,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "updated": false
+  }
+}
+
+[exit 0; expected 0]
+ASSERT PASS: a hit in a gitignored env/ directory stays quiet
+$ /Users/dipsy/Developer/poteto-skills-review/skills/correct/scripts/patlint.py --rules /Users/dipsy/Developer/poteto-skills-review/skills/correct/references/lint-rules.example.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app --json /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app/env
+patlint: no files to lint in directory: /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app/env (empty, ignored, or excluded by git); name a file explicitly to lint it as given
+
+[exit 2; expected 2]
+ASSERT PASS: an explicitly named ignored directory fails visibly instead of reporting a clean zero-file lint
+$ /Users/dipsy/Developer/poteto-skills-review/skills/correct/scripts/patlint.py --rules /Users/dipsy/Developer/poteto-skills-review/skills/correct/references/lint-rules.example.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app --json /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app
+{
+  "ok": false,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 4,
+  "untracked": [
+    "todo/new.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app",
+  "failing": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "updated": false
+  }
+}
+
+[exit 1; expected 1]
+ASSERT PASS: a hit in an untracked, unignored todo/new.py still fails and is reported as untracked
+$ /Users/dipsy/Developer/poteto-skills-review/skills/correct/scripts/patlint.py --rules /Users/dipsy/Developer/poteto-skills-review/skills/correct/references/lint-rules.example.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app --json --baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/git-set-fresh.json --update-baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app
+{
+  "ok": false,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 4,
+  "untracked": [
+    "todo/new.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app",
+  "failing": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/git-set-fresh.json",
+    "over": [
+      {
+        "rule": "no-direct-json-write",
+        "path": "todo/new.py",
+        "count": 1,
+        "baseline": 0
+      }
+    ],
+    "improved": [],
+    "refused": [],
+    "updated": true
+  }
+}
+
+[exit 1; expected 1]
+ASSERT PASS: adopting a rule writes no count for an untracked file, whose hits keep failing
+$ git worktree remove --force /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app/.claude/worktrees/past
+
+[exit 0; expected 0]
+$ git init -q
+
+[exit 0; expected 0]
+$ git add todo/new.py
+
+[exit 0; expected 0]
+$ /Users/dipsy/Developer/poteto-skills-review/skills/correct/scripts/patlint.py --rules /Users/dipsy/Developer/poteto-skills-review/skills/correct/references/lint-rules.example.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/ratchet-contract --json --baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/ratchet-contract/baseline.json --update-baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/ratchet-contract
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/ratchet-contract",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/ratchet-contract/baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "updated": true
+  }
+}
+
+[exit 0; expected 0]
+$ /Users/dipsy/Developer/poteto-skills-review/skills/correct/scripts/patlint.py --rules /Users/dipsy/Developer/poteto-skills-review/skills/correct/references/lint-rules.example.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/ratchet-contract --json --baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/ratchet-contract/baseline.json --update-baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/ratchet-contract
+{
+  "ok": false,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/ratchet-contract",
+  "failing": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/ratchet-contract/baseline.json",
+    "over": [
+      {
+        "rule": "no-direct-json-write",
+        "path": "todo/new.py",
+        "count": 1,
+        "baseline": 0
+      }
+    ],
+    "improved": [],
+    "refused": [
+      {
+        "rule": "no-direct-json-write",
+        "path": "todo/new.py",
+        "count": 1,
+        "baseline": 0
+      }
+    ],
+    "updated": true
+  }
+}
+
+[exit 1; expected 1]
+ASSERT PASS: a tracked hit cannot raise an existing rule baseline, even after the file enters git
+$ /Users/dipsy/Developer/poteto-skills-review/skills/correct/scripts/patlint.py --rules /Users/dipsy/Developer/poteto-skills-review/skills/correct/references/lint-rules.example.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/ratchet-contract --json --baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/ratchet-contract/first.json --update-baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/ratchet-contract
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/ratchet-contract",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/ratchet-contract/first.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "updated": true
+  }
+}
+
+[exit 0; expected 0]
+ASSERT PASS: tracked existing hits may enter a baseline only when the rule is first adopted
+ASSERT PASS: SKILL.md explains first adoption and the ratchet for existing rules
+ASSERT PASS: patlint.py explains first adoption and the ratchet for existing rules
+$ /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/after/formal_trace_timeout/slow_trace_model.py --timeout 0.2 --json
+{
+  "model": "/Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/after/formal_trace_timeout/slow_trace_model.py",
+  "depth": 25,
+  "max_states": 200000,
+  "timeout": 0.2,
+  "call_timeout": 10.0,
+  "invariants": [
+    "below_two"
+  ],
+  "ok": false,
+  "result": "violation",
+  "states": 3,
+  "transitions": 2,
+  "max_depth": 2,
+  "hit_depth_bound": false,
+  "hit_state_bound": false,
+  "violation": {
+    "kind": "invariant",
+    "name": "below_two",
+    "detail": null,
+    "trace": [
+      {
+        "step": 0,
+        "action": "init",
+        "state": 0,
+        "describe": "state 0"
+      },
+      {
+        "step": 1,
+        "action": "inc",
+        "state": 1,
+        "describe": null
+      },
+      {
+        "step": 2,
+        "action": "inc",
+        "state": 2,
+        "describe": null
+      }
+    ],
+    "trace_incomplete": "stopped at the 0.2 s limit"
+  },
+  "stopped": "stopped at the 0.2 s limit",
+  "exhaustive": false,
+  "seconds": 0.2,
+  "mutants": {},
+  "expect_violation": null
+}
+
+[exit 1; expected 1]
+ASSERT PASS: a describe timeout retains the confirmed invariant violation and raw trace (exit 1)
+$ /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/after/formal_trace_timeout/slow_trace_model.py --timeout 0.2 --json --expect-violation below_two
+{
+  "model": "/Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/after/formal_trace_timeout/slow_trace_model.py",
+  "depth": 25,
+  "max_states": 200000,
+  "timeout": 0.2,
+  "call_timeout": 10.0,
+  "invariants": [
+    "below_two"
+  ],
+  "ok": true,
+  "result": "violation",
+  "states": 3,
+  "transitions": 2,
+  "max_depth": 2,
+  "hit_depth_bound": false,
+  "hit_state_bound": false,
+  "violation": {
+    "kind": "invariant",
+    "name": "below_two",
+    "detail": null,
+    "trace": [
+      {
+        "step": 0,
+        "action": "init",
+        "state": 0,
+        "describe": "state 0"
+      },
+      {
+        "step": 1,
+        "action": "inc",
+        "state": 1,
+        "describe": null
+      },
+      {
+        "step": 2,
+        "action": "inc",
+        "state": 2,
+        "describe": null
+      }
+    ],
+    "trace_incomplete": "stopped at the 0.2 s limit"
+  },
+  "stopped": "stopped at the 0.2 s limit",
+  "exhaustive": false,
+  "seconds": 0.201,
+  "mutants": {},
+  "expect_violation": "below_two"
+}
+
+[exit 0; expected 0]
+ASSERT PASS: a describe timeout retains the confirmed invariant violation and raw trace (exit 0)
+$ /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/after/formal_trace_timeout/slow_trace_model.py --timeout 0.2
+bounded_check: /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/after/formal_trace_timeout/slow_trace_model.py: depth <= 25, max 200000 states, 0.2 s run limit, 10 s per call
+bounded_check: /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/after/formal_trace_timeout/slow_trace_model.py (depth <= 25, 1 invariant(s): below_two)
+FAIL: invariant "below_two" violated after 2 step(s)
+    0  init                                 state 0
+    1  inc                                  1
+    2  inc                                  2
+  trace descriptions incomplete: stopped at the 0.2 s limit; confirmed finding retained
+explored 3 states
+
+[exit 1; expected 1]
+ASSERT PASS: text output retains the failure and explains incomplete trace descriptions
+$ /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/after/formal_shrink_interrupt/props_shrink_interrupt.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app --json
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {
+    "broken": {
+      "result": "fail",
+      "accepted": 1,
+      "generated": 1,
+      "rejected": 0,
+      "counterexample": "60",
+      "detail": "returned False",
+      "shrink_attempts": 1
+    }
+  },
+  "called": [
+    "todo/store.py:Store.__init__",
+    "todo/store.py:Store._transaction",
+    "todo/store.py:Store.add",
+    "todo/store.py:Store.add.<locals>.change",
+    "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
+    "todo/store.py:Store.list_all"
+  ],
+  "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": "interrupted"
+}
+
+[exit 1; expected 1]
+ASSERT PASS: SIGINT during shrinking preserves the best counterexample, accepted target calls and failure exit 1
+$ /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/after/formal_shrink_interrupt/props_shrink_interrupt.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app --expect-fail broken --json
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {
+    "broken": {
+      "result": "fail",
+      "accepted": 1,
+      "generated": 1,
+      "rejected": 0,
+      "counterexample": "60",
+      "detail": "returned False",
+      "shrink_attempts": 1
+    }
+  },
+  "called": [
+    "todo/store.py:Store.__init__",
+    "todo/store.py:Store._transaction",
+    "todo/store.py:Store.add",
+    "todo/store.py:Store.add.<locals>.change",
+    "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
+    "todo/store.py:Store.list_all"
+  ],
+  "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": "interrupted"
+}
+
+[exit 3; expected 3]
+ASSERT PASS: an interrupted shrink keeps its failure but cannot complete an --expect-fail proof
+$ /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/after/formal_property_seeds/props_independent_seeds.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app --seed 42 --examples 5 --call-timeout 0.1 --json
+{
+  "seed": 42,
+  "ok": false,
+  "properties": {
+    "lead": {
+      "result": "timeout",
+      "accepted": 0,
+      "generated": 1,
+      "rejected": 0,
+      "counterexample": null,
+      "detail": "no return within 0.1 s",
+      "shrink_attempts": 0,
+      "input": "711234646426242858"
+    },
+    "later": {
+      "result": "fail",
+      "accepted": 1,
+      "generated": 1,
+      "rejected": 0,
+      "counterexample": "826787967538149751",
+      "detail": "returned False",
+      "shrink_attempts": 0
+    }
+  },
+  "called": [
+    "todo/store.py:Store.__init__",
+    "todo/store.py:Store._transaction",
+    "todo/store.py:Store.add",
+    "todo/store.py:Store.add.<locals>.change",
+    "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
+    "todo/store.py:Store.list_all"
+  ],
+  "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 0.1,
+  "incomplete": null
+}
+
+[exit 1; expected 1]
+ASSERT PASS: leading property times out after 1 draws with seed 42
+$ /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/after/formal_property_seeds/props_independent_seeds.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app --seed 42 --examples 5 --call-timeout 0.1 --json
+{
+  "seed": 42,
+  "ok": false,
+  "properties": {
+    "lead": {
+      "result": "timeout",
+      "accepted": 2,
+      "generated": 3,
+      "rejected": 0,
+      "counterexample": null,
+      "detail": "no return within 0.1 s",
+      "shrink_attempts": 0,
+      "input": "885830535379523876"
+    },
+    "later": {
+      "result": "fail",
+      "accepted": 1,
+      "generated": 1,
+      "rejected": 0,
+      "counterexample": "826787967538149751",
+      "detail": "returned False",
+      "shrink_attempts": 0
+    }
+  },
+  "called": [
+    "todo/store.py:Store.__init__",
+    "todo/store.py:Store._transaction",
+    "todo/store.py:Store.add",
+    "todo/store.py:Store.add.<locals>.change",
+    "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
+    "todo/store.py:Store.list_all"
+  ],
+  "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 0.1,
+  "incomplete": null
+}
+
+[exit 1; expected 1]
+ASSERT PASS: leading property times out after 3 draws with seed 42
+$ /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/after/formal_property_seeds/props_independent_seeds.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app --seed 43 --examples 5 --call-timeout 0.1 --json
+{
+  "seed": 43,
+  "ok": false,
+  "properties": {
+    "lead": {
+      "result": "timeout",
+      "accepted": 0,
+      "generated": 1,
+      "rejected": 0,
+      "counterexample": null,
+      "detail": "no return within 0.1 s",
+      "shrink_attempts": 0,
+      "input": "532757085230842690"
+    },
+    "later": {
+      "result": "fail",
+      "accepted": 1,
+      "generated": 1,
+      "rejected": 0,
+      "counterexample": "979553669154450752",
+      "detail": "returned False",
+      "shrink_attempts": 0
+    }
+  },
+  "called": [
+    "todo/store.py:Store.__init__",
+    "todo/store.py:Store._transaction",
+    "todo/store.py:Store.add",
+    "todo/store.py:Store.add.<locals>.change",
+    "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
+    "todo/store.py:Store.list_all"
+  ],
+  "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 0.1,
+  "incomplete": null
+}
+
+[exit 1; expected 1]
+ASSERT PASS: leading property times out after 1 draws with seed 43
+ASSERT PASS: each property has its own seeded stream: an earlier timeout cannot change later inputs or replay
+$ /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/after/formal_import_timeout_json/slow_import_model.py --timeout 0.1 --json
+{
+  "model": "/Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/after/formal_import_timeout_json/slow_import_model.py",
+  "ok": false,
+  "result": "timeout",
+  "violation": null,
+  "timeout": 0.1,
+  "call_timeout": 10.0,
+  "stopped": "stopped at the 0.1 s limit outside the search",
+  "states": 0,
+  "transitions": 0,
+  "max_depth": 0,
+  "exhaustive": false,
+  "mutants": {}
+}
+
+[exit 3; expected 3]
+ASSERT PASS: an import-time run limit exits 3
+ASSERT PASS: --json remains parseable on an import-time timeout and identifies an inconclusive run
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/after/formal_limit_support/unsupported_limits.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py no_timer /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/after/formal_limit_support/unsupported_model.py --timeout 0.02 --call-timeout 0.02 --json
+{"code": 0, "report": {"model": "/Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/after/formal_limit_support/unsupported_model.py", "depth": 25, "max_states": 200000, "timeout": 0.02, "call_timeout": 0.02, "invariants": ["ok"], "ok": true, "result": "pass", "states": 1, "transitions": 0, "max_depth": 0, "hit_depth_bound": false, "hit_state_bound": false, "violation": null, "exhaustive": true, "seconds": 0.104, "mutants": {}, "expect_violation": null}, "stderr": "bounded_check: WARNING: --timeout and --call-timeout are not enforced; SIGALRM/setitimer in the main thread is required. Use an external process deadline.\n"}
+
+[exit 0; expected 0]
+ASSERT PASS: bounded_check.py warns that both limits are not enforced for no_timer, while stdout stays JSON
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/after/formal_limit_support/unsupported_limits.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py worker /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/after/formal_limit_support/unsupported_model.py --timeout 0.02 --call-timeout 0.02 --json
+{"code": 0, "report": {"model": "/Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/after/formal_limit_support/unsupported_model.py", "depth": 25, "max_states": 200000, "timeout": 0.02, "call_timeout": 0.02, "invariants": ["ok"], "ok": true, "result": "pass", "states": 1, "transitions": 0, "max_depth": 0, "hit_depth_bound": false, "hit_state_bound": false, "violation": null, "exhaustive": true, "seconds": 0.101, "mutants": {}, "expect_violation": null}, "stderr": "bounded_check: WARNING: --timeout and --call-timeout are not enforced; SIGALRM/setitimer in the main thread is required. Use an external process deadline.\n"}
+
+[exit 0; expected 0]
+ASSERT PASS: bounded_check.py warns that both limits are not enforced for worker, while stdout stays JSON
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/after/formal_limit_support/unsupported_limits.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py no_timer /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/after/formal_limit_support/props_unsupported.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app --examples 1 --timeout 0.02 --call-timeout 0.02 --json
+{"code": 0, "report": {"seed": 0, "ok": true, "properties": {"ok": {"result": "pass", "accepted": 1, "generated": 1, "rejected": 0, "counterexample": null, "detail": null, "shrink_attempts": 0}}, "called": ["todo/store.py:Store.__init__", "todo/store.py:Store._transaction", "todo/store.py:Store.add", "todo/store.py:Store.add.<locals>.change", "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>", "todo/store.py:Store.list_all"], "missing_targets": [], "timeout": 0.02, "call_timeout": 0.02, "incomplete": null}, "stderr": "gen_check: WARNING: --timeout and --call-timeout are not enforced; SIGALRM/setitimer in the main thread is required. Use an external process deadline.\n"}
+
+[exit 0; expected 0]
+ASSERT PASS: gen_check.py warns that both limits are not enforced for no_timer, while stdout stays JSON
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/after/formal_limit_support/unsupported_limits.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py worker /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/after/formal_limit_support/props_unsupported.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-g6y15ub2/todo-app --examples 1 --timeout 0.02 --call-timeout 0.02 --json
+{"code": 0, "report": {"seed": 0, "ok": true, "properties": {"ok": {"result": "pass", "accepted": 1, "generated": 1, "rejected": 0, "counterexample": null, "detail": null, "shrink_attempts": 0}}, "called": ["todo/store.py:Store.__init__", "todo/store.py:Store._transaction", "todo/store.py:Store.add", "todo/store.py:Store.add.<locals>.change", "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>", "todo/store.py:Store.list_all"], "missing_targets": [], "timeout": 0.02, "call_timeout": 0.02, "incomplete": null}, "stderr": "gen_check: WARNING: --timeout and --call-timeout are not enforced; SIGALRM/setitimer in the main thread is required. Use an external process deadline.\n"}
+
+[exit 0; expected 0]
+ASSERT PASS: gen_check.py warns that both limits are not enforced for worker, while stdout stays JSON
+ASSERT PASS: formal-verification documents timer/thread support, native-code limits and an external deadline

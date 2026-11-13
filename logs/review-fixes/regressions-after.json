@@ -1,0 +1,42 @@
+[
+  {
+    "case": "maintain_path_comparisons",
+    "status": "PASS"
+  },
+  {
+    "case": "maintain_zero_nargs",
+    "status": "PASS"
+  },
+  {
+    "case": "maintain_exit_contract",
+    "status": "PASS"
+  },
+  {
+    "case": "correct_git_file_set",
+    "status": "PASS"
+  },
+  {
+    "case": "correct_baseline_contract",
+    "status": "PASS"
+  },
+  {
+    "case": "formal_trace_timeout",
+    "status": "PASS"
+  },
+  {
+    "case": "formal_shrink_interrupt",
+    "status": "PASS"
+  },
+  {
+    "case": "formal_property_seeds",
+    "status": "PASS"
+  },
+  {
+    "case": "formal_import_timeout_json",
+    "status": "PASS"
+  },
+  {
+    "case": "formal_limit_support",
+    "status": "PASS"
+  }
+]

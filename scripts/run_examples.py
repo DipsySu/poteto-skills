@@ -504,6 +504,9 @@ class Examples:
             finally:
                 feature.write_text(original)
             self.maintain_scan_regressions()
+            self.maintain_path_comparisons()
+            self.maintain_zero_nargs()
+            self.maintain_exit_contract()
             self.run(*command)
             self.live_pass('maintain')
 
@@ -516,13 +519,13 @@ class Examples:
             api.write_text(originals[api].replace('if path == "/health":', 'if path == "/home":\n'
                            '            self.server.store.export("/tmp/todo-export")\n'
                            '            self.reply(200, {"page": "home"})\n        elif path == "/health":'))
-            drift = self.json(*command, expected=(0, 1))
+            drift = self.json(*command, expected=1)
             self.save('home-route.json', drift)
             missing = [(r['method'], r['path']) for r in drift['routes']['missing']]
             self.ensure(('GET', '/home') in missing, 'a GET /home branch is reported missing from the map, though /home is also a filesystem root')
             self.ensure(not any(path.startswith('/tmp') for _, path in missing), 'a /tmp path passed only to a generic call is still not a route')
             listing.write_text(originals[listing] + '- `GET /home` serves the home page.\n')
-            mapped = self.json(*command, expected=(0, 1))
+            mapped = self.json(*command, expected=0)
             self.ensure(not mapped['routes']['dead'] and not mapped['drift'], 'a feature file that maps GET /home is not reported dead')
         finally:
             for path, text in originals.items():
@@ -539,7 +542,7 @@ class Examples:
             texts = [path.read_text() for path in features]
             self.ensure(flag in cli.read_text() and not any('-m todo list' in t for t in texts) and any('-m todo --json list' in t for t in texts),
                         'scratch CLI declares a top-level store_true --json and every list recipe passes it before the subcommand')
-            drift = self.json(*command, expected=(0, 1))
+            drift = self.json(*command, expected=0)
             self.save('store-true-flag.json', drift)
             self.ensure(not any(c['name'] == 'list' for c in drift['commands']['missing']),
                         'a store_true flag does not take the subcommand as its value: python3 -m todo --json list maps list')
@@ -549,6 +552,91 @@ class Examples:
         finally:
             for path, text in originals.items():
                 path.write_text(text)
+
+    def maintain_path_comparisons(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'review_scan')
+        source = '''import os, re
+from http.server import BaseHTTPRequestHandler
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if data_dir == "/tmp/cache": pass
+        if data_dir.startswith("/var/lib/"): pass
+        if real.startswith("/var/www/"): pass
+        if os.environ.get("HOME") == "/root": pass
+        if re.match(r"^/Users/files$", real): pass
+        match real:
+            case "/etc/config": pass
+        if self.path == "/Users": pass
+        if "/home" == path: pass
+        if request.path.startswith("/var/routes/"): pass
+        if re.fullmatch(r"/root/routes", path): pass
+        match self.path:
+            case "/opt/routes": pass
+'''
+        routes = {(r['method'], r['path']) for r in scanner.analyze_python('server.py', source)['routes']}
+        self.ensure(routes == {('GET', p) for p in ('/Users', '/home', '/var/routes/<*>', '/root/routes', '/opt/routes')},
+                    'only request-path comparisons bypass filesystem filtering, including equality, prefix, regex and match/case')
+        api = self.repo / 'todo/api.py'
+        original = api.read_text()
+        try:
+            api.write_text(original.replace('        path = urlsplit(self.path).path',
+                           '        data_dir = "/unused"\n'
+                           '        if data_dir == "/tmp/cache": pass\n'
+                           '        if data_dir.startswith("/var/www/"): pass\n'
+                           '        path = urlsplit(self.path).path'))
+            drift = self.json(self.script(self.name, 'drift_check.py'), self.skill, '--repo', self.repo, '--json')
+            self.ensure(not drift['drift'], 'filesystem equality and startswith checks introduce no phantom routes or drift')
+        finally:
+            api.write_text(original)
+
+    def maintain_zero_nargs(self):
+        cli = self.repo / 'todo/__main__.py'
+        features = sorted((self.skill / 'features').glob('*.md'))
+        originals = {p: p.read_text() for p in (cli, *features)}
+        try:
+            action = ('import argparse\nclass Zero(argparse.Action):\n'
+                      '    def __call__(self, parser, namespace, values, option_string=None):\n'
+                      '        setattr(namespace, self.dest, True)\n')
+            cli.write_text(action + originals[cli].replace('    commands = parser.add_subparsers(',
+                           '    parser.register("action", "zero", Zero)\n'
+                           '    parser.add_argument("--zero", action="zero", nargs=0, default=False)\n'
+                           '    commands = parser.add_subparsers('))
+            self.run(sys.executable, '-m', 'todo', '--zero', 'list', '--data', self.scratch / 'zero-data')
+            scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'review_zero_scan')
+            option = next(o for o in scanner.analyze_python('cli.py', cli.read_text())['parser_options']['parser']
+                          if '--zero' in o['names'])
+            self.ensure(option['takes_value'] is False, 'registered string argparse actions with explicit nargs=0 consume no value')
+            for p in features:
+                p.write_text(originals[p].replace('python3 -m todo list', 'python3 -m todo --zero list'))
+            drift = self.json(self.script(self.name, 'drift_check.py'), self.skill, '--repo', self.repo, '--json')
+            self.ensure(not drift['drift'], 'a registered nargs=0 action before list keeps its command mapped and exits 0')
+        finally:
+            for p, text in originals.items():
+                p.write_text(text)
+
+    def maintain_exit_contract(self):
+        """Prove both clean-map regressions reject a checker that returns clean JSON with exit 1."""
+        from unittest.mock import patch
+        checker = str(self.script(self.name, 'drift_check.py'))
+        run = subprocess.run
+        for target in (0, 1):  # mapped /home; store_true recipes
+            clean = 0
+            def wrong_exit(*args, **kwargs):
+                nonlocal clean
+                result = run(*args, **kwargs)
+                if args[0][0] == checker and not json.loads(result.stdout)['drift']:
+                    if clean == target:
+                        result.returncode = 1
+                    clean += 1
+                return result
+            caught = None
+            with patch.object(subprocess, 'run', wrong_exit):
+                try:
+                    self.maintain_scan_regressions()
+                except AssertionError as error:
+                    caught = str(error)
+            self.ensure(caught is not None and 'exit 1, expected 0;' in caught,
+                        f'clean drift regression {target + 1} rejects exit 1 even when its JSON reports no drift')
 
     def correct_grok_regressions(self):
         """mine_mistakes false positives seen on pixel-agent-garden (logs/grok-trial/)."""
@@ -597,6 +685,10 @@ class Examples:
             (env / 'x.py').write_text('store.path.write_text(payload)\n')
             gitignore.write_text(ignored + 'env/\n')
             self.ensure(self.lint(rules, self.repo)['ok'], 'a hit in a gitignored env/ directory stays quiet')
+            output = self.run(self.script('correct', 'patlint.py'), '--rules', rules, '--root', self.repo,
+                              '--json', env, expected=2)
+            self.ensure('no files' in output and str(env) in output,
+                        'an explicitly named ignored directory fails visibly instead of reporting a clean zero-file lint')
             new.write_text('store.path.write_text(payload)\n')
             hit = self.lint(rules, self.repo, expected=1)
             self.ensure([v['path'] for v in hit['failing']] == ['todo/new.py'] and 'todo/new.py' in hit['untracked'],
@@ -617,6 +709,28 @@ class Examples:
         return self.json(self.script('correct', 'patlint.py'), '--rules', rules, '--root', root or self.repo,
                          '--json', *extra, path, expected=expected)
 
+    def correct_baseline_contract(self):
+        rules = ROOT / 'skills/correct/references/lint-rules.example.json'
+        root = self.scratch / 'ratchet-contract'
+        (root / 'todo').mkdir(parents=True)
+        self.run('git', 'init', '-q', cwd=root)
+        file = root / 'todo/new.py'
+        baseline, first = root / 'baseline.json', root / 'first.json'
+        file.write_text('# clean\n')
+        self.run('git', 'add', 'todo/new.py', cwd=root)
+        self.lint(rules, root, root=root, extra=('--baseline', baseline, '--update-baseline'))
+        file.write_text('store.path.write_text(payload)\n')
+        existing = self.lint(rules, root, root=root, extra=('--baseline', baseline, '--update-baseline'), expected=1)
+        self.ensure(existing['baseline']['refused'] and not existing['ok'],
+                    'a tracked hit cannot raise an existing rule baseline, even after the file enters git')
+        adopted = self.lint(rules, root, root=root, extra=('--baseline', first, '--update-baseline'))
+        self.ensure(adopted['ok'] and json.loads(first.read_text())['counts']['no-direct-json-write']['todo/new.py'] == 1,
+                    'tracked existing hits may enter a baseline only when the rule is first adopted')
+        for path in (ROOT / 'skills/correct/SKILL.md', self.script('correct', 'patlint.py')):
+            text = path.read_text()
+            self.ensure('first adopted' in text and 'existing rule' in text,
+                        f'{path.name} explains first adoption and the ratchet for existing rules')
+
     def correct(self):
         with self.case('correct'):
             mined = self.json(self.script(self.name, 'mine_mistakes.py'), self.repo, '--since', '2026-09-01', '--feedback',
@@ -628,6 +742,7 @@ class Examples:
             self.ensure(any('status' in ' '.join(c['signature']).lower() and c['sources'].get('commit',0)>=2
                             for c in mined['classes']), 'status-transition class contains both fix commits')
             self.correct_grok_regressions()
+            self.correct_baseline_contract()
             rules = self.save('rules.json', {'rules':[{'id':'no-direct-json-write','regex':r'\b\w+\.path\.write_text\s*\(',
                 'include':['todo/*.py'], 'exclude':['todo/store.py'],
                 'message':'Use Store.add or Store.transition in todo/store.py for atomic persistence; avoid json.dump.',
@@ -836,6 +951,125 @@ class Examples:
             self.save('tla-availability.json', availability)
             self.generated_properties()
             self.formal_time_limits()
+            self.formal_trace_timeout()
+            self.formal_shrink_interrupt()
+            self.formal_property_seeds()
+            self.formal_import_timeout_json()
+            self.formal_limit_support()
+
+    def formal_trace_timeout(self):
+        checker = self.script('formal-verification', 'bounded_check.py')
+        model = self.art / 'slow_trace_model.py'
+        model.write_text('import time\ndef init(): return 0\n'
+                         'def actions(s): return [("inc", s + 1)]\n'
+                         'invariants = {"below_two": lambda s: s < 2}\n'
+                         'def describe(s):\n    if s == 1: time.sleep(2)\n    return f"state {s}"\n')
+        for flags, code in (((), 1), (('--expect-violation', 'below_two'), 0)):
+            result = self.json(checker, model, '--timeout', '0.2', '--json', *flags, expected=code)
+            violation = result['violation']
+            self.ensure(result['result'] == 'violation' and violation['name'] == 'below_two'
+                        and [s['state'] for s in violation['trace']] == [0, 1, 2]
+                        and violation['trace'][0]['describe'] == 'state 0' and violation.get('trace_incomplete'),
+                        f'a describe timeout retains the confirmed invariant violation and raw trace (exit {code})')
+        output = self.run(checker, model, '--timeout', '0.2', expected=1)
+        self.ensure('invariant "below_two" violated' in output and 'trace' in output,
+                    'text output retains the failure and explains incomplete trace descriptions')
+
+    def formal_shrink_interrupt(self):
+        checker = self.script('formal-verification', 'gen_check.py')
+        props = self.art / 'props_shrink_interrupt.py'
+        props.write_text('from gen_check import Generator\nimport signal\n'
+                         'from todo_props import reset, round_trip\n'
+                         'TARGETS = ["todo/store.py:Store.add"]\n'
+                         'def check(x):\n    round_trip("valid")\n    return x < 10\n'
+                         'def shrink(x):\n    if x == 100: yield 60\n    signal.raise_signal(signal.SIGINT)\n'
+                         'properties = {"broken": (Generator(lambda rng: 100, shrink), check)}\n')
+        result = self.json(checker, props, '--repo', self.repo, '--json', expected=1)
+        found = result['properties']['broken']
+        self.ensure(found['result'] == 'fail' and found['counterexample'] == '60' and found['shrink_attempts'] == 1
+                    and found['detail'] == 'returned False' and result['incomplete'] == 'interrupted'
+                    and not result['missing_targets'] and 'todo/store.py:Store.add' in result['called'],
+                    'SIGINT during shrinking preserves the best counterexample, accepted target calls and failure exit 1')
+        incomplete = self.json(checker, props, '--repo', self.repo, '--expect-fail', 'broken', '--json', expected=3)
+        self.ensure(not incomplete['ok'] and incomplete['properties']['broken']['counterexample'] == '60',
+                    'an interrupted shrink keeps its failure but cannot complete an --expect-fail proof')
+
+    def formal_property_seeds(self):
+        checker = self.script('formal-verification', 'gen_check.py')
+        props = self.art / 'props_independent_seeds.py'
+        body = ('from gen_check import Generator\nimport time\n'
+                'from todo_props import reset, round_trip\nTARGETS = ["todo/store.py:Store.add"]\n'
+                'calls = 0\nSTOP_AFTER = {stop}\n'
+                'def lead(x):\n    global calls\n    calls += 1\n'
+                '    if calls == STOP_AFTER: time.sleep(1)\n'
+                'def later(x):\n    round_trip("valid")\n    return False\n'
+                'gen = Generator(lambda rng: rng.randrange(2**60), lambda x: [])\n'
+                'properties = {{"lead": (gen, lead), "later": (gen, later)}}\n')
+        reports = []
+        for stop, seed in ((1, 42), (3, 42), (1, 43)):
+            props.write_text(body.format(stop=stop))
+            result = self.json(checker, props, '--repo', self.repo, '--seed', seed, '--examples', '5',
+                               '--call-timeout', '0.1', '--json', expected=1)
+            self.ensure(result['properties']['lead']['result'] == 'timeout'
+                        and result['properties']['lead']['generated'] == stop and not result['missing_targets'],
+                        f'leading property times out after {stop} draws with seed {seed}')
+            reports.append(result['properties']['later'])
+        self.ensure(reports[0] == reports[1] and reports[0]['counterexample'] != reports[2]['counterexample'],
+                    'each property has its own seeded stream: an earlier timeout cannot change later inputs or replay')
+
+    def formal_import_timeout_json(self):
+        checker = self.script('formal-verification', 'bounded_check.py')
+        model = self.art / 'slow_import_model.py'
+        model.write_text('import time\ntime.sleep(2)\n'
+                         'def init(): return 0\ndef actions(s): return []\ninvariants = {"ok": lambda s: True}\n')
+        argv = [str(checker), str(model), '--timeout', '0.1', '--json']
+        self.log.write('$ ' + shlex.join(argv) + '\n')
+        result = subprocess.run(argv, cwd=self.repo, env=self.env, capture_output=True, text=True, timeout=10)
+        self.log.write(result.stdout + result.stderr + f'\n[exit {result.returncode}; expected 3]\n')
+        self.ensure(result.returncode == 3, 'an import-time run limit exits 3')
+        report = json.loads(result.stdout)
+        self.ensure(report['result'] == 'timeout' and not report['ok'] and report['violation'] is None
+                    and report['model'] == str(model) and report['timeout'] == 0.1 and report['stopped'],
+                    '--json remains parseable on an import-time timeout and identifies an inconclusive run')
+
+    def formal_limit_support(self):
+        """Simulate missing interval timers and execution outside the main thread without hanging the runner."""
+        driver = self.art / 'unsupported_limits.py'
+        driver.write_text('''import contextlib, io, json, runpy, signal, sys, threading
+checker, scenario, *argv = sys.argv[1:]
+if scenario == "no_timer": del signal.setitimer
+sys.argv = [checker, *argv]
+out, err, codes = io.StringIO(), io.StringIO(), []
+def run():
+    try: runpy.run_path(checker, run_name="__main__")
+    except SystemExit as e: codes.append(e.code)
+with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+    if scenario == "worker":
+        thread = threading.Thread(target=run)
+        thread.start()
+        thread.join()
+    else: run()
+print(json.dumps({"code": codes[0], "report": json.loads(out.getvalue()), "stderr": err.getvalue()}))
+''')
+        model, props = self.art / 'unsupported_model.py', self.art / 'props_unsupported.py'
+        model.write_text('import time\ndef init():\n    time.sleep(0.1)\n    return 0\n'
+                         'def actions(s): return []\ninvariants = {"ok": lambda s: True}\n')
+        props.write_text('from gen_check import sampled_from\nimport time\n'
+                         'from todo_props import reset, round_trip\nTARGETS = ["todo/store.py:Store.add"]\n'
+                         'def check(x):\n    time.sleep(0.1)\n    round_trip("valid")\n'
+                         'properties = {"ok": (sampled_from([0]), check)}\n')
+        for file, fixture, flags in (('bounded_check.py', model, ()),
+                                     ('gen_check.py', props, ('--repo', self.repo, '--examples', '1'))):
+            for scenario in ('no_timer', 'worker'):
+                result = self.json(sys.executable, driver, self.script('formal-verification', file), scenario,
+                                   fixture, *flags, '--timeout', '0.02', '--call-timeout', '0.02', '--json')
+                warning = result['stderr']
+                self.ensure(result['code'] == 0 and result['report']['ok'] and 'WARNING' in warning
+                            and '--timeout' in warning and '--call-timeout' in warning and 'not enforced' in warning,
+                            f'{file} warns that both limits are not enforced for {scenario}, while stdout stays JSON')
+        text = (ROOT / 'skills/formal-verification/SKILL.md').read_text()
+        self.ensure(all(term in text for term in ('SIGALRM', 'main thread', 'native code', 'external')),
+                    'formal-verification documents timer/thread support, native-code limits and an external deadline')
 
     def generated_properties(self):
         checker = self.script(self.name, 'gen_check.py')

@@ -51,7 +51,7 @@ class Timeout(BaseException):
 class Limits:
     """Run and per-call limits, checked by a SIGALRM tick from signal.setitimer.
 
-    Where setitimer is missing (Windows) or off the main thread, the limits are skipped.
+    Where setitimer is missing (Windows) or off the main thread, warn that the limits are not enforced.
     """
     TICK = 0.05
 
@@ -62,7 +62,8 @@ class Limits:
         self.started = None
         self.expired = False
         self.previous = None
-        self.active = (hasattr(signal, 'setitimer') and hasattr(signal, 'SIGALRM')
+        self.active = (callable(getattr(signal, 'setitimer', None)) and hasattr(signal, 'SIGALRM')
+                       and hasattr(signal, 'ITIMER_REAL')
                        and threading.current_thread() is threading.main_thread())
 
     def limit_run(self, seconds):
@@ -73,6 +74,10 @@ class Limits:
         if self.active:
             self.previous = signal.signal(signal.SIGALRM, self.tick)
             signal.setitimer(signal.ITIMER_REAL, self.TICK, self.TICK)
+        else:
+            print("gen_check: WARNING: --timeout and --call-timeout are not enforced; "
+                  "SIGALRM/setitimer in the main thread is required. Use an external process deadline.",
+                  file=sys.stderr, flush=True)
         return self
 
     def __exit__(self, *exc):
@@ -342,7 +347,7 @@ def attempt(mod, check, value, repo, limits):
 
 
 def reduce_failure(mod, gen, check, value, detail, repo, limits):
-    """Shrink a failure; on the run limit, keep the reduction so far and return the Timeout."""
+    """Shrink a failure; on the run limit or Ctrl-C, retain the best confirmed reduction and stop reason."""
     seen = {repr(value)}
     attempts = 0
     try:
@@ -364,13 +369,13 @@ def reduce_failure(mod, gen, check, value, detail, repo, limits):
                     break
             else:
                 break
-    except Timeout as error:
+    except (Timeout, KeyboardInterrupt) as error:
         return value, detail, attempts, error
     return value, detail, attempts, None
 
 
 def run_property(mod, name, gen, check, rng, count, repo, limits):
-    """Return (result, called, stopped); stopped is the run-limit Timeout, if it fired."""
+    """Return (result, called, stopped); stopped is a run-limit Timeout or KeyboardInterrupt, if one fired."""
     result = {"result": "pass", "accepted": 0, "generated": 0, "rejected": 0,
               "counterexample": None, "detail": None, "shrink_attempts": 0}
     called = set()
@@ -390,13 +395,16 @@ def run_property(mod, name, gen, check, rng, count, repo, limits):
             result['accepted'] += 1
             called.update(ran)
             if status == 'fail':
+                result.update(result='fail', counterexample=repr(value), detail=detail)
                 value, detail, attempts, stopped = reduce_failure(mod, gen, check, value, detail, repo, limits)
                 result.update(result='fail', counterexample=repr(value), detail=detail, shrink_attempts=attempts)
                 break
-    except Timeout as error:
-        # Not a failure and not a proof: keep the input so the seed replays it.
-        stopped = error if error.scope == 'run' else None
-        result.update(result='timeout', input=repr(checking[0]) if checking else None, detail=str(error))
+    except (Timeout, KeyboardInterrupt) as error:
+        stopped = error if isinstance(error, KeyboardInterrupt) or error.scope == 'run' else None
+        # An interrupted check is inconclusive; interruption after a confirmed failure cannot erase it.
+        if result['result'] != 'fail':
+            result.update(result='timeout', input=repr(checking[0]) if checking else None,
+                          detail='interrupted' if isinstance(error, KeyboardInterrupt) else str(error))
     # Too many rejections is a warning about a property that otherwise passed; it never hides a result.
     if result['result'] == 'pass' and result['rejected'] * 2 > result['generated']:
         result['result'] = 'filter_too_much'
@@ -437,8 +445,8 @@ def main(argv=None):
                 if not args.json:  # --json output carries the seed; keep it parseable
                     print(f"gen_check: seed {args.seed}; limits {limits.run_seconds:g} s per run, "
                           f"{limits.call_seconds:g} s per call", file=sys.stderr, flush=True)
-                rng = random.Random(args.seed)
                 for name, (gen, check) in mod.properties.items():
+                    rng = random.Random(f"{args.seed}:{name}")
                     result, ran, stopped = run_property(mod, name, gen, check, rng, args.examples, repo, limits)
                     report['properties'][name] = result
                     called.update(ran)

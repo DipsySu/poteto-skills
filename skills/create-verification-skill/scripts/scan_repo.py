@@ -243,13 +243,34 @@ def _usage(node) -> str | None:
     return None
 
 
+def _request_path(node) -> bool:
+    """Recognize request-path conventions, without treating every filesystem path as a route."""
+    if isinstance(node, ast.Name):
+        return node.id in {"path", "request_path", "url_path"}
+    if isinstance(node, ast.Attribute) and node.attr in {"path", "path_info"}:
+        if isinstance(node.value, ast.Name):
+            return node.value.id in {"self", "request", "req"}
+        return (isinstance(node.value, ast.Call) and _call_name(node.value) in {"urlsplit", "urlparse"}
+                and bool(node.value.args) and _request_path(node.value.args[0]))
+    return False
+
+
 def _compares_path(node) -> bool:
     """True for a string compared with the request path (==, match/case, startswith, re.match): a declared route.
     False for one in a container or passed to a generic call, where it may be a filesystem path."""
     p = getattr(node, "_parent", None)
     if isinstance(p, ast.Call):
-        return node is not p.func and (_call_name(p) == "startswith" or _call_name(p) in RE_FUNCS)
-    return isinstance(p, (ast.Compare, ast.MatchValue))
+        if _call_name(p) == "startswith" and isinstance(p.func, ast.Attribute):
+            return node in p.args and _request_path(p.func.value)
+        if _call_name(p) in RE_FUNCS and p.args and node is p.args[0]:
+            subject = p.args[1] if len(p.args) > 1 else next((k.value for k in p.keywords if k.arg == "string"), None)
+            return _request_path(subject)
+    if isinstance(p, ast.Compare):
+        return any(other is not node and _request_path(other) for other in (p.left, *p.comparators))
+    if isinstance(p, ast.MatchValue):
+        match = getattr(getattr(p, "_parent", None), "_parent", None)
+        return isinstance(match, ast.Match) and _request_path(match.subject)
+    return False
 
 
 def _takes_value(keywords: list[ast.keyword], default, names: list[str]) -> bool:
@@ -261,6 +282,8 @@ def _takes_value(keywords: list[ast.keyword], default, names: list[str]) -> bool
         return False
     if "flag_value" in kw or any(n.startswith("-") and "/" in n for n in names):
         return False
+    if "nargs" in kw:
+        return _literal(kw["nargs"]) != 0
     action = kw.get("action")
     if action is None:
         return True
@@ -268,8 +291,6 @@ def _takes_value(keywords: list[ast.keyword], default, names: list[str]) -> bool
         return action.value not in NO_VALUE_ACTIONS  # store, append and extend take a value
     if (action.attr if isinstance(action, ast.Attribute) else getattr(action, "id", None)) in NO_VALUE_ACTIONS:
         return False  # argparse.BooleanOptionalAction
-    if "nargs" in kw:
-        return _literal(kw["nargs"]) != 0
     return not isinstance(default, bool)
 
 
@@ -496,7 +517,7 @@ def analyze_python(rel: str, text: str) -> dict:
                     paths = [base + "/<*>" + "/" + x.lstrip("/") for x in suffixes] or [base + "/<*>"]
                     for m in methods:
                         for p in paths:
-                            add_route(m, normalize_route(p, declared=True), node, "startswith", body)
+                            add_route(m, normalize_route(p, declared=_compares_path(node)), node, "startswith", body)
                     continue
                 declared = _compares_path(node)
                 for m in methods:

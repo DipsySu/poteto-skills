@@ -15,6 +15,11 @@ All notable changes to this project are documented in this file. The format is b
 
 ### Fixed
 
+- Curator review fixes (2026-11-13): request-path equality, prefix, regex and match/case declarations keep filesystem-like route names without promoting filesystem or environment checks to routes. Explicit argparse `nargs=0` takes precedence over registered string actions; `default=False` alone still consumes an option value, as argparse does.
+- `bounded_check.py` retains confirmed violations and raw traces when optional descriptions hit the run limit, and emits JSON for import-time timeouts. `gen_check.py` retains counterexamples and accepted target coverage when shrinking is interrupted, and uses a separate seeded random stream per property so earlier timeouts cannot change later inputs.
+- Both stdlib checkers warn on stderr when signal/thread support cannot enforce their limits. The formal-verification skill documents supported execution, native-code limitations, and the need for an external process deadline.
+- `patlint.py` rejects explicit git directories expanding to no files instead of silently passing; its help and skill now explain that committing a file only permits baseline adoption for a newly adopted rule. Existing rules still refuse increases. Regression examples cover every review fix, including injected clean-JSON/wrong-exit failures; clean drift checks require exit 0 and known drift requires exit 1.
+
 - Proposal 3: patlint `--record RULE --commit FIX_SHA` retains raw diff cases after whole-file history proof; `--test` replays every rule's cases with the lint's flags and scope, requires a matching bad case, and validates explicit `fix` references (Python symbols via AST). Ordinary lint and ratchets keep their behavior.
 - Review conflict: chose an explicit `fix` field over scanning every name in the message, so mentioning `json.dump` as the mistake never creates a false fix failure.
 - The planner saves executable cases only from successful proofs. Updated the correct skill, example owner APIs, helper mapping, deterministic builder fix SHA, and example regressions for recording, scope drift, renamed fixes, and mistake mentions.
