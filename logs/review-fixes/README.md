@@ -1,6 +1,34 @@
-# Curator review follow-up, 2026-11-13
+# Curator review fixes
 
-This follow-up addresses `reviews/codex-curator-2026-11-09.md` and `reviews/claude-curator-2026-11-09.md` on `curator/2026-11-09`, starting from `77c8dd9`. The first review fixes were already committed before this task. No commits or pushes are made by this follow-up.
+## Current reassessment, 2026-11-13
+
+This pass fixes the three findings in `reviews/codex-curator-2026-11-09.md`, starting from `03dcb22f01f0d7dca713aca89eb99a7fc5c8c83d` on `curator/2026-11-09`. The current changes are uncommitted and unpushed.
+
+The three new regression groups were added to `scripts/run_examples.py` before changing production code. **All three failed on the starting implementation; all ten existing groups passed.** [reassessment-before/source-state.json](reassessment-before/source-state.json) records the commit, source hashes and empty production diff, while [reassessment-before/summary.json](reassessment-before/summary.json) and [reassessment-before/run.log](reassessment-before/run.log) retain the failures. An additional real-SIGALRM reproduction against the starting checker is in [reassessment-before/shrink-real-signal.json](reassessment-before/shrink-real-signal.json): a hung shrink candidate incorrectly returned exit 0, `ok: true`, and `incomplete: null` with `--expect-fail`.
+
+After fixing the implementation, **all 13 regression groups pass, with 42 assertions**: [reassessment-after/summary.json](reassessment-after/summary.json), [reassessment-after/run.log](reassessment-after/run.log). No existing assertion was removed or weakened.
+
+| New regression | Contract and coverage |
+|---|---|
+| `review_import_budget` | Uses a manual monotonic clock to compare both checkers before, exactly at, and after `TIMEOUT`; import time is included, expired budgets exit 3 without running a property, and explicit `--timeout` overrides remain effective. |
+| `review_go_receivers` | Covers mux aliases, struct fields, `Handle`, mixed-case router methods and returned muxes, asserting both route inventory and `server` launch classification. `kv.Put("/var/lib/data", v)` and untrusted fields/handlers stay excluded and remain `cli`; known receivers retain filesystem-like HTTP paths. |
+| `review_shrink_call_timeout` | Keeps the best confirmed reduction, failure detail and accepted target coverage; records the hung candidate, call scope, shrink phase and incomplete status. Stops further reduction but runs the next property. Checks JSON/text output, exact exit codes and a real infinite-loop candidate under SIGALRM. |
+
+The shrink contract is explicit in `skills/formal-verification/SKILL.md`: an unexpected confirmed failure retains exit 1; an otherwise valid `--expect-fail` run with a shrink call timeout exits 2 and cannot be successful; an independent unexpected failure still takes exit 1. The confirmed failure remains visible alongside `timeout_scope`, `timeout_phase`, `input`, and `incomplete`. Run timeout/Ctrl-C retain their existing failure-versus-inconclusive behavior.
+
+Full verification ran once on an isolated copy of the current tracked working files, using `bash scripts/verify.sh --run-examples`: **7 PASS / 2 FAIL, exit 1**. [reassessment-verification/verify.log](reassessment-verification/verify.log) records the gate output; [reassessment-verification/run.json](reassessment-verification/run.json) records source hashes, and [reassessment-verification/summary.json](reassessment-verification/summary.json) and the adjacent per-skill logs retain the example results. The isolated copy was removed afterward; this run did not overwrite the historical `logs/examples/` snapshot.
+
+- Formal verification passed **86 assertions**, including the new import and shrink cases; correct passed **44**. The new Go receiver regression also passed before maintain-verification-skill reached its HTTP launch.
+- Create/maintain failed at the existing loopback port allocation: `PermissionError: [Errno 1] Operation not permitted`. Curator passed 62 assertions, then failed at `curate.sh:57` opening `/dev/fd/63` for output process substitution. [reassessment-verification/environment.json](reassessment-verification/environment.json) independently records both environment denials. No check was skipped or changed to hide these failures.
+- Frontmatter, all 27 executable help contracts, Python/shell syntax, documentation/mapping, installer isolation, and the fresh example app's seven unit tests and lint passed. The two failing gates are example regeneration and the example-results summary. Full verification has **not** passed; it requires an environment permitting those existing operations.
+
+Reproduce the focused run with `python3 scripts/run_examples.py --review-regressions /tmp/poteto-reassessment-results`. Fixture repositories and driver files now live under the runner's temporary scratch directory and are removed in `finally`; the requested output directory receives only `run.log` and `summary.json`. Git baseline, Go route and git-fallback fixtures also use scratch space during the full example run.
+
+Twenty untracked fixture directories left by the previous recheck (67,551 bytes, including two nested `.git` directories) were moved outside `logs/` without changing their contents. [reassessment-cleanup.json](reassessment-cleanup.json) lists the exact paths and retained temporary location. Existing evidence logs, summaries and tracked fixture snapshots remain intact. A recursive check found no `.git` entries or temporary fixture directories remaining under `logs/`.
+
+## Previous follow-up, starting at `77c8dd9`
+
+The previous follow-up addressed the earlier Codex/Claude review findings on `curator/2026-11-09`, starting from `77c8dd9`. Its code fixes were subsequently committed as `03dcb22` before the reassessment below began. The evidence in this section is historical.
 
 Ten independent regression groups in `scripts/run_examples.py` failed before this follow-up's fixes. At that point only the regression runner had changed; the production helpers, existing fixtures and documentation were unchanged. [recheck-before/summary.json](recheck-before/summary.json) and [recheck-before/run.log](recheck-before/run.log) record the failures. After the fixes, **all ten groups passed, with 33 assertions**, in [recheck-after/summary.json](recheck-after/summary.json) and [recheck-after/run.log](recheck-after/run.log).
 
@@ -33,4 +61,4 @@ Reproduce the focused run with `python3 scripts/run_examples.py --review-regress
 
 The pre-existing Linux-specific `ps --ppid` check is intentionally unchanged; this run failed earlier at HTTP launch. No assertion was removed or relaxed. Existing `gen_check.py` call-timeout checks now require exact exit 2 to match the requested contract; the request-path positive fixture now explicitly assigns `path = self.path`. JSON test commands parse stdout separately while retaining stderr in the logs, so expected fallback warnings cannot corrupt JSON parsing.
 
-The full command still needs an environment permitting the existing HTTP and output-redirection checks. The working branch remains at its starting commit with these fixes uncommitted and unpushed.
+That full run needed an environment permitting the existing HTTP and output-redirection checks. The previous follow-up was uncommitted when this historical evidence was recorded; its fixes are now in `03dcb22`.

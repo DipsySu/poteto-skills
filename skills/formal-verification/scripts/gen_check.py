@@ -8,7 +8,9 @@ run). Hooks run before each input and shrink attempt. Only check(input) is
 profiled; rejected and timed-out inputs do not count toward target coverage. A
 failure is reduced with at most 500 attempts, not guaranteed minimal. An input
 whose hooks and check run past --call-timeout ends its property as timeout; the
-other properties still run. Exit 0 pass, 1 property/filter/target failure, 2
+other properties still run. During shrinking, a timeout instead keeps the
+confirmed failure and marks the reduction incomplete; --expect-fail cannot pass.
+Exit 0 pass, 1 property/filter/target failure, 2
 usage, infrastructure error or call timeout, 3 inconclusive: the run limit or Ctrl-C stopped a
 check and nothing failed outright. --expect-fail never accepts infrastructure
 failures or timeouts.
@@ -98,6 +100,12 @@ class Limits:
             raise Timeout('run', self.run_seconds)
         if now >= call_deadline:
             raise Timeout('call', self.call_seconds)
+
+    def check_run(self):
+        """Check the run deadline synchronously, including a budget learned after import."""
+        if self.active and time.monotonic() >= self.deadline:
+            self.expired = True
+            raise Timeout('run', self.run_seconds)
 
 
 LIMIT_CODES = {Limits.tick.__code__, Timeout.__init__.__code__}
@@ -350,9 +358,10 @@ def attempt(mod, check, value, repo, limits):
 
 
 def reduce_failure(mod, gen, check, value, detail, repo, limits):
-    """Shrink a failure; on the run limit or Ctrl-C, retain the best confirmed reduction and stop reason."""
+    """On any timeout or Ctrl-C, retain the best reduction, stop reason and interrupted input."""
     seen = {repr(value)}
     attempts = 0
+    checking = None
     try:
         while attempts < 500:
             for candidate in itertools.islice(gen.shrink(value), 500 - attempts):
@@ -361,20 +370,17 @@ def reduce_failure(mod, gen, check, value, detail, repo, limits):
                 if key in seen:
                     continue
                 seen.add(key)
-                try:
-                    status, why, _ = attempt(mod, check, candidate, repo, limits)
-                except Timeout as error:
-                    if error.scope == 'run':
-                        raise
-                    continue  # a candidate that does not return is not a confirmed failure
+                checking = (candidate,)
+                status, why, _ = attempt(mod, check, candidate, repo, limits)
+                checking = None
                 if status == 'fail':
                     value, detail = candidate, why
                     break
             else:
                 break
     except (Timeout, KeyboardInterrupt) as error:
-        return value, detail, attempts, error
-    return value, detail, attempts, None
+        return value, detail, attempts, error, checking
+    return value, detail, attempts, None, None
 
 
 def run_property(mod, name, gen, check, rng, count, repo, limits):
@@ -399,8 +405,16 @@ def run_property(mod, name, gen, check, rng, count, repo, limits):
             called.update(ran)
             if status == 'fail':
                 result.update(result='fail', counterexample=repr(value), detail=detail)
-                value, detail, attempts, stopped = reduce_failure(mod, gen, check, value, detail, repo, limits)
+                value, detail, attempts, stopped, checking = reduce_failure(mod, gen, check, value, detail, repo, limits)
                 result.update(result='fail', counterexample=repr(value), detail=detail, shrink_attempts=attempts)
+                if stopped is not None:
+                    scope = 'interrupted' if isinstance(stopped, KeyboardInterrupt) else stopped.scope
+                    result.update(timeout_scope=scope, timeout_phase='shrink',
+                                  input=repr(checking[0]) if checking else None,
+                                  incomplete=('interrupted during shrink' if scope == 'interrupted'
+                                              else f'{scope} timeout during shrink: {stopped}'))
+                    if scope == 'call':
+                        stopped = None  # End this property's shrinking; other properties still run.
                 break
     except (Timeout, KeyboardInterrupt) as error:
         stopped = error if isinstance(error, KeyboardInterrupt) or error.scope == 'run' else None
@@ -446,6 +460,7 @@ def main(argv=None):
                 if args.timeout is None:
                     limits.limit_run(seconds(getattr(mod, 'TIMEOUT', DEFAULT_TIMEOUT), 'TIMEOUT'))
                 report['timeout'] = limits.run_seconds
+                limits.check_run()
                 if not args.json:  # --json output carries the seed; keep it parseable
                     print(f"gen_check: seed {args.seed}; limits {limits.run_seconds:g} s per run, "
                           f"{limits.call_seconds:g} s per call", file=sys.stderr, flush=True)
@@ -454,6 +469,9 @@ def main(argv=None):
                     result, ran, stopped = run_property(mod, name, gen, check, rng, args.examples, repo, limits)
                     report['properties'][name] = result
                     called.update(ran)
+                    if result.get('incomplete'):
+                        detail = f"{name}: {result['incomplete']}"
+                        report['incomplete'] = '; '.join(filter(None, (report['incomplete'], detail)))
                     if stopped is not None:
                         raise stopped
         except Timeout as error:
@@ -474,7 +492,7 @@ def main(argv=None):
             inconclusive = report['incomplete'] is not None or any(r['result'] == 'timeout' for r in results.values())
             definitive = any(r['result'] not in (expected(n), 'timeout') for n, r in results.items())
             report['ok'] = ok
-            # A timeout is not a failure and not a proof: exit 3 unless something failed outright.
+            # Unexpected confirmed failures retain exit 1; otherwise call/run timeouts exit 2/3.
             call_timeout = any(r.get('timeout_scope') == 'call' for r in results.values())
             code = 0 if ok else (2 if call_timeout else 3) if inconclusive and not definitive else 1
     except (Exception, SystemExit) as error:

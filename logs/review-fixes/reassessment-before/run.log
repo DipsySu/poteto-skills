@@ -1,0 +1,998 @@
+$ /Users/dipsy/Developer/poteto-skills-review/examples/build-todo-app.sh /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/todo-app
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/todo-app",
+  "head": "4242a5ae43587ea1ed392b15775e2e3e3acc2aa4",
+  "direct_write_commits": [
+    "570c1e91c25878c9550969a1ba4072a0e1790d27",
+    "dbd44008685859312aee6a60154fd0258c1c063b"
+  ],
+  "direct_write_fix": "2fd7988731eb03a000207e269b441daeb22d2a3e",
+  "status_bug_commits": [
+    "41967033e461ea9fc00af5a5bb985a7bcb6149e0",
+    "2c383ecc2ce27c62d73d049228c0b2542683a1b9"
+  ]
+}
+
+[exit 0; expected 0]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_deadline_order/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_deadline_order/clock_fixture.py --timeout 5 --call-timeout 6 --json
+{"code": 3, "stdout": "{\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_deadline_order/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 6.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 5 s limit\",\n  \"detail\": \"stopped at the 5 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 20.0,\n  \"incomplete\": \"stopped at the 5 s limit\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+ASSERT PASS: bounded_check.py: simultaneous expiry uses the first absolute deadline (run=5, call=6, exit 3)
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_deadline_order/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_deadline_order/clock_fixture.py --timeout 6 --call-timeout 5 --json
+{"code": 2, "stdout": "{\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_deadline_order/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 6.0,\n  \"call_timeout\": 5.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"error\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": {\n    \"kind\": \"error\",\n    \"name\": \"ok\",\n    \"detail\": \"no return within 5 s\",\n    \"trace\": [\n      {\n        \"step\": 0,\n        \"action\": \"init\",\n        \"state\": 0,\n        \"describe\": null\n      }\n    ],\n    \"timeout\": true\n  },\n  \"stopped\": \"no return within 5 s\",\n  \"detail\": \"no return within 5 s\",\n  \"seconds\": 20.0,\n  \"incomplete\": \"no return within 5 s\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+ASSERT PASS: bounded_check.py: simultaneous expiry uses the first absolute deadline (run=6, call=5, exit 2)
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_deadline_order/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_deadline_order/clock_fixture.py --timeout 5 --call-timeout 5 --json
+{"code": 3, "stdout": "{\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_deadline_order/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 5.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 5 s limit\",\n  \"detail\": \"stopped at the 5 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 20.0,\n  \"incomplete\": \"stopped at the 5 s limit\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+ASSERT PASS: bounded_check.py: simultaneous expiry uses the first absolute deadline (run=5, call=5, exit 3)
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_deadline_order/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_deadline_order/clock_fixture.py --timeout 5 --call-timeout 2 --json
+{"code": 3, "stdout": "{\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_deadline_order/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 2.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 5 s limit\",\n  \"detail\": \"stopped at the 5 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 16,\n  \"incomplete\": \"stopped at the 5 s limit\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+ASSERT PASS: bounded_check.py: deadline order includes the call start time
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_deadline_order/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_deadline_order/clock_fixture.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/todo-app --examples 1 --timeout 5 --call-timeout 6 --json
+{"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"stopped at the 5 s limit\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"run\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"todo/store.py:Store.add\"\n  ],\n  \"timeout\": 5.0,\n  \"call_timeout\": 6.0,\n  \"incomplete\": \"stopped at the 5 s limit in ok\"\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+ASSERT PASS: gen_check.py: simultaneous expiry uses the first absolute deadline (run=5, call=6, exit 3)
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_deadline_order/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_deadline_order/clock_fixture.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/todo-app --examples 1 --timeout 6 --call-timeout 5 --json
+{"code": 2, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"no return within 5 s\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"call\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"todo/store.py:Store.add\"\n  ],\n  \"timeout\": 6.0,\n  \"call_timeout\": 5.0,\n  \"incomplete\": null\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+ASSERT PASS: gen_check.py: simultaneous expiry uses the first absolute deadline (run=6, call=5, exit 2)
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_deadline_order/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_deadline_order/clock_fixture.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/todo-app --examples 1 --timeout 5 --call-timeout 5 --json
+{"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"stopped at the 5 s limit\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"run\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"todo/store.py:Store.add\"\n  ],\n  \"timeout\": 5.0,\n  \"call_timeout\": 5.0,\n  \"incomplete\": \"stopped at the 5 s limit in ok\"\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+ASSERT PASS: gen_check.py: simultaneous expiry uses the first absolute deadline (run=5, call=5, exit 3)
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_deadline_order/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_deadline_order/clock_fixture.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/todo-app --examples 1 --timeout 5 --call-timeout 2 --json
+{"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"stopped at the 5 s limit\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"run\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"todo/store.py:Store.add\"\n  ],\n  \"timeout\": 5.0,\n  \"call_timeout\": 2.0,\n  \"incomplete\": \"stopped at the 5 s limit in ok\"\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+ASSERT PASS: gen_check.py: deadline order includes the call start time
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_deadline/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_deadline/clock_fixture.py --timeout 5 --call-timeout 10 --mutants --json
+{"code": 3, "stdout": "{\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_deadline/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"nonnegative\"\n  ],\n  \"ok\": false,\n  \"result\": \"pass\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": null,\n  \"detail\": null,\n  \"exhaustive\": true,\n  \"seconds\": 0.0,\n  \"incomplete\": \"stopped at the 5 s limit\",\n  \"not_run\": [\n    \"later\",\n    \"last\"\n  ],\n  \"mutants\": {\n    \"broken\": {\n      \"killed\": true,\n      \"by\": \"nonnegative\",\n      \"steps\": 1,\n      \"result\": \"violation\",\n      \"stopped\": \"stopped at the 5 s limit\",\n      \"detail\": null,\n      \"states\": 2,\n      \"transitions\": 1,\n      \"max_depth\": 1,\n      \"trace\": [\n        {\n          \"step\": 0,\n          \"action\": \"init\",\n          \"state\": 0,\n          \"describe\": null\n        },\n        {\n          \"step\": 1,\n          \"action\": \"bad\",\n          \"state\": -1,\n          \"describe\": null\n        }\n      ]\n    },\n    \"later\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit\",\n      \"detail\": \"not run: stopped at the 5 s limit\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    },\n    \"last\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit\",\n      \"detail\": \"not run: stopped at the 5 s limit\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    }\n  },\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["describe"]}
+
+[exit 0; expected 0]
+ASSERT PASS: a timed-out mutant description retains its kill and starts no later search
+ASSERT PASS: confirmed mutant kill and raw trace survive the total deadline; pending names stay visible
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_deadline/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_deadline/clock_fixture.py --timeout 5 --call-timeout 10 --mutants
+{"code": 3, "stdout": "bounded_check: /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_deadline/clock_fixture.py (depth <= 25, 1 invariant(s): nonnegative)\nPASS: invariants hold on 1 states (0 transitions, max depth 0); state space exhausted: complete for this model\nmutants (each broken variant must be caught, or the check proves nothing):\n  broken                   killed by nonnegative after 1 step(s)\n  later                    INCOMPLETE: stopped at the 5 s limit after 0 states; not run\n  last                     INCOMPLETE: stopped at the 5 s limit after 0 states; not run\ncounterexample for mutant broken:\n    0  init                                 0\n    1  bad                                  -1\n  trace descriptions incomplete: stopped at the 5 s limit; confirmed finding retained\nINCOMPLETE: stopped at the 5 s limit; confirmed findings retained\n", "stderr": "bounded_check: /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_deadline/clock_fixture.py: depth <= 25, max 200000 states, 5 s run limit, 10 s per call\n", "events": ["describe"]}
+
+[exit 0; expected 0]
+ASSERT PASS: a timed-out mutant description retains its kill and starts no later search
+ASSERT PASS: unrun mutants print INCOMPLETE instead of SURVIVED
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_deadline/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_deadline/clock_fixture.py --timeout 5 --call-timeout 10 --mutants --json
+{"code": 3, "stdout": "{\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_deadline/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"nonnegative\"\n  ],\n  \"ok\": false,\n  \"result\": \"pass\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": null,\n  \"detail\": null,\n  \"exhaustive\": true,\n  \"seconds\": 20.0,\n  \"incomplete\": \"stopped at the 5 s limit outside the search\",\n  \"not_run\": [\n    \"broken\",\n    \"later\",\n    \"last\"\n  ],\n  \"mutants\": {\n    \"broken\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit outside the search\",\n      \"detail\": \"not run: stopped at the 5 s limit outside the search\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    },\n    \"later\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit outside the search\",\n      \"detail\": \"not run: stopped at the 5 s limit outside the search\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    },\n    \"last\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit outside the search\",\n      \"detail\": \"not run: stopped at the 5 s limit outside the search\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    }\n  },\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+ASSERT PASS: an expired deadline between searches cannot start the first mutant
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_json/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_json/clock_fixture.py --timeout 5 --call-timeout 10 --mutants --json
+{"code": 3, "stdout": "{\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_json/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"pass\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": null,\n  \"detail\": null,\n  \"exhaustive\": true,\n  \"seconds\": 0.0,\n  \"incomplete\": \"stopped at the 5 s limit\",\n  \"not_run\": [\n    \"pending\"\n  ],\n  \"mutants\": {\n    \"killed\": {\n      \"killed\": true,\n      \"by\": \"ok\",\n      \"steps\": 1,\n      \"result\": \"violation\",\n      \"stopped\": null,\n      \"detail\": null,\n      \"states\": 2,\n      \"transitions\": 1,\n      \"max_depth\": 1,\n      \"trace\": [\n        {\n          \"step\": 0,\n          \"action\": \"init\",\n          \"state\": 0,\n          \"describe\": null\n        },\n        {\n          \"step\": 1,\n          \"action\": \"bad\",\n          \"state\": -1,\n          \"describe\": null\n        }\n      ]\n    },\n    \"slow\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit\",\n      \"detail\": \"stopped at the 5 s limit\",\n      \"states\": 1,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    },\n    \"pending\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit\",\n      \"detail\": \"not run: stopped at the 5 s limit\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    }\n  },\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+ASSERT PASS: mutant JSON preserves timeout, stop reason, detail, states and top-level incompleteness
+ASSERT PASS: every mutant has an explicit status and unrun names are separate from survivors
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_json/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_json/clock_fixture.py --timeout 30 --call-timeout 5 --mutants --json
+{"code": 2, "stdout": "{\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_json/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 30.0,\n  \"call_timeout\": 5.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"pass\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": null,\n  \"detail\": null,\n  \"exhaustive\": true,\n  \"seconds\": 0.0,\n  \"incomplete\": \"no return within 5 s\",\n  \"not_run\": [],\n  \"mutants\": {\n    \"killed\": {\n      \"killed\": true,\n      \"by\": \"ok\",\n      \"steps\": 1,\n      \"result\": \"violation\",\n      \"stopped\": null,\n      \"detail\": null,\n      \"states\": 2,\n      \"transitions\": 1,\n      \"max_depth\": 1,\n      \"trace\": [\n        {\n          \"step\": 0,\n          \"action\": \"init\",\n          \"state\": 0,\n          \"describe\": null\n        },\n        {\n          \"step\": 1,\n          \"action\": \"bad\",\n          \"state\": -1,\n          \"describe\": null\n        }\n      ]\n    },\n    \"slow\": {\n      \"killed\": false,\n      \"by\": \"actions\",\n      \"steps\": 0,\n      \"result\": \"error\",\n      \"stopped\": \"no return within 5 s\",\n      \"detail\": \"no return within 5 s\",\n      \"states\": 1,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": [\n        {\n          \"step\": 0,\n          \"action\": \"init\",\n          \"state\": 0,\n          \"describe\": null\n        }\n      ]\n    },\n    \"pending\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"pass\",\n      \"stopped\": null,\n      \"detail\": null,\n      \"states\": 1,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    }\n  },\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+ASSERT PASS: mutant JSON preserves error, stop reason, detail, states and top-level incompleteness
+ASSERT PASS: every mutant has an explicit status and unrun names are separate from survivors
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_json/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_json/clock_fixture.py --timeout 5 --call-timeout 10 --mutants --json
+{"code": 3, "stdout": "{\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_json/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 5 s limit\",\n  \"detail\": \"stopped at the 5 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 20.0,\n  \"incomplete\": \"stopped at the 5 s limit\",\n  \"not_run\": [\n    \"killed\",\n    \"slow\",\n    \"pending\"\n  ],\n  \"mutants\": {\n    \"killed\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit\",\n      \"detail\": \"not run: stopped at the 5 s limit\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    },\n    \"slow\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit\",\n      \"detail\": \"not run: stopped at the 5 s limit\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    },\n    \"pending\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit\",\n      \"detail\": \"not run: stopped at the 5 s limit\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    }\n  },\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+ASSERT PASS: a main-search timeout lists every unrun mutant as incomplete with zero explored states
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_errors/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_errors/clock_fixture.py --timeout 5 --call-timeout 10 --mutants
+{"code": 2, "stdout": "bounded_check: /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_errors/clock_fixture.py (depth <= 25, 1 invariant(s): ok)\nPASS: invariants hold on 1 states (0 transitions, max depth 0); state space exhausted: complete for this model\nmutants (each broken variant must be caught, or the check proves nothing):\n  crash                    ERROR: model error in actions: actions() raised ValueError: broken mutant after 0 step(s)\n  slow                     INCOMPLETE: stopped at the 5 s limit after 1 states\ntrace to the error in mutant crash:\n    0  init                                 0\nINCOMPLETE: stopped at the 5 s limit; confirmed findings retained\n", "stderr": "bounded_check: /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_errors/clock_fixture.py: depth <= 25, max 200000 states, 5 s run limit, 10 s per call\n", "events": []}
+
+[exit 0; expected 0]
+ASSERT PASS: a crashing mutant reports model error exit 2, including before a later run timeout
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_errors/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_errors/clock_fixture.py --timeout 5 --call-timeout 10 --mutants
+{"code": 2, "stdout": "bounded_check: /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_errors/clock_fixture.py (depth <= 25, 1 invariant(s): ok)\nPASS: invariants hold on 1 states (0 transitions, max depth 0); state space exhausted: complete for this model\nmutants (each broken variant must be caught, or the check proves nothing):\n  crash                    ERROR: model error in actions: actions() raised ValueError: broken mutant after 0 step(s)\ntrace to the error in mutant crash:\n    0  init                                 0\n", "stderr": "bounded_check: /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_mutant_errors/clock_fixture.py: depth <= 25, max 200000 states, 5 s run limit, 10 s per call\n", "events": []}
+
+[exit 0; expected 0]
+ASSERT PASS: a crashing mutant reports model error exit 2, including before a later run timeout
+$ /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_sigint/props_shrink_interrupt.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/todo-app --json
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {
+    "broken": {
+      "result": "fail",
+      "accepted": 1,
+      "generated": 1,
+      "rejected": 0,
+      "counterexample": "60",
+      "detail": "returned False",
+      "shrink_attempts": 1
+    }
+  },
+  "called": [
+    "todo/store.py:Store.__init__",
+    "todo/store.py:Store._transaction",
+    "todo/store.py:Store.add",
+    "todo/store.py:Store.add.<locals>.change",
+    "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
+    "todo/store.py:Store.list_all"
+  ],
+  "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": "interrupted"
+}
+
+[exit 1; expected 1]
+ASSERT PASS: SIGINT during shrinking preserves the best counterexample, accepted target calls and failure exit 1
+$ /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_sigint/props_shrink_interrupt.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/todo-app --expect-fail broken --json
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {
+    "broken": {
+      "result": "fail",
+      "accepted": 1,
+      "generated": 1,
+      "rejected": 0,
+      "counterexample": "60",
+      "detail": "returned False",
+      "shrink_attempts": 1
+    }
+  },
+  "called": [
+    "todo/store.py:Store.__init__",
+    "todo/store.py:Store._transaction",
+    "todo/store.py:Store.add",
+    "todo/store.py:Store.add.<locals>.change",
+    "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
+    "todo/store.py:Store.list_all"
+  ],
+  "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": "interrupted"
+}
+
+[exit 3; expected 3]
+ASSERT PASS: an interrupted shrink keeps its failure but cannot complete an --expect-fail proof
+ASSERT PASS: disk-using timeout fixtures use second-scale limits instead of subsecond scheduling assumptions
+$ /Users/dipsy/Developer/poteto-skills-review/skills/create-verification-skill/scripts/scan_repo.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-go-routes --json
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-go-routes",
+  "languages": [
+    {
+      "name": "go",
+      "files": 1
+    }
+  ],
+  "markers": [],
+  "build_commands": [
+    {
+      "cmd": "go build ./...",
+      "source": "go.mod"
+    }
+  ],
+  "test_commands": [],
+  "launch_candidates": [
+    {
+      "kind": "server",
+      "cmd": "go run .",
+      "source": "./ (package main)",
+      "port": null,
+      "port_flag": null,
+      "data_flag": null
+    }
+  ],
+  "http_routes": [
+    {
+      "method": "GET",
+      "path": "/Users",
+      "source": "main.go:5",
+      "how": "go router",
+      "health": false
+    },
+    {
+      "method": "PUT",
+      "path": "/var/routes",
+      "source": "main.go:4",
+      "how": "go router",
+      "health": false
+    }
+  ],
+  "health_routes": [],
+  "cli_commands": [],
+  "env_vars": [],
+  "skill_dirs": [],
+  "features": [
+    {
+      "id": "list-users",
+      "title": "List Users",
+      "action": "list",
+      "resource": "Users",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/Users",
+          "source": "main.go:5",
+          "how": "go router",
+          "health": false
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "update-var",
+      "title": "Update a var",
+      "action": "update",
+      "resource": "var",
+      "routes": [
+        {
+          "method": "PUT",
+          "path": "/var/routes",
+          "source": "main.go:4",
+          "how": "go router",
+          "health": false
+        }
+      ],
+      "commands": []
+    }
+  ],
+  "notes": [],
+  "ports": []
+}
+
+[exit 0; expected 0]
+ASSERT PASS: filesystem, curl, args, folders and non-router Go calls create no phantom routes: {}
+ASSERT PASS: known Go route receivers retain filesystem-like route names
+ASSERT PASS: same-function request-path aliases and split segments keep real routes; reassignment revokes provenance
+$ git init -q
+
+[exit 0; expected 0]
+$ git add tracked.py
+
+[exit 0; expected 0]
+{
+  "ok": false,
+  "rules": [
+    "probe",
+    "clean"
+  ],
+  "files_scanned": 2,
+  "untracked": [
+    "new.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-baseline-adoption",
+  "failing": [
+    {
+      "rule": "probe",
+      "path": "new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    },
+    {
+      "rule": "probe",
+      "path": "tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    },
+    {
+      "rule": "probe",
+      "path": "tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-baseline-adoption/baseline.json",
+    "over": [
+      {
+        "rule": "probe",
+        "path": "new.py",
+        "count": 1,
+        "baseline": 0
+      },
+      {
+        "rule": "probe",
+        "path": "tracked.py",
+        "count": 1,
+        "baseline": 0
+      }
+    ],
+    "improved": [],
+    "refused": [],
+    "deferred": [
+      {
+        "rule": "probe",
+        "untracked": [
+          "new.py"
+        ]
+      }
+    ],
+    "updated": true
+  }
+}
+patlint: rule probe not adopted: untracked hits in new.py; track or ignore these files and rerun --update-baseline
+ASSERT PASS: failed first adoption leaves no rule key, preserves other rules and explains how to retry
+$ git add new.py
+
+[exit 0; expected 0]
+$ /Users/dipsy/Developer/poteto-skills-review/skills/correct/scripts/patlint.py --rules /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-baseline-adoption/rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-baseline-adoption --baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-baseline-adoption/baseline.json --update-baseline --json /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-baseline-adoption
+{
+  "ok": true,
+  "rules": [
+    "probe",
+    "clean"
+  ],
+  "files_scanned": 2,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-baseline-adoption",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    },
+    {
+      "rule": "probe",
+      "path": "tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-baseline-adoption/baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+
+[exit 0; expected 0]
+ASSERT PASS: tracking the hit after a failed first adoption lets the retry adopt all current counts
+$ /Users/dipsy/Developer/poteto-skills-review/skills/correct/scripts/patlint.py --rules /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-baseline-adoption/rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-baseline-adoption --baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-baseline-adoption/baseline.json --update-baseline --json /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-baseline-adoption
+{
+  "ok": false,
+  "rules": [
+    "probe",
+    "clean"
+  ],
+  "files_scanned": 2,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-baseline-adoption",
+  "failing": [
+    {
+      "rule": "probe",
+      "path": "new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    },
+    {
+      "rule": "probe",
+      "path": "new.py",
+      "line": 2,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    },
+    {
+      "rule": "probe",
+      "path": "new.py",
+      "line": 2,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    },
+    {
+      "rule": "probe",
+      "path": "tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-baseline-adoption/baseline.json",
+    "over": [
+      {
+        "rule": "probe",
+        "path": "new.py",
+        "count": 2,
+        "baseline": 1
+      }
+    ],
+    "improved": [],
+    "refused": [
+      {
+        "rule": "probe",
+        "path": "new.py",
+        "count": 2,
+        "baseline": 1
+      }
+    ],
+    "deferred": [],
+    "updated": true
+  }
+}
+
+[exit 1; expected 1]
+ASSERT PASS: successful retry still ratchets subsequent increases
+ASSERT PASS: git failure retains disk fallback but warns on stderr: git unavailable
+ASSERT PASS: git failure retains disk fallback but warns on stderr: CompletedProcess(args=['git'], returncode=128, stdout=b'', stderr=b'fatal: dubious ownership')
+ASSERT PASS: changelog documents changed seed sequences, default limits and replay/timeout migration
+ASSERT PASS: review evidence distinguishes this follow-up from the already committed first review fixes
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_import_budget/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_import_budget/clock_fixture.py --call-timeout 10 --json
+{"code": 0, "stdout": "{\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_import_budget/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 1.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": true,\n  \"result\": \"pass\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": null,\n  \"detail\": null,\n  \"exhaustive\": true,\n  \"seconds\": 0.0,\n  \"incomplete\": null,\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_import_budget/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_import_budget/clock_fixture.py --call-timeout 10 --json
+{"code": 3, "stdout": "{\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_import_budget/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 1.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 0,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 1 s limit\",\n  \"detail\": \"stopped at the 1 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 0,\n  \"incomplete\": \"stopped at the 1 s limit\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_import_budget/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_import_budget/clock_fixture.py --call-timeout 10 --json
+{"code": 3, "stdout": "{\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_import_budget/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 1.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 0,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 1 s limit\",\n  \"detail\": \"stopped at the 1 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 0.0,\n  \"incomplete\": \"stopped at the 1 s limit\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_import_budget/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_import_budget/clock_fixture.py --timeout 2 --call-timeout 10 --json
+{"code": 0, "stdout": "{\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_import_budget/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 2.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": true,\n  \"result\": \"pass\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": null,\n  \"detail\": null,\n  \"exhaustive\": true,\n  \"seconds\": 0.0,\n  \"incomplete\": null,\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_import_budget/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_import_budget/clock_fixture.py --timeout 2 --call-timeout 10 --json
+{"code": 3, "stdout": "{\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_import_budget/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 2.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 0,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 2 s limit\",\n  \"detail\": \"stopped at the 2 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 0.0,\n  \"incomplete\": \"stopped at the 2 s limit\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_import_budget/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_import_budget/clock_fixture.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/todo-app --examples 1 --call-timeout 10 --json
+{"code": 0, "stdout": "{\n  \"seed\": 0,\n  \"ok\": true,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"pass\",\n      \"accepted\": 1,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": null,\n      \"shrink_attempts\": 0\n    }\n  },\n  \"called\": [\n    \"review_budget_target.py:checked\"\n  ],\n  \"missing_targets\": [],\n  \"timeout\": 1.0,\n  \"call_timeout\": 10.0,\n  \"incomplete\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_import_budget/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_import_budget/clock_fixture.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/todo-app --examples 1 --call-timeout 10 --json
+{"code": 0, "stdout": "{\n  \"seed\": 0,\n  \"ok\": true,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"pass\",\n      \"accepted\": 1,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": null,\n      \"shrink_attempts\": 0\n    }\n  },\n  \"called\": [\n    \"review_budget_target.py:checked\"\n  ],\n  \"missing_targets\": [],\n  \"timeout\": 1.0,\n  \"call_timeout\": 10.0,\n  \"incomplete\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_import_budget/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_import_budget/clock_fixture.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/todo-app --examples 1 --call-timeout 10 --json
+{"code": 0, "stdout": "{\n  \"seed\": 0,\n  \"ok\": true,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"pass\",\n      \"accepted\": 1,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": null,\n      \"shrink_attempts\": 0\n    }\n  },\n  \"called\": [\n    \"review_budget_target.py:checked\"\n  ],\n  \"missing_targets\": [],\n  \"timeout\": 1.0,\n  \"call_timeout\": 10.0,\n  \"incomplete\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_import_budget/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_import_budget/clock_fixture.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/todo-app --examples 1 --timeout 2 --call-timeout 10 --json
+{"code": 0, "stdout": "{\n  \"seed\": 0,\n  \"ok\": true,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"pass\",\n      \"accepted\": 1,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": null,\n      \"shrink_attempts\": 0\n    }\n  },\n  \"called\": [\n    \"review_budget_target.py:checked\"\n  ],\n  \"missing_targets\": [],\n  \"timeout\": 2.0,\n  \"call_timeout\": 10.0,\n  \"incomplete\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_import_budget/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_import_budget/clock_fixture.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/todo-app --examples 1 --timeout 2 --call-timeout 10 --json
+{"code": 0, "stdout": "{\n  \"seed\": 0,\n  \"ok\": true,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"pass\",\n      \"accepted\": 1,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": null,\n      \"shrink_attempts\": 0\n    }\n  },\n  \"called\": [\n    \"review_budget_target.py:checked\"\n  ],\n  \"missing_targets\": [],\n  \"timeout\": 2.0,\n  \"call_timeout\": 10.0,\n  \"incomplete\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+Traceback (most recent call last):
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1834, in review_regressions
+    method()
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1134, in review_import_budget
+    self.ensure(not failures,
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 43, in ensure
+    raise AssertionError(description)
+AssertionError: import time counts toward TIMEOUT, including equality; explicit overrides retain their budget: [('gen_check.py', 1, None, 3, {'code': 0, 'stdout': '{\n  "seed": 0,\n  "ok": true,\n  "properties": {\n    "ok": {\n      "result": "pass",\n      "accepted": 1,\n      "generated": 1,\n      "rejected": 0,\n      "counterexample": null,\n      "detail": null,\n      "shrink_attempts": 0\n    }\n  },\n  "called": [\n    "review_budget_target.py:checked"\n  ],\n  "missing_targets": [],\n  "timeout": 1.0,\n  "call_timeout": 10.0,\n  "incomplete": null\n}\n', 'stderr': '', 'events': ['checked']}), ('gen_check.py', 1.1, None, 3, {'code': 0, 'stdout': '{\n  "seed": 0,\n  "ok": true,\n  "properties": {\n    "ok": {\n      "result": "pass",\n      "accepted": 1,\n      "generated": 1,\n      "rejected": 0,\n      "counterexample": null,\n      "detail": null,\n      "shrink_attempts": 0\n    }\n  },\n  "called": [\n    "review_budget_target.py:checked"\n  ],\n  "missing_targets": [],\n  "timeout": 1.0,\n  "call_timeout": 10.0,\n  "incomplete": null\n}\n', 'stderr': '', 'events': ['checked']}), ('gen_check.py', 2.1, 2, 3, {'code': 0, 'stdout': '{\n  "seed": 0,\n  "ok": true,\n  "properties": {\n    "ok": {\n      "result": "pass",\n      "accepted": 1,\n      "generated": 1,\n      "rejected": 0,\n      "counterexample": null,\n      "detail": null,\n      "shrink_attempts": 0\n    }\n  },\n  "called": [\n    "review_budget_target.py:checked"\n  ],\n  "missing_targets": [],\n  "timeout": 2.0,\n  "call_timeout": 10.0,\n  "incomplete": null\n}\n', 'stderr': '', 'events': ['checked']})]
+$ /Users/dipsy/Developer/poteto-skills-review/skills/create-verification-skill/scripts/scan_repo.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-go-receivers --json
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-go-receivers",
+  "languages": [
+    {
+      "name": "go",
+      "files": 1
+    }
+  ],
+  "markers": [],
+  "build_commands": [
+    {
+      "cmd": "go build ./...",
+      "source": "go.mod"
+    }
+  ],
+  "test_commands": [],
+  "launch_candidates": [
+    {
+      "kind": "cli",
+      "cmd": "go run .",
+      "source": "./ (package main)",
+      "port": null,
+      "port_flag": null,
+      "data_flag": null
+    }
+  ],
+  "http_routes": [],
+  "health_routes": [],
+  "cli_commands": [],
+  "env_vars": [],
+  "skill_dirs": [],
+  "features": [],
+  "notes": [],
+  "ports": []
+}
+
+[exit 0; expected 0]
+$ /Users/dipsy/Developer/poteto-skills-review/skills/create-verification-skill/scripts/scan_repo.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-go-receivers --json
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-go-receivers",
+  "languages": [
+    {
+      "name": "go",
+      "files": 1
+    }
+  ],
+  "markers": [],
+  "build_commands": [
+    {
+      "cmd": "go build ./...",
+      "source": "go.mod"
+    }
+  ],
+  "test_commands": [],
+  "launch_candidates": [
+    {
+      "kind": "cli",
+      "cmd": "go run .",
+      "source": "./ (package main)",
+      "port": null,
+      "port_flag": null,
+      "data_flag": null
+    }
+  ],
+  "http_routes": [],
+  "health_routes": [],
+  "cli_commands": [],
+  "env_vars": [],
+  "skill_dirs": [],
+  "features": [],
+  "notes": [],
+  "ports": []
+}
+
+[exit 0; expected 0]
+$ /Users/dipsy/Developer/poteto-skills-review/skills/create-verification-skill/scripts/scan_repo.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-go-receivers --json
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-go-receivers",
+  "languages": [
+    {
+      "name": "go",
+      "files": 1
+    }
+  ],
+  "markers": [],
+  "build_commands": [
+    {
+      "cmd": "go build ./...",
+      "source": "go.mod"
+    }
+  ],
+  "test_commands": [],
+  "launch_candidates": [
+    {
+      "kind": "cli",
+      "cmd": "go run .",
+      "source": "./ (package main)",
+      "port": null,
+      "port_flag": null,
+      "data_flag": null
+    }
+  ],
+  "http_routes": [],
+  "health_routes": [],
+  "cli_commands": [],
+  "env_vars": [],
+  "skill_dirs": [],
+  "features": [],
+  "notes": [],
+  "ports": []
+}
+
+[exit 0; expected 0]
+$ /Users/dipsy/Developer/poteto-skills-review/skills/create-verification-skill/scripts/scan_repo.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-go-receivers --json
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-go-receivers",
+  "languages": [
+    {
+      "name": "go",
+      "files": 1
+    }
+  ],
+  "markers": [],
+  "build_commands": [
+    {
+      "cmd": "go build ./...",
+      "source": "go.mod"
+    }
+  ],
+  "test_commands": [],
+  "launch_candidates": [
+    {
+      "kind": "cli",
+      "cmd": "go run .",
+      "source": "./ (package main)",
+      "port": null,
+      "port_flag": null,
+      "data_flag": null
+    }
+  ],
+  "http_routes": [],
+  "health_routes": [],
+  "cli_commands": [],
+  "env_vars": [],
+  "skill_dirs": [],
+  "features": [],
+  "notes": [],
+  "ports": []
+}
+
+[exit 0; expected 0]
+$ /Users/dipsy/Developer/poteto-skills-review/skills/create-verification-skill/scripts/scan_repo.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-go-receivers --json
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-go-receivers",
+  "languages": [
+    {
+      "name": "go",
+      "files": 1
+    }
+  ],
+  "markers": [],
+  "build_commands": [
+    {
+      "cmd": "go build ./...",
+      "source": "go.mod"
+    }
+  ],
+  "test_commands": [],
+  "launch_candidates": [
+    {
+      "kind": "cli",
+      "cmd": "go run .",
+      "source": "./ (package main)",
+      "port": null,
+      "port_flag": null,
+      "data_flag": null
+    }
+  ],
+  "http_routes": [],
+  "health_routes": [],
+  "cli_commands": [],
+  "env_vars": [],
+  "skill_dirs": [],
+  "features": [],
+  "notes": [],
+  "ports": []
+}
+
+[exit 0; expected 0]
+$ /Users/dipsy/Developer/poteto-skills-review/skills/create-verification-skill/scripts/scan_repo.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-go-receivers --json
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-go-receivers",
+  "languages": [
+    {
+      "name": "go",
+      "files": 1
+    }
+  ],
+  "markers": [],
+  "build_commands": [
+    {
+      "cmd": "go build ./...",
+      "source": "go.mod"
+    }
+  ],
+  "test_commands": [],
+  "launch_candidates": [
+    {
+      "kind": "cli",
+      "cmd": "go run .",
+      "source": "./ (package main)",
+      "port": null,
+      "port_flag": null,
+      "data_flag": null
+    }
+  ],
+  "http_routes": [],
+  "health_routes": [],
+  "cli_commands": [],
+  "env_vars": [],
+  "skill_dirs": [],
+  "features": [],
+  "notes": [],
+  "ports": []
+}
+
+[exit 0; expected 0]
+$ /Users/dipsy/Developer/poteto-skills-review/skills/create-verification-skill/scripts/scan_repo.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-go-receivers --json
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-go-receivers",
+  "languages": [
+    {
+      "name": "go",
+      "files": 1
+    }
+  ],
+  "markers": [],
+  "build_commands": [
+    {
+      "cmd": "go build ./...",
+      "source": "go.mod"
+    }
+  ],
+  "test_commands": [],
+  "launch_candidates": [
+    {
+      "kind": "cli",
+      "cmd": "go run .",
+      "source": "./ (package main)",
+      "port": null,
+      "port_flag": null,
+      "data_flag": null
+    }
+  ],
+  "http_routes": [],
+  "health_routes": [],
+  "cli_commands": [],
+  "env_vars": [],
+  "skill_dirs": [],
+  "features": [],
+  "notes": [],
+  "ports": []
+}
+
+[exit 0; expected 0]
+$ /Users/dipsy/Developer/poteto-skills-review/skills/create-verification-skill/scripts/scan_repo.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-go-receivers --json
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-go-receivers",
+  "languages": [
+    {
+      "name": "go",
+      "files": 1
+    }
+  ],
+  "markers": [],
+  "build_commands": [
+    {
+      "cmd": "go build ./...",
+      "source": "go.mod"
+    }
+  ],
+  "test_commands": [],
+  "launch_candidates": [
+    {
+      "kind": "cli",
+      "cmd": "go run .",
+      "source": "./ (package main)",
+      "port": null,
+      "port_flag": null,
+      "data_flag": null
+    }
+  ],
+  "http_routes": [],
+  "health_routes": [],
+  "cli_commands": [],
+  "env_vars": [],
+  "skill_dirs": [],
+  "features": [],
+  "notes": [],
+  "ports": []
+}
+
+[exit 0; expected 0]
+$ /Users/dipsy/Developer/poteto-skills-review/skills/create-verification-skill/scripts/scan_repo.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-go-receivers --json
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-go-receivers",
+  "languages": [
+    {
+      "name": "go",
+      "files": 1
+    }
+  ],
+  "markers": [],
+  "build_commands": [
+    {
+      "cmd": "go build ./...",
+      "source": "go.mod"
+    }
+  ],
+  "test_commands": [],
+  "launch_candidates": [
+    {
+      "kind": "cli",
+      "cmd": "go run .",
+      "source": "./ (package main)",
+      "port": null,
+      "port_flag": null,
+      "data_flag": null
+    }
+  ],
+  "http_routes": [],
+  "health_routes": [],
+  "cli_commands": [],
+  "env_vars": [],
+  "skill_dirs": [],
+  "features": [],
+  "notes": [],
+  "ports": []
+}
+
+[exit 0; expected 0]
+$ /Users/dipsy/Developer/poteto-skills-review/skills/create-verification-skill/scripts/scan_repo.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-go-receivers --json
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-go-receivers",
+  "languages": [
+    {
+      "name": "go",
+      "files": 1
+    }
+  ],
+  "markers": [],
+  "build_commands": [
+    {
+      "cmd": "go build ./...",
+      "source": "go.mod"
+    }
+  ],
+  "test_commands": [],
+  "launch_candidates": [
+    {
+      "kind": "server",
+      "cmd": "go run .",
+      "source": "./ (package main)",
+      "port": null,
+      "port_flag": null,
+      "data_flag": null
+    }
+  ],
+  "http_routes": [
+    {
+      "method": "GET",
+      "path": "/Users",
+      "source": "main.go:2",
+      "how": "go router",
+      "health": false
+    },
+    {
+      "method": "ANY",
+      "path": "/home",
+      "source": "main.go:2",
+      "how": "net/http",
+      "health": false
+    },
+    {
+      "method": "PUT",
+      "path": "/var/routes",
+      "source": "main.go:2",
+      "how": "go router",
+      "health": false
+    }
+  ],
+  "health_routes": [],
+  "cli_commands": [],
+  "env_vars": [],
+  "skill_dirs": [],
+  "features": [
+    {
+      "id": "list-users",
+      "title": "List Users",
+      "action": "list",
+      "resource": "Users",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/Users",
+          "source": "main.go:2",
+          "how": "go router",
+          "health": false
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "list-home",
+      "title": "List home",
+      "action": "list",
+      "resource": "home",
+      "routes": [
+        {
+          "method": "ANY",
+          "path": "/home",
+          "source": "main.go:2",
+          "how": "net/http",
+          "health": false
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "update-var",
+      "title": "Update a var",
+      "action": "update",
+      "resource": "var",
+      "routes": [
+        {
+          "method": "PUT",
+          "path": "/var/routes",
+          "source": "main.go:2",
+          "how": "go router",
+          "health": false
+        }
+      ],
+      "commands": []
+    }
+  ],
+  "notes": [],
+  "ports": []
+}
+
+[exit 0; expected 0]
+Traceback (most recent call last):
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1834, in review_regressions
+    method()
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1163, in review_go_receivers
+    self.ensure(not failures,
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 43, in ensure
+    raise AssertionError(description)
+AssertionError: Go aliases, fields and returned muxes retain routes and server launches; FS bypass needs a known receiver: [('mux alias', [], [('GET', '/todos')], {'cli'}), ('struct field', [], [('GET', '/todos')], {'cli'}), ('Handle alias', [], [('ANY', '/todos/<*>')], {'cli'}), ('router alias', [], [('GET', '/todos')], {'cli'}), ('router field', [], [('POST', '/todos')], {'cli'}), ('returned mux', [], [('GET', '/todos')], {'cli'})]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_shrink_call_timeout/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/review-artifacts/review_shrink_call_timeout/clock_fixture.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-q_tgoedj/todo-app --examples 1 --timeout 20 --call-timeout 1 --expect-fail broken --json
+{"code": 0, "stdout": "{\n  \"seed\": 0,\n  \"ok\": true,\n  \"properties\": {\n    \"broken\": {\n      \"result\": \"fail\",\n      \"accepted\": 1,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": \"30\",\n      \"detail\": \"returned False\",\n      \"shrink_attempts\": 5\n    },\n    \"later\": {\n      \"result\": \"pass\",\n      \"accepted\": 1,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": null,\n      \"shrink_attempts\": 0\n    }\n  },\n  \"called\": [\n    \"review_shrink_target.py:confirmed\"\n  ],\n  \"missing_targets\": [],\n  \"timeout\": 20.0,\n  \"call_timeout\": 1.0,\n  \"incomplete\": null\n}\n", "stderr": "", "events": ["check 100", "check 60", "check 0", "check 30", "later"]}
+
+[exit 0; expected 0]
+Traceback (most recent call last):
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1834, in review_regressions
+    method()
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1185, in review_shrink_call_timeout
+    self.ensure(result['code'] == code and not report['ok'] and report['incomplete']
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 43, in ensure
+    raise AssertionError(description)
+AssertionError: shrink call timeout preserves the best confirmed failure and reports incomplete reduction (exit 2)

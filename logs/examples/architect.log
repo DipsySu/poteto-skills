@@ -1,4 +1,4 @@
-scratch: /tmp/poteto-examples-690s1lq1
+scratch: /tmp/poteto-examples-qxu2y85c
 $ /workspace/pr-fix/skills/architect/scripts/sketch_check.py /workspace/pr-fix/logs/examples/artifacts/architect/SKETCH.md --json
 {
   "candidates": [

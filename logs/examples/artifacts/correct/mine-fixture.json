@@ -1,5 +1,5 @@
 {
-  "repo": "/tmp/poteto-examples-690s1lq1/mine-fixture",
+  "repo": "/tmp/poteto-examples-qxu2y85c/mine-fixture",
   "since": null,
   "items": 2,
   "counts": {
@@ -23,10 +23,10 @@
       ],
       "evidence": [
         {
-          "id": "commit:bf85e68216",
+          "id": "commit:e9607d557d",
           "source": "commit",
           "kind": "fix",
-          "ref": "bf85e682166cc56d22b075d7163e99ad7eed2a31",
+          "ref": "e9607d557d86919c70a5525d7848554bf97011be",
           "text": "feat: layout pass, plus 3 layout-audit fixes",
           "paths": [
             "CHANGELOG.md"
@@ -40,10 +40,10 @@
           "diff_removed": []
         },
         {
-          "id": "commit:6590dc83c7",
+          "id": "commit:7bdec2656a",
           "source": "commit",
           "kind": "fix",
-          "ref": "6590dc83c78f2da5d0406ecfc59afea9bfa39d35",
+          "ref": "7bdec2656ad0bc0c43c6c28e5289485c4cf4aef6",
           "text": "fix: layout overlap in the changelog renderer again",
           "paths": [
             "CHANGELOG.md"

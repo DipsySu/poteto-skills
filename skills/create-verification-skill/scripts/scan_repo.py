@@ -605,14 +605,23 @@ NODE_ROUTE = re.compile(r"""\b(?:app|router|server|api|routes|r|fastify|instance
 NODE_CLI = re.compile(r"""\.command\(\s*(['"])([\w:-]+)""")
 NODE_PORTS = [re.compile(r"\.listen\(\s*(\d{2,5})\b"), re.compile(r"\bPORT\s*(?:\|\||\?\?)\s*['\"]?(\d{2,5})")]
 NODE_ENV = re.compile(r"process\.env\.([A-Z][A-Z0-9_]*)|process\.env\[['\"]([A-Z][A-Z0-9_]*)['\"]\]")
-GO_HANDLE = re.compile(r"""(?<![\w.])(?:http|mux|router|r|server|app)\s*\.(?:HandleFunc|Handle)\(\s*"([^"]+)\"""")
-GO_ROUTER = re.compile(r"""(?<![\w.])(?:r|router|mux|app|engine|group|api|server)\s*\.(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS|Get|Post|Put|Patch|Delete|Head|Options)\(\s*"(/[^"]*)\"""")
+GO_HANDLE = re.compile(r"""\.(?:HandleFunc|Handle)\(\s*"([^"]+)\"""")
+GO_ROUTER = re.compile(r"""\.(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS|Get|Post|Put|Patch|Delete|Head|Options)\(\s*"(/[^"]*)\"""")
+GO_HANDLE_RECEIVERS = {'http', 'mux', 'router', 'r', 'server', 'app'}
+GO_ROUTER_RECEIVERS = {'r', 'router', 'mux', 'app', 'engine', 'group', 'api', 'server'}
 GO_PORTS = [re.compile(r"""ListenAndServe(?:TLS)?\(\s*"[^"]*:(\d{2,5})\""""), re.compile(r"""Addr:\s*"[^"]*:(\d{2,5})\""""),
             re.compile(r"""flag\.(?:Int|String)\(\s*"(?:port|addr)"\s*,\s*"?:?(\d{2,5})""")]
 GO_FLAGS = re.compile(r"""flag\.(?:Int|String|Bool)(?:Var)?\([^"]*"([\w-]+)\"""")
 GO_COBRA = re.compile(r"""Use:\s*"([\w-]+)""")
 GO_ENV = re.compile(r"""os\.Getenv\("([A-Z][A-Z0-9_]*)"\)""")
 MAKE_TARGET = re.compile(r"^([A-Za-z0-9][\w.-]*)\s*:(?!=)", re.M)
+
+
+def go_route_receiver(text: str, dot: int, known: set[str]) -> bool:
+    """Conventional receivers may bypass FS filtering; ordinary paths need no receiver whitelist."""
+    receiver = re.search(r'\b(\w+)\s*$', text[:dot])
+    return bool(receiver and receiver.group(1) in known
+                and not text[:receiver.start()].rstrip().endswith('.'))
 
 
 # ---------------------------------------------------------------- features
@@ -905,11 +914,15 @@ def scan(repo: Path, max_files: int = 20000) -> dict:
                 method, path = (mm_.group(1), mm_.group(2)) if mm_ else ("ANY", raw)
                 if path.endswith("/") and len(path) > 1:
                     path = path + "<*>"
-                routes.append({"method": method, "path": normalize_route(path, declared=True),
-                               "source": f"{rel}:{line_of(text, m.start())}", "how": "net/http"})
+                path = normalize_route(path, declared=go_route_receiver(text, m.start(), GO_HANDLE_RECEIVERS))
+                if path is not None:
+                    routes.append({"method": method, "path": path,
+                                   "source": f"{rel}:{line_of(text, m.start())}", "how": "net/http"})
             for m in GO_ROUTER.finditer(text):
-                routes.append({"method": m.group(1).upper(), "path": normalize_route(m.group(2), declared=True),
-                               "source": f"{rel}:{line_of(text, m.start())}", "how": "go router"})
+                path = normalize_route(m.group(2), declared=go_route_receiver(text, m.start(), GO_ROUTER_RECEIVERS))
+                if path is not None:
+                    routes.append({"method": m.group(1).upper(), "path": path,
+                                   "source": f"{rel}:{line_of(text, m.start())}", "how": "go router"})
             for pat in GO_PORTS:
                 for m in pat.finditer(text):
                     ports.append({"port": int(m.group(1)), "source": f"{rel}:{line_of(text, m.start())}"})

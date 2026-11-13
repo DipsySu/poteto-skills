@@ -508,6 +508,7 @@ class Examples:
             self.maintain_scan_regressions()
             self.maintain_path_comparisons()
             self.review_phantom_routes()
+            self.review_go_receivers()
             self.maintain_zero_nargs()
             self.maintain_exit_contract()
             self.run(*command)
@@ -640,7 +641,7 @@ class Handler(BaseHTTPRequestHandler):
                 '    def do_GET(self):\n        if path == "/var/files": pass\n')
         if routes := scanner.analyze_python('server.py', body)['routes']:
             unexpected['cross-function path'] = routes
-        root = self.art / 'go-routes'
+        root = self.scratch / 'review-go-routes'
         root.mkdir()
         (root / 'main.go').write_text('package main\nfunc main() {\n'
                                       'kv.Put("/var/lib/data", v)\n'
@@ -665,7 +666,7 @@ class Handler(BaseHTTPRequestHandler):
                     'same-function request-path aliases and split segments keep real routes; reassignment revokes provenance')
 
     def review_baseline_retry(self):
-        root = self.art / 'adoption'
+        root = self.scratch / 'review-baseline-adoption'
         root.mkdir()
         self.run('git', 'init', '-q', cwd=root)
         rules, baseline = root / 'rules.json', root / 'baseline.json'
@@ -695,7 +696,7 @@ class Handler(BaseHTTPRequestHandler):
         import contextlib
         import io
         lint = load_module(self.script('correct', 'patlint.py'), 'recheck_patlint')
-        root = self.art / 'git-fallback'
+        root = self.scratch / 'review-git-fallback'
         root.mkdir()
         (root / 'hit.py').write_text('BAD\n')
         for error in (FileNotFoundError('git unavailable'),
@@ -1055,6 +1056,8 @@ class Handler(BaseHTTPRequestHandler):
             self.formal_import_timeout_json()
             self.formal_limit_support()
             self.review_deadline_order()
+            self.review_import_budget()
+            self.review_shrink_call_timeout()
             self.review_mutant_deadline()
             self.review_mutant_json()
             self.review_mutant_errors()
@@ -1095,8 +1098,126 @@ print(json.dumps({"code": code, "stdout": out.getvalue(), "stderr": err.getvalue
         fixture = self.art / 'clock_fixture.py'
         fixture.write_text(body)
         args = ('--repo', self.repo, '--examples', '1') if checker == 'gen_check.py' else ()
+        timeout_args = ('--timeout', run) if run is not None else ()
         return self.json(sys.executable, driver, self.script('formal-verification', checker), fixture,
-                         *args, '--timeout', run, '--call-timeout', call, *flags, timeout=10)
+                         *args, *timeout_args, '--call-timeout', call, *flags, timeout=10)
+
+    def review_import_budget(self):
+        target = self.repo / 'review_budget_target.py'
+        target.write_text('def checked(value): return True\n')
+        failures = []
+        try:
+            for checker in ('bounded_check.py', 'gen_check.py'):
+                for elapsed, override, code in ((0.9, None, 0), (1, None, 3), (1.1, None, 3),
+                                                (1.1, 2, 0), (2.1, 2, 3)):
+                    body = ('import review_clock as clock\nTIMEOUT = 1\n'
+                            f'clock.advance({elapsed}, tick=False)\n')
+                    body += ('from review_budget_target import checked\n' if checker == 'gen_check.py' else
+                             'def checked(value): return True\n')
+                    body += ('def check(x):\n    clock.events.append("checked")\n    return checked(x)\n')
+                    if checker == 'gen_check.py':
+                        body += ('from gen_check import sampled_from\nTARGETS = ["review_budget_target.py:checked"]\n'
+                                 'properties = {"ok": (sampled_from([0]), check)}\n')
+                    else:
+                        body += 'def init(): return 0\ndef actions(s): return []\ninvariants = {"ok": check}\n'
+                    result = self.clock_check(checker, body, run=override, flags=('--json',))
+                    report = json.loads(result['stdout'])
+                    valid = result['code'] == code and report['ok'] == (code == 0)
+                    if code == 3:
+                        valid = valid and not result['events'] and bool(report['incomplete'])
+                        if checker == 'gen_check.py':
+                            valid = valid and report['properties'] == {} and report['timeout'] == (override or 1)
+                    else:
+                        valid = valid and result['events'] == ['checked']
+                    if not valid:
+                        failures.append((checker, elapsed, override, code, result))
+            self.ensure(not failures,
+                        f'import time counts toward TIMEOUT, including equality; explicit overrides retain their budget: {failures}')
+        finally:
+            target.unlink()
+
+    def review_go_receivers(self):
+        root = self.scratch / 'review-go-receivers'
+        root.mkdir()
+        cases = [
+            ('mux alias', 'm := http.NewServeMux(); m.HandleFunc("GET /todos", h)', {('GET', '/todos')}),
+            ('struct field', 's.mux.HandleFunc("GET /todos", h)', {('GET', '/todos')}),
+            ('Handle alias', 'm.Handle("/todos/", h)', {('ANY', '/todos/<*>')}),
+            ('router alias', 'apiRoutes.Get("/todos", h)', {('GET', '/todos')}),
+            ('router field', 's.routes.POST("/todos", h)', {('POST', '/todos')}),
+            ('returned mux', 'newMux().HandleFunc("GET /todos", h)', {('GET', '/todos')}),
+            ('filesystem store', 'kv.Put("/var/lib/data", v)', set()),
+            ('untrusted field', 's.router.Put("/var/lib/data", v)', set()),
+            ('untrusted Handle', 'store.Handle("/var/lib/data", v)', set()),
+            ('known receivers', 'http.HandleFunc("/home", h); router.GET("/Users", h); r.Put("/var/routes", h)',
+             {('ANY', '/home'), ('GET', '/Users'), ('PUT', '/var/routes')}),
+        ]
+        failures = []
+        for name, source, expected in cases:
+            (root / 'main.go').write_text(f'package main\nfunc main() {{ {source} }}\n')
+            result = self.json(self.script('create-verification-skill', 'scan_repo.py'), root, '--json')
+            routes = {(r['method'], r['path']) for r in result['http_routes']}
+            kinds = {c['kind'] for c in result['launch_candidates']}
+            if routes != expected or kinds != ({'server'} if expected else {'cli'}):
+                failures.append((name, sorted(routes), sorted(expected), kinds))
+        self.ensure(not failures,
+                    f'Go aliases, fields and returned muxes retain routes and server launches; FS bypass needs a known receiver: {failures}')
+
+    def review_shrink_call_timeout(self):
+        target = self.repo / 'review_shrink_target.py'
+        target.write_text('def confirmed(value): return False\ndef timed_out(value): return True\n')
+        body = ('import review_clock as clock\nfrom gen_check import Generator, sampled_from\n'
+                'from review_shrink_target import confirmed, timed_out\n'
+                'TARGETS = ["review_shrink_target.py:confirmed"]\n'
+                'def check(x):\n    clock.events.append(f"check {x}")\n'
+                '    if x == 0:\n        timed_out(x)\n        clock.advance(2)\n'
+                '    return confirmed(x)\n'
+                'def shrink(x):\n    if x == 100: yield 60\n'
+                '    yield 0\n    yield 30\n'
+                'def later(x):\n    clock.events.append("later")\n    return True\n'
+                'properties = {"broken": (Generator(lambda rng: 100, shrink), check),\n'
+                '              "later": (sampled_from([1]), later)}\n')
+        try:
+            for flags, code in ((('--expect-fail', 'broken'), 2), ((), 1)):
+                result = self.clock_check('gen_check.py', body, run=20, call=1, flags=(*flags, '--json'))
+                report = json.loads(result['stdout'])
+                found = report['properties']['broken']
+                self.ensure(result['code'] == code and not report['ok'] and report['incomplete']
+                            and found['result'] == 'fail' and found['counterexample'] == '60'
+                            and found['detail'] == 'returned False' and found['shrink_attempts'] == 2
+                            and found.get('timeout_scope') == 'call' and found.get('timeout_phase') == 'shrink'
+                            and found.get('incomplete') and found.get('input') == '0',
+                            f'shrink call timeout preserves the best confirmed failure and reports incomplete reduction (exit {code})')
+                self.ensure(result['events'] == ['check 100', 'check 60', 'check 0', 'later']
+                            and report['properties']['later']['result'] == 'pass' and not report['missing_targets']
+                            and report['called'] == ['review_shrink_target.py:confirmed'],
+                            'a shrink call timeout ends only that property and keeps only accepted target coverage')
+            result = self.clock_check('gen_check.py', body, run=20, call=1, flags=('--expect-fail', 'broken'))
+            self.ensure(result['code'] == 2 and 'reduced counterexample: 60' in result['stdout']
+                        and 'incomplete:' in result['stdout'] and 'shrink' in result['stdout']
+                        and 'call timeout' in result['stdout'],
+                        'text mode exposes the retained counterexample and incomplete shrink instead of PASS')
+            result = self.clock_check('gen_check.py', body.replace('return True', 'return False'),
+                                      run=20, call=1, flags=('--expect-fail', 'broken', '--json'))
+            report = json.loads(result['stdout'])
+            self.ensure(result['code'] == 1 and report['incomplete'] and report['properties']['later']['result'] == 'fail',
+                        'an independent unexpected failure retains exit 1 alongside the expected failure and shrink timeout')
+            # Exercise the actual SIGALRM path too, with a second-scale call budget and an external deadline.
+            props = self.art / 'shrink_hang.py'
+            props.write_text('from gen_check import Generator\nfrom review_shrink_target import confirmed\n'
+                             'TARGETS = ["review_shrink_target.py:confirmed"]\n'
+                             'def check(x):\n    while x == 0: pass\n    return confirmed(x)\n'
+                             'properties = {"broken": (Generator(lambda rng: 100, lambda x: iter([0])), check)}\n')
+            report = self.json(self.script('formal-verification', 'gen_check.py'), props, '--repo', self.repo,
+                               '--examples', '1', '--timeout', '20', '--call-timeout', '2',
+                               '--expect-fail', 'broken', '--json', expected=2, timeout=30)
+            self.ensure(not report['ok'] and report['incomplete'] and not report['missing_targets']
+                        and report['properties']['broken']['counterexample'] == '100'
+                        and report['properties']['broken'].get('timeout_scope') == 'call'
+                        and report['properties']['broken'].get('timeout_phase') == 'shrink',
+                        'a genuinely hung shrink candidate is interrupted and cannot satisfy --expect-fail')
+        finally:
+            target.unlink()
 
     def review_deadline_order(self):
         for checker in ('bounded_check.py', 'gen_check.py'):
@@ -1712,7 +1833,8 @@ properties = {"copy": (sampled_from([" title "]), check)}
         output.mkdir(parents=True, exist_ok=True)
         methods = [self.review_deadline_order, self.review_mutant_deadline, self.review_mutant_json,
                    self.review_mutant_errors, self.review_sigint, self.review_fixture_limits, self.review_phantom_routes,
-                   self.review_baseline_retry, self.review_git_warning, self.review_docs]
+                   self.review_baseline_retry, self.review_git_warning, self.review_docs,
+                   self.review_import_budget, self.review_go_receivers, self.review_shrink_call_timeout]
         results = {}
         try:
             with (output / 'run.log').open('w') as self.log:
@@ -1720,8 +1842,8 @@ properties = {"copy": (sampled_from([" title "]), check)}
                 for method in methods:
                     self.name = method.__name__
                     self.summary[self.name] = {'checks': []}
-                    self.art = output / self.name
-                    self.art.mkdir()
+                    self.art = self.scratch / 'review-artifacts' / self.name
+                    self.art.mkdir(parents=True)
                     try:
                         method()
                     except Exception as error:

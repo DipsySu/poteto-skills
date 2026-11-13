@@ -4,14 +4,14 @@
   "write": null,
   "read_back": [],
   "read_only": true,
-  "started": "2026-11-13T10:13:37Z",
+  "started": "2026-11-13T10:39:55Z",
   "argv": [
     "/usr/bin/python3",
     "-m",
     "todo",
     "list",
     "--data",
-    "/tmp/poteto-examples-690s1lq1/verify-state-maintain/maintain/data"
+    "/tmp/poteto-examples-qxu2y85c/verify-state-maintain/maintain/data"
   ],
   "exit_code": 0,
   "stdout": "[{\"id\": 1, \"status\": \"open\", \"title\": \"verify HTTP\"}, {\"id\": 2, \"status\": \"open\", \"title\": \"verify CLI\"}]\n",
@@ -26,5 +26,5 @@
   ],
   "execution_ok": true,
   "ok": true,
-  "elapsed_ms": 60.1
+  "elapsed_ms": 44.6
 }

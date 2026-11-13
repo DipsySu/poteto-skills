@@ -1,0 +1,12 @@
+{
+  "command": "bash scripts/verify.sh --run-examples",
+  "isolated_checkout": "/tmp/poteto-reassessment-verify-62_gvwd1/collection",
+  "code": 1,
+  "source_sha256": {
+    "scripts/run_examples.py": "b4270a73bff76fd1b10c6eca0b69e4d6b5f42dd1ab5a5c034dc2e3e76e4e8ffa",
+    "skills/formal-verification/scripts/gen_check.py": "4e086a4367a871076bb90d9275dd59c6fb8c72614597a74fed535ac673bf20f1",
+    "skills/create-verification-skill/scripts/scan_repo.py": "f490a903f48de246c87e3b3fa369b565d72ddc8377af84dc7567ae4a6be58c93",
+    "skills/formal-verification/SKILL.md": "288e9fa86aac6e37f3fa24b248efffe0e8847b0b66885596f64b392bb75aab49",
+    "CHANGELOG.md": "bf5ef75790a46e0acf31306db2b868a76af37c5f414c7e2ee356e91105d4a607"
+  }
+}
