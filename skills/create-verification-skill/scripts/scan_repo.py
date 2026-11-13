@@ -249,32 +249,91 @@ def _function(node):
     while node is not None:
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
             return node
+        if isinstance(node, ast.ClassDef):
+            return None
         node = getattr(node, "_parent", None)
     return None
 
 
+def _target_bindings(target, value=None):
+    """Pair bound names with known RHS elements; opaque or starred unpacking revokes provenance."""
+    if isinstance(target, ast.Name):
+        yield target.id, value
+    elif isinstance(target, ast.Starred):
+        yield from _target_bindings(target.value)
+    elif isinstance(target, (ast.Tuple, ast.List)):
+        known = (isinstance(value, (ast.Tuple, ast.List)) and len(target.elts) == len(value.elts)
+                 and not any(isinstance(e, ast.Starred) for e in (*target.elts, *value.elts)))
+        for index, element in enumerate(target.elts):
+            yield from _target_bindings(element, value.elts[index] if known else None)
+
+
 def _assigned_value(node):
-    """Latest preceding assignment in this function; names alone are never path provenance."""
+    """Latest preceding binding in this function; unknown rebinding revokes path provenance."""
     if not isinstance(node, ast.Name) or (fn := _function(node)) is None:
         return None
-    assignments = []
+    # Comprehension targets shadow enclosing aliases without rebinding them outside the comprehension.
+    parent = getattr(node, "_parent", None)
+    while parent is not fn:
+        if isinstance(parent, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
+            if any(name == node.id for gen in parent.generators for name, _ in _target_bindings(gen.target)):
+                return None
+        parent = getattr(parent, "_parent", None)
+
+    bindings = []
+    position = (node.lineno, node.col_offset)
+
+    def record(at, pairs):
+        end = (at.end_lineno, at.end_col_offset)
+        if end <= position:
+            bindings.extend((end, value) for name, value in pairs if name == node.id)
+
     for candidate in ast.walk(fn):
-        if not isinstance(candidate, (ast.Assign, ast.AnnAssign, ast.AugAssign)) or _function(candidate) is not fn:
+        if isinstance(candidate, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            if _function(getattr(candidate, "_parent", None)) is fn:
+                record(candidate, [(candidate.name, None)])
             continue
-        targets = candidate.targets if isinstance(candidate, ast.Assign) else [candidate.target]
-        if (any(isinstance(t, ast.Name) and t.id == node.id for t in targets)
-                and (candidate.end_lineno, candidate.end_col_offset) <= (node.lineno, node.col_offset)):
-            assignments.append(candidate)
-    if not assignments:
+        if _function(candidate) is not fn:
+            continue
+        if isinstance(candidate, ast.Assign):
+            for target in candidate.targets:
+                record(candidate, _target_bindings(target, candidate.value))
+        elif isinstance(candidate, (ast.AnnAssign, ast.NamedExpr)):
+            if candidate.value is not None:  # An annotation alone does not rebind an existing local.
+                record(candidate, _target_bindings(candidate.target, candidate.value))
+        elif isinstance(candidate, ast.AugAssign):
+            record(candidate, _target_bindings(candidate.target))
+        elif isinstance(candidate, (ast.For, ast.AsyncFor)):
+            # The iterable is evaluated before binding the target, which takes effect inside the body.
+            record(candidate.iter, _target_bindings(candidate.target))
+        elif isinstance(candidate, (ast.With, ast.AsyncWith)):
+            for item in candidate.items:
+                if item.optional_vars is not None:
+                    record(item.optional_vars, _target_bindings(item.optional_vars))
+        elif isinstance(candidate, ast.Delete):
+            for target in candidate.targets:
+                record(candidate, _target_bindings(target))
+        elif isinstance(candidate, (ast.Import, ast.ImportFrom)):
+            record(candidate, [(alias.asname or alias.name.split('.')[0], None) for alias in candidate.names])
+        elif isinstance(candidate, ast.ExceptHandler) and candidate.name:
+            record(candidate.type, [(candidate.name, None)])
+            record(candidate, [(candidate.name, None)])  # Python deletes the exception alias afterward.
+        elif isinstance(candidate, (ast.MatchAs, ast.MatchStar)) and candidate.name:
+            record(candidate, [(candidate.name, None)])
+        elif isinstance(candidate, ast.MatchMapping) and candidate.rest:
+            record(candidate, [(candidate.rest, None)])
+    if not bindings:
         return None
-    latest = max(assignments, key=lambda n: (n.lineno, n.col_offset))
-    return None if isinstance(latest, ast.AugAssign) else latest.value
+    # Repeated names in one unpacking assignment bind left to right.
+    return max(reversed(bindings), key=lambda binding: binding[0])[1]
 
 
 def _request_path(node) -> bool:
     """Recognize direct request paths and same-function aliases, never translated filesystem paths."""
     if isinstance(node, ast.Name):
         return _request_path(_assigned_value(node))
+    if isinstance(node, ast.NamedExpr):
+        return _request_path(node.value)
     if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
             and node.func.attr in {"strip", "rstrip", "lstrip"}):
         return _request_path(node.func.value)

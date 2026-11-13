@@ -1,5 +1,5 @@
-scratch: /tmp/poteto-examples-qxu2y85c
-$ /workspace/pr-fix/scripts/check_docs.py --repo /tmp/poteto-examples-qxu2y85c/docs
+scratch: /tmp/poteto-examples-m9y_losv
+$ /workspace/pr-fix/scripts/check_docs.py --repo /tmp/poteto-examples-m9y_losv/docs
 PASS docs: helper paths, commands, links, counts and source citations
 
 [exit 0; expected 0]
@@ -62,25 +62,25 @@ ASSERT PASS: adding S24 to NOTES allows a skill citing only S24 without editing 
 ASSERT PASS: adding a source also invalidates any stale explicit whole-set range
 ASSERT PASS: adding a source also invalidates any stale explicit whole-set range: diagnostics include file and line
 ASSERT PASS: all scratch mutations restore to clean documentation
-$ git init -q --initial-branch=main --template= /tmp/poteto-examples-qxu2y85c/cache/cursor-plugins
+$ git init -q --initial-branch=main --template= /tmp/poteto-examples-m9y_losv/cache/cursor-plugins
 
 [exit 0; expected 0]
-$ git -C /tmp/poteto-examples-qxu2y85c/cache/cursor-plugins add -A
+$ git -C /tmp/poteto-examples-m9y_losv/cache/cursor-plugins add -A
 
 [exit 0; expected 0]
-$ git -C /tmp/poteto-examples-qxu2y85c/cache/cursor-plugins -c user.name=example-dev -c user.email=dev@example.local -c commit.gpgsign=false commit -qm 'offline upstream fixture'
+$ git -C /tmp/poteto-examples-m9y_losv/cache/cursor-plugins -c user.name=example-dev -c user.email=dev@example.local -c commit.gpgsign=false commit -qm 'offline upstream fixture'
 
 [exit 0; expected 0]
 $ /workspace/pr-fix/skills/curator/scripts/upstream_diff.sh --repo /workspace/pr-fix --offline --json
 {
   "upstream": {
-    "url": "/tmp/poteto-examples-qxu2y85c/cache/cursor-plugins",
+    "url": "/tmp/poteto-examples-m9y_losv/cache/cursor-plugins",
     "branch": "main",
-    "head": "3024564a16daaeb623a598d11654a8ddb2534e7d",
-    "head_date": "2026-11-13T10:40:34Z",
+    "head": "18c67435f3605cfd47896da6509c36b963e1b1ca",
+    "head_date": "2026-11-13T16:48:53Z",
     "version": null,
     "fetch": "skipped",
-    "clone": "/tmp/poteto-examples-qxu2y85c/cache/cursor-plugins"
+    "clone": "/tmp/poteto-examples-m9y_losv/cache/cursor-plugins"
   },
   "snapshot": {
     "dir": "/workspace/pr-fix/research/upstream",
@@ -114,26 +114,26 @@ $ /workspace/pr-fix/skills/curator/scripts/upstream_diff.sh --repo /workspace/pr
 ASSERT PASS: offline diff detects a changed upstream skill against the snapshot
 ASSERT PASS: first offline diff reports a new skill absent from the snapshot
 ASSERT PASS: fake upstream maps every snapshotted source path correctly
-$ git -C /tmp/poteto-examples-qxu2y85c/cache/cursor-plugins add -A
+$ git -C /tmp/poteto-examples-m9y_losv/cache/cursor-plugins add -A
 
 [exit 0; expected 0]
-$ git -C /tmp/poteto-examples-qxu2y85c/cache/cursor-plugins -c user.name=example-dev -c user.email=dev@example.local -c commit.gpgsign=false commit -qm 'add a skill between curator runs'
+$ git -C /tmp/poteto-examples-m9y_losv/cache/cursor-plugins -c user.name=example-dev -c user.email=dev@example.local -c commit.gpgsign=false commit -qm 'add a skill between curator runs'
 
 [exit 0; expected 0]
-$ /workspace/pr-fix/skills/curator/scripts/curate.sh --propose --offline --repo /tmp/poteto-examples-qxu2y85c/collection --date 2026-10-19
-[curate 10:40:34] mode=propose offline=1 no_fetch=0 repo=/tmp/poteto-examples-qxu2y85c/collection cache=/tmp/poteto-examples-qxu2y85c/cache
-[curate 10:40:35] upstream: 2 change(s), 1 changed file(s), head 2a734b333233
-[curate 10:40:35] wrote /tmp/poteto-examples-qxu2y85c/collection/proposals/2026-10-19.md (offline, from the upstream diff)
-check_proposals: PASS: 2 proposal(s), 0 above prose, 2 prose/review (/tmp/poteto-examples-qxu2y85c/collection/proposals/2026-10-19.md)
-[curate 10:40:35] done
+$ /workspace/pr-fix/skills/curator/scripts/curate.sh --propose --offline --repo /tmp/poteto-examples-m9y_losv/collection --date 2026-10-19
+[curate 16:48:53] mode=propose offline=1 no_fetch=0 repo=/tmp/poteto-examples-m9y_losv/collection cache=/tmp/poteto-examples-m9y_losv/cache
+[curate 16:48:53] upstream: 2 change(s), 1 changed file(s), head e007f0832d51
+[curate 16:48:53] wrote /tmp/poteto-examples-m9y_losv/collection/proposals/2026-10-19.md (offline, from the upstream diff)
+check_proposals: PASS: 2 proposal(s), 0 above prose, 2 prose/review (/tmp/poteto-examples-m9y_losv/collection/proposals/2026-10-19.md)
+[curate 16:48:53] done
 
 [exit 0; expected 0]
 ASSERT PASS: offline curate writes a proposal and execution log
 ASSERT PASS: proposal includes changed and new upstream evidence with source URLs
 ASSERT PASS: a later run proposes only skills new since the previous run, not every untracked skill again
-$ /workspace/pr-fix/skills/curator/scripts/check_proposals.py /tmp/poteto-examples-qxu2y85c/collection/proposals/2026-10-19.md --skills-dir /tmp/poteto-examples-qxu2y85c/collection/skills --json
+$ /workspace/pr-fix/skills/curator/scripts/check_proposals.py /tmp/poteto-examples-m9y_losv/collection/proposals/2026-10-19.md --skills-dir /tmp/poteto-examples-m9y_losv/collection/skills --json
 {
-  "file": "/tmp/poteto-examples-qxu2y85c/collection/proposals/2026-10-19.md",
+  "file": "/tmp/poteto-examples-m9y_losv/collection/proposals/2026-10-19.md",
   "items": 2,
   "deterministic": 0,
   "prose_or_review": 2,
@@ -163,10 +163,10 @@ $ /workspace/pr-fix/skills/curator/scripts/check_proposals.py /tmp/poteto-exampl
 }
 
 [exit 0; expected 0]
-$ /workspace/pr-fix/skills/curator/scripts/curate.sh --propose --offline --repo /tmp/poteto-examples-qxu2y85c/collection --date 2026-10-20
-[curate 10:40:35] mode=propose offline=1 no_fetch=0 repo=/tmp/poteto-examples-qxu2y85c/collection cache=/tmp/poteto-examples-qxu2y85c/empty-cache
-upstream_diff: no cached clone at /tmp/poteto-examples-qxu2y85c/empty-cache/cursor-plugins and nothing fetched; run once with network access
-[curate 10:40:35] ERROR: upstream_diff failed (exit 3); no proposal can be grounded in this run
+$ /workspace/pr-fix/skills/curator/scripts/curate.sh --propose --offline --repo /tmp/poteto-examples-m9y_losv/collection --date 2026-10-20
+[curate 16:48:53] mode=propose offline=1 no_fetch=0 repo=/tmp/poteto-examples-m9y_losv/collection cache=/tmp/poteto-examples-m9y_losv/empty-cache
+upstream_diff: no cached clone at /tmp/poteto-examples-m9y_losv/empty-cache/cursor-plugins and nothing fetched; run once with network access
+[curate 16:48:53] ERROR: upstream_diff failed (exit 3); no proposal can be grounded in this run
 
 [exit 1; expected 1]
 ASSERT PASS: failed upstream diff cannot produce a false clean proposal
@@ -179,7 +179,7 @@ ASSERT PASS: unstructured proposal text cannot pass as an empty proposal list
 ASSERT PASS: HTTP 401 fails the fetched-source acceptance gate (stubbed transport, no network)
 ASSERT PASS: HTTP 403 fails the fetched-source acceptance gate (stubbed transport, no network)
 ASSERT PASS: HTTP 429 fails the fetched-source acceptance gate (stubbed transport, no network)
-$ git -C /tmp/poteto-examples-qxu2y85c/cache/cursor-plugins remote
+$ git -C /tmp/poteto-examples-m9y_losv/cache/cursor-plugins remote
 
 [exit 0; expected 0]
 ASSERT PASS: local upstream fixture has no git remotes

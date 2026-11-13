@@ -1,8 +1,21 @@
 # Curator review fixes
 
-## Current reassessment, 2026-11-13
+## Current reassessment, 2026-11-14
 
-This pass fixes the three findings in `reviews/codex-curator-2026-11-09.md`, starting from `03dcb22f01f0d7dca713aca89eb99a7fc5c8c83d` on `curator/2026-11-09`. The current changes are uncommitted and unpushed.
+Base: `14880b7069089191e3a5bd19f7513570cb3ca4fd`, branch `curator/2026-11-09`. This pass addresses the two current findings in `reviews/codex-curator-2026-11-09.md`; no commit or push was performed.
+
+- Added `review_synchronous_deadlines` and `review_path_rebindings` to `scripts/run_examples.py` before changing production code. Both failed on the base implementation while the existing 13 groups passed. Existing assertions were neither removed nor weakened.
+- Deadline regressions advance a manual clock without delivering a timer tick. They cover exact/overdue returns, earliest run/call expiry, hooks, generation, shrink attempts, property/mutant boundaries and final results. Timed-out inputs add no accepted target coverage; an expired run starts no later property or mutant.
+- Route regressions cover translated-path tuple/list unpacking, `for`/`async for`, `with`/`async with`, named expressions, augmented assignment and other local bindings. Unknown sources revoke path/segment provenance; proven aliases, nested unpacking and existing positive cases remain valid.
+- Focused verification: all 15 groups pass (44 assertions). Reproduce with `python3 scripts/run_examples.py --review-regressions /tmp/poteto-final-review-results` using a fresh output directory.
+
+Full verification ran on an isolated copy with `bash scripts/verify.sh --run-examples`: **7 PASS / 2 FAIL, exit 1**. Formal verification passed **87 assertions**; syntax, executable contracts, docs/mapping, installer isolation and the fresh example app's seven tests/lint passed. Create/maintain hit the sandbox's loopback-bind `PermissionError`; curator hit `/dev/fd/63: Operation not permitted`. These leave the example-regeneration and example-results gates failing; full verification has not passed.
+
+[sync-rebinding-summary.json](sync-rebinding-summary.json) retains compact before/after evidence and production hashes. The final tests were also replayed against unchanged base production sources: only the two new groups failed. An AST comparison confirmed all 213 existing `ensure` assertions are unchanged. Isolated copies and fixture repositories were removed; detailed output stays in system temporary space. No nested Git repository or temporary fixture directory remains under `logs/`.
+
+## Previous reassessment, 2026-11-13
+
+This prior pass fixed three earlier findings, starting from `03dcb22f01f0d7dca713aca89eb99a7fc5c8c83d` on `curator/2026-11-09`. Its changes were committed before the current reassessment; the evidence in this section is historical.
 
 The three new regression groups were added to `scripts/run_examples.py` before changing production code. **All three failed on the starting implementation; all ten existing groups passed.** [reassessment-before/source-state.json](reassessment-before/source-state.json) records the commit, source hashes and empty production diff, while [reassessment-before/summary.json](reassessment-before/summary.json) and [reassessment-before/run.log](reassessment-before/run.log) retain the failures. An additional real-SIGALRM reproduction against the starting checker is in [reassessment-before/shrink-real-signal.json](reassessment-before/shrink-real-signal.json): a hung shrink candidate incorrectly returned exit 0, `ok: true`, and `incomplete: null` with `--expect-fail`.
 

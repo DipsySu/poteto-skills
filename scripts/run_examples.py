@@ -508,6 +508,7 @@ class Examples:
             self.maintain_scan_regressions()
             self.maintain_path_comparisons()
             self.review_phantom_routes()
+            self.review_path_rebindings()
             self.review_go_receivers()
             self.maintain_zero_nargs()
             self.maintain_exit_contract()
@@ -664,6 +665,64 @@ class Handler(BaseHTTPRequestHandler):
         self.ensure({r['path'] for r in scanner.analyze_python('server.py', body)['routes']}
                     == {'/var/routes/<*>', '/tmp/cache', '/dev'},
                     'same-function request-path aliases and split segments keep real routes; reassignment revokes provenance')
+
+    def review_path_rebindings(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'rebind_scan')
+        prefix = 'from http.server import BaseHTTPRequestHandler\nclass Handler(BaseHTTPRequestHandler):\n'
+        probe = 'if path.startswith("/var/www/"): pass'
+        negatives = [
+            'path, query = self.translate_path(path), ""\n' + probe,
+            '[path, query] = [self.translate_path(path), ""]\n' + probe,
+            '(query, [path, *rest]) = translated\n' + probe,
+            'path, path = self.path, filesystem\n' + probe,
+            'for path in files:\n    ' + probe,
+            'for query, [path] in files:\n    ' + probe,
+            'for path in files: pass\n' + probe,
+            'async for path in files:\n    ' + probe,
+            'with open_file() as path:\n    ' + probe,
+            'with open_file() as (path, query):\n    ' + probe,
+            'with open_file() as path: pass\n' + probe,
+            'async with open_file() as path:\n    ' + probe,
+            '(path := self.translate_path(path))\n' + probe,
+            'if (path := self.translate_path(path)) and path.startswith("/var/www/"): pass',
+            'path += suffix\n' + probe,
+            'del path\n' + probe,
+            'import filesystem as path\n' + probe,
+            'from filesystem import root as path\n' + probe,
+            'def path(): pass\n' + probe,
+            'class path: pass\n' + probe,
+            'try: read_file()\nexcept OSError as path:\n    ' + probe,
+            'match filesystem:\n    case {"root": path}:\n        ' + probe,
+            'checks = [path.startswith("/var/www/") for path in files]',
+            'parts = path.strip("/").split("/")\nparts, query = folders, ""\n'
+            'if parts == ["var", "www"]: pass',
+        ]
+        failures = []
+        for source in negatives:
+            body = prefix + '    async def do_GET(self):\n        path = self.path\n'
+            body += ''.join('        ' + line + '\n' for line in source.splitlines())
+            info = scanner.analyze_python('server.py', body)
+            if info['routes'] or info['notes']:
+                failures.append((source, info['routes'], info['notes']))
+        positives = [
+            'path = self.path',
+            'path, query = self.path, ""',
+            'path, path = filesystem, self.path',
+            '[query, [path]] = ["", [urlsplit(self.path).path]]',
+            '(path := self.path)',
+            'path = self.path\npath: str',
+            'path = self.path\nfor other in files: pass',
+            'path = self.path\nwith open_file() as other: pass',
+            'path = self.path\nchecks = [path for path in files]',
+            'path = self.translate_path(self.path)\npath = self.path',
+        ]
+        for source in positives:
+            body = prefix + '    def do_GET(self):\n'
+            body += ''.join('        ' + line + '\n' for line in (source + '\n' + probe).splitlines())
+            routes = {(r['method'], r['path']) for r in scanner.analyze_python('server.py', body)['routes']}
+            if routes != {('GET', '/var/www/<*>')}:
+                failures.append((source, sorted(routes)))
+        self.ensure(not failures, f'rebindings revoke unknown path/segment sources and retain proven request aliases: {failures}')
 
     def review_baseline_retry(self):
         root = self.scratch / 'review-baseline-adoption'
@@ -1056,6 +1115,7 @@ class Handler(BaseHTTPRequestHandler):
             self.formal_import_timeout_json()
             self.formal_limit_support()
             self.review_deadline_order()
+            self.review_synchronous_deadlines()
             self.review_import_budget()
             self.review_shrink_call_timeout()
             self.review_mutant_deadline()
@@ -1101,6 +1161,126 @@ print(json.dumps({"code": code, "stdout": out.getvalue(), "stderr": err.getvalue
         timeout_args = ('--timeout', run) if run is not None else ()
         return self.json(sys.executable, driver, self.script('formal-verification', checker), fixture,
                          *args, *timeout_args, '--call-timeout', call, *flags, timeout=10)
+
+    def review_synchronous_deadlines(self):
+        """Advance past deadlines without delivering SIGALRM, including the last covered call."""
+        target = self.repo / 'review_sync_target.py'
+        target.write_text('def checked(value): return True\n')
+        failures = []
+
+        def verify(label, result, code, events=None):
+            report = json.loads(result['stdout'])
+            if (result['code'] != code or report['ok'] != (code == 0)
+                    or (events is not None and result['events'] != events)):
+                failures.append((label, code, events, result))
+            return report
+
+        props = ('from gen_check import Generator, sampled_from, reject\n'
+                 'from review_sync_target import checked\nTARGETS = ["review_sync_target.py:checked"]\n')
+        model = 'def init(): return 0\ndef actions(s): return []\n'
+        try:
+            # Cover the last property, last invariant and last actions call. Exact equality expires too.
+            for checker, phase in (('gen_check.py', 'check'), ('bounded_check.py', 'invariant'),
+                                   ('bounded_check.py', 'actions')):
+                for run, call, start, end, code in ((5, 6, 0, 4.99, 0), (5, 6, 0, 5, 3),
+                                                   (5, 6, 0, 5.02, 3), (6, 5, 0, 5.02, 2),
+                                                   (6, 5, 0, 5, 2), (10, 2, 4, 6, 2),
+                                                   (5, 5, 0, 5.02, 3), (5, 2, 4, 5.02, 3),
+                                                   (6, 5, 0, 20, 2)):
+                    body = ('import review_clock as clock\n' + (props if checker == 'gen_check.py' else model)
+                            + f'clock.advance({start}, tick=False)\n'
+                            'def check(x):\n    clock.events.append("checked")\n'
+                            + ('    checked(x)\n' if checker == 'gen_check.py' else '')
+                            + f'    clock.advance({end}, tick=False)\n'
+                            + ('    return []\n' if phase == 'actions' else '    return True\n'))
+                    body += ('properties = {"ok": (sampled_from([0]), check)}\n' if checker == 'gen_check.py' else
+                             'actions = check\ninvariants = {"ok": lambda s: True}\n' if phase == 'actions' else
+                             'invariants = {"ok": check}\nDEPTH = 0\n')
+                    result = self.clock_check(checker, body, run=run, call=call, flags=('--json',))
+                    report = verify((checker, phase, run, call, start, end), result, code, ['checked'])
+                    if checker == 'gen_check.py' and code:
+                        if report['called'] or report['properties']['ok']['accepted'] != 0:
+                            failures.append(('timed-out input counted as accepted coverage', result))
+            # Returning False, rejecting, or raising after a deadline cannot manufacture a counterexample.
+            for ending in ('return False', 'reject()', 'raise ValueError("late")'):
+                body = ('import review_clock as clock\n' + props + 'def check(x):\n    checked(x)\n'
+                        '    clock.advance(5.02, tick=False)\n    ' + ending + '\n'
+                        'properties = {"ok": (sampled_from([0]), check)}\n')
+                for run, call, code in ((5, 6, 3), (6, 5, 2)):
+                    verify(('late outcome', ending, code), self.clock_check('gen_check.py', body, run=run,
+                           call=call, flags=('--json',)), code)
+            for hook in ('setup', 'reset'):
+                body = ('import review_clock as clock\n' + props + f'def {hook}():\n'
+                        f'    clock.events.append("{hook}")\n    clock.advance(5.02, tick=False)\n'
+                        'def check(x):\n    clock.events.append("check")\n    return checked(x)\n'
+                        'properties = {"ok": (sampled_from([0]), check)}\n')
+                for run, call, code in ((5, 6, 3), (6, 5, 2)):
+                    verify((hook, code), self.clock_check('gen_check.py', body, run=run, call=call,
+                           flags=('--json',)), code, [hook])
+            # A call timeout may end one property, but it cannot start another after the total budget elapsed.
+            body = ('import review_clock as clock\n' + props + 'def first(x):\n'
+                    '    clock.events.append("first")\n    checked(x)\n    clock.advance(20, tick=False)\n'
+                    'def later(x):\n    clock.events.append("later")\n    return checked(x)\n'
+                    'properties = {"first": (sampled_from([0]), first), "later": (sampled_from([0]), later)}\n')
+            for run, call, code in ((5, 6, 3), (6, 5, 2)):
+                verify(('no later property', code), self.clock_check('gen_check.py', body, run=run, call=call,
+                       flags=('--json',)), code, ['first'])
+            body = ('import review_clock as clock\n' + props + 'def draw(rng):\n'
+                    '    clock.events.append("draw")\n    clock.advance(5.02, tick=False)\n    return 0\n'
+                    'def check(x):\n    clock.events.append("check")\n    return checked(x)\n'
+                    'properties = {"ok": (Generator(draw, lambda x: []), check)}\n')
+            verify('generation exhausts budget before input', self.clock_check('gen_check.py', body,
+                   flags=('--json',)), 3, ['draw'])
+            body = ('import review_clock as clock\n' + props + 'def check(x):\n    checked(x)\n'
+                    '    clock.events.append(x)\n    if x == 1: clock.advance(5.02, tick=False)\n'
+                    '    return False\nproperties = {"broken": (Generator(lambda rng: 2, lambda x: [1]), check)}\n')
+            for run, call, code in ((5, 6, 3), (6, 5, 2)):
+                report = verify(('shrink return', code), self.clock_check('gen_check.py', body, run=run, call=call,
+                                flags=('--expect-fail', 'broken', '--json')), code, [2, 1])
+                if report['properties']['broken']['counterexample'] != '2' or not report['incomplete']:
+                    failures.append(('late shrink discarded confirmed counterexample or incomplete status', report))
+            # A property iterator can consume the remaining budget between properties or at exhaustion.
+            for tail in ('yield "later", (sampled_from([0]), check)', 'return'):
+                body = ('import review_clock as clock\n' + props + 'def check(x):\n'
+                        '    clock.events.append("check")\n    return checked(x)\n'
+                        'class Properties(dict):\n    def items(self):\n'
+                        '        yield "first", self["first"]\n'
+                        '        if clock.events: clock.advance(5.02, tick=False)\n        ' + tail + '\n'
+                        'properties = Properties(first=(sampled_from([0]), check))\n')
+                verify(('property boundary', tail), self.clock_check('gen_check.py', body,
+                       flags=('--json',)), 3, ['check'])
+            # Initialization/terminal/description use the run budget, including returns between ticks.
+            for phase in ('init', 'terminal', 'describe'):
+                body = ('import review_clock as clock\n' + model
+                        + 'invariants = {"ok": lambda s: s >= 0}\n'
+                        'def broken(s): return [("bad", -1)]\n'
+                        'def later(s):\n    clock.events.append("later")\n    return []\n'
+                        'mutants = {"broken": broken, "later": later}\n'
+                        + f'def {phase}(' + ('' if phase == 'init' else 's') + '):\n'
+                        + f'    clock.events.append("{phase}")\n    clock.advance(5.02, tick=False)\n'
+                        + ('    return 0\n' if phase == 'init' else '    return True\n'))
+                flags = ('--mutants', '--json') if phase == 'describe' else ('--deadlock', '--json')
+                verify(phase, self.clock_check('bounded_check.py', body, flags=flags), 3, [phase])
+            body = ('import review_clock as clock\n' + model + 'invariants = {"ok": lambda s: s >= 0}\n'
+                    'def broken(s): return [("bad", -1)]\n'
+                    'class Mutants(dict):\n    def items(self):\n'
+                    '        yield "broken", self["broken"]\n        clock.advance(5.02, tick=False)\n'
+                    'mutants = Mutants(broken=broken)\n')
+            verify('final mutant result boundary', self.clock_check('bounded_check.py', body,
+                   flags=('--mutants', '--json')), 3)
+            body = ('import review_clock as clock\n' + model + 'invariants = {"ok": lambda s: True}\n'
+                    'def late(s):\n    clock.events.append("mutant")\n'
+                    '    clock.advance(20, tick=False)\n    return []\n'
+                    'def later(s):\n    clock.events.append("later")\n    return []\n'
+                    'mutants = {"late": late, "later": later}\n')
+            for run, call, code in ((5, 6, 3), (6, 5, 2)):
+                report = verify(('mutant return', code), self.clock_check('bounded_check.py', body, run=run, call=call,
+                                flags=('--mutants', '--json')), code, ['mutant'])
+                if report['not_run'] != ['later']:
+                    failures.append(('late mutant started pending search', report))
+            self.ensure(not failures, f'synchronous deadline checks honor earliest expiry without timer delivery: {failures}')
+        finally:
+            target.unlink()
 
     def review_import_budget(self):
         target = self.repo / 'review_budget_target.py'
@@ -1835,6 +2015,7 @@ properties = {"copy": (sampled_from([" title "]), check)}
                    self.review_mutant_errors, self.review_sigint, self.review_fixture_limits, self.review_phantom_routes,
                    self.review_baseline_retry, self.review_git_warning, self.review_docs,
                    self.review_import_budget, self.review_go_receivers, self.review_shrink_call_timeout]
+        methods += [self.review_synchronous_deadlines, self.review_path_rebindings]
         results = {}
         try:
             with (output / 'run.log').open('w') as self.log:

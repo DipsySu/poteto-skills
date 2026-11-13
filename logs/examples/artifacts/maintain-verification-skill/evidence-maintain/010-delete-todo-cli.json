@@ -4,7 +4,7 @@
   "write": "reject-cli",
   "read_back": [],
   "read_only": false,
-  "started": "2026-11-13T10:39:55Z",
+  "started": "2026-11-13T16:48:11Z",
   "argv": [
     "/usr/bin/python3",
     "-m",
@@ -12,7 +12,7 @@
     "rm",
     "2",
     "--data",
-    "/tmp/poteto-examples-qxu2y85c/verify-state-maintain/maintain/data"
+    "/tmp/poteto-examples-m9y_losv/verify-state-maintain/maintain/data"
   ],
   "exit_code": 1,
   "stdout": "",
@@ -27,5 +27,5 @@
   ],
   "execution_ok": true,
   "ok": true,
-  "elapsed_ms": 46.5
+  "elapsed_ms": 72.6
 }

@@ -1,4 +1,4 @@
-scratch: /tmp/poteto-examples-qxu2y85c
+scratch: /tmp/poteto-examples-m9y_losv
 $ /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/todo_model.py --mutants --json
 {
   "model": "/workspace/pr-fix/logs/examples/artifacts/formal-verification/todo_model.py",
@@ -464,7 +464,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspa
   },
   "stopped": null,
   "detail": null,
-  "seconds": 0.0,
+  "seconds": 0.001,
   "incomplete": null,
   "not_run": [],
   "mutants": {},
@@ -621,7 +621,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspa
   },
   "stopped": null,
   "detail": null,
-  "seconds": 0.0,
+  "seconds": 0.001,
   "incomplete": null,
   "not_run": [],
   "mutants": {},
@@ -1124,7 +1124,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/tla_available.sh --json
 
 [exit 1; expected (0, 1)]
 ASSERT PASS: TLA availability exit code matches its report and advertises the stdlib fallback
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --json
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-m9y_losv/todo-app --json
 {
   "seed": 0,
   "ok": true,
@@ -1156,7 +1156,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 [exit 0; expected 0]
 ASSERT PASS: real Store round trip checks title.strip() and independent persistence after pinned examples
 ASSERT PASS: scratch break identifies only the persisted title assignment
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --expect-fail round_trip
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-m9y_losv/todo-app --expect-fail round_trip
 gen_check: seed 0; limits 90 s per run, 10 s per call
 gen_check: /workspace/pr-fix/logs/examples/artifacts/formal-verification/todo_props.py (seed 0)
   round_trip: fail (0 of 0 generated inputs rejected before the counterexample)
@@ -1167,7 +1167,7 @@ PASS
 
 [exit 0; expected 0]
 ASSERT PASS: scratch break prints a reduced counterexample and replay seed
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --expect-fail round_trip --json
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-m9y_losv/todo-app --expect-fail round_trip --json
 {
   "seed": 0,
   "ok": true,
@@ -1198,7 +1198,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 
 [exit 0; expected 0]
 ASSERT PASS: removing assignment strip shrinks to a nonblank title with surrounding whitespace
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --expect-fail round_trip --json
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-m9y_losv/todo-app --expect-fail round_trip --json
 {
   "seed": 0,
   "ok": true,
@@ -1229,7 +1229,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 
 [exit 0; expected 0]
 ASSERT PASS: same seed replays the same reduced counterexample and call report
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --json
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-m9y_losv/todo-app --json
 {
   "seed": 0,
   "ok": true,
@@ -1259,7 +1259,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 }
 
 [exit 0; expected 0]
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --expect-fail round_trip
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/todo_props.py --repo /tmp/poteto-examples-m9y_losv/todo-app --expect-fail round_trip
 gen_check: seed 0; limits 90 s per run, 10 s per call
 gen_check: /workspace/pr-fix/logs/examples/artifacts/formal-verification/todo_props.py (seed 0)
   round_trip: pass (91 accepted, 10/100 generated rejected)
@@ -1267,7 +1267,7 @@ gen_check: /workspace/pr-fix/logs/examples/artifacts/formal-verification/todo_pr
 FAIL
 
 [exit 1; expected 1]
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_copy.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --json
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_copy.py --repo /tmp/poteto-examples-m9y_losv/todo-app --json
 {
   "seed": 0,
   "ok": false,
@@ -1294,7 +1294,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 [exit 1; expected 1]
 ASSERT PASS: copy: pasted add cannot satisfy declared Store.add even with imports/construction
 ASSERT PASS: property-module functions are outside the repo call report
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_imported_copy.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --json
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_imported_copy.py --repo /tmp/poteto-examples-m9y_losv/todo-app --json
 {
   "seed": 0,
   "ok": false,
@@ -1320,7 +1320,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 
 [exit 1; expected 1]
 ASSERT PASS: imported_copy: pasted add cannot satisfy declared Store.add even with imports/construction
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_filter.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --json
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_filter.py --repo /tmp/poteto-examples-m9y_losv/todo-app --json
 {
   "seed": 0,
   "ok": false,
@@ -1351,7 +1351,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 
 [exit 1; expected 1]
 ASSERT PASS: over-half generated rejection fails even when pinned accepted input covers targets
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_filter_expected.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --json --expect-fail filtered
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_filter_expected.py --repo /tmp/poteto-examples-m9y_losv/todo-app --json --expect-fail filtered
 {
   "seed": 0,
   "ok": false,
@@ -1381,7 +1381,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 }
 
 [exit 1; expected 1]
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_never.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --json
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_never.py --repo /tmp/poteto-examples-m9y_losv/todo-app --json
 {
   "seed": 0,
   "ok": false,
@@ -1414,7 +1414,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 
 [exit 1; expected 1]
 ASSERT PASS: one uncalled declared target fails despite other repo functions running
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_import_call.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --json
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_import_call.py --repo /tmp/poteto-examples-m9y_losv/todo-app --json
 {
   "seed": 0,
   "ok": false,
@@ -1440,7 +1440,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 
 [exit 1; expected 1]
 ASSERT PASS: target calls made during imports do not count
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_hook_call.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --json
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_hook_call.py --repo /tmp/poteto-examples-m9y_losv/todo-app --json
 {
   "seed": 0,
   "ok": false,
@@ -1466,7 +1466,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 
 [exit 1; expected 1]
 ASSERT PASS: target calls made during setup/reset do not count
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_rejected_call.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --json
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_rejected_call.py --repo /tmp/poteto-examples-m9y_losv/todo-app --json
 {
   "seed": 0,
   "ok": false,
@@ -1492,7 +1492,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 
 [exit 1; expected 1]
 ASSERT PASS: target calls made only in rejected checks do not count
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_import_error.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --json --expect-fail broken
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_import_error.py --repo /tmp/poteto-examples-m9y_losv/todo-app --json --expect-fail broken
 {
   "seed": 0,
   "ok": false,
@@ -1508,7 +1508,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 
 [exit 2; expected 2]
 ASSERT PASS: import_error: infrastructure error never satisfies --expect-fail
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_setup_error.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --json --expect-fail broken
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_setup_error.py --repo /tmp/poteto-examples-m9y_losv/todo-app --json --expect-fail broken
 {
   "seed": 0,
   "ok": false,
@@ -1524,7 +1524,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 
 [exit 2; expected 2]
 ASSERT PASS: setup_error: infrastructure error never satisfies --expect-fail
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_reset_error.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --json --expect-fail broken
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_reset_error.py --repo /tmp/poteto-examples-m9y_losv/todo-app --json --expect-fail broken
 {
   "seed": 0,
   "ok": false,
@@ -1540,7 +1540,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 
 [exit 2; expected 2]
 ASSERT PASS: reset_error: infrastructure error never satisfies --expect-fail
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_hook_exit.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --json --expect-fail broken
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_hook_exit.py --repo /tmp/poteto-examples-m9y_losv/todo-app --json --expect-fail broken
 {
   "seed": 0,
   "ok": false,
@@ -1556,7 +1556,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 
 [exit 2; expected 2]
 ASSERT PASS: hook_exit: infrastructure error never satisfies --expect-fail
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_generation_error.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --json --expect-fail broken
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_generation_error.py --repo /tmp/poteto-examples-m9y_losv/todo-app --json --expect-fail broken
 {
   "seed": 0,
   "ok": false,
@@ -1572,7 +1572,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 
 [exit 2; expected 2]
 ASSERT PASS: generation_error: infrastructure error never satisfies --expect-fail
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_shrink_error.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --json --expect-fail broken
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_shrink_error.py --repo /tmp/poteto-examples-m9y_losv/todo-app --json --expect-fail broken
 {
   "seed": 0,
   "ok": false,
@@ -1640,13 +1640,13 @@ ASSERT PASS: an actions() call that never returns on the second state is a model
 $ /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/counter_model.py --timeout 2
 bounded_check: /workspace/pr-fix/logs/examples/artifacts/formal-verification/counter_model.py: depth <= 1000000000, max 1000000000 states, 2 s run limit, 10 s per call
 bounded_check: /workspace/pr-fix/logs/examples/artifacts/formal-verification/counter_model.py (depth <= 1000000000, 1 invariant(s): nonnegative)
-INCOMPLETE: stopped at the 2 s limit after 1820 states (1819 transitions, max depth 1819); not a failure and not a proof
-INCOMPLETE: stopped at the 2 s limit; confirmed findings retained
+INCOMPLETE: stopped at the 2 s limit after 1814 states (1813 transitions, max depth 1813); not a failure and not a proof
+INCOMPLETE: stopped at the 2 s limit outside the search; confirmed findings retained
 
 [exit 3; expected 3]
 ASSERT PASS: a search over a billion-state bound stops at the 2 s run limit as inconclusive, after printing its bounds
 ASSERT PASS: scratch looping module does not shadow a real todo module
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_strip_leading.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --call-timeout 1 --json
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_strip_leading.py --repo /tmp/poteto-examples-m9y_losv/todo-app --call-timeout 1 --json
 {
   "seed": 0,
   "ok": false,
@@ -1684,7 +1684,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 [exit 2; expected 2]
 ASSERT PASS: a check that never returns ends its property as timeout with the leading-space input and seed 0
 ASSERT PASS: the other property in the same file still runs and passes after the timeout
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_strip_leading.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --call-timeout 1 --expect-fail strip_leading --json
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_strip_leading.py --repo /tmp/poteto-examples-m9y_losv/todo-app --call-timeout 1 --expect-fail strip_leading --json
 {
   "seed": 0,
   "ok": false,
@@ -1721,7 +1721,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 
 [exit 2; expected 2]
 ASSERT PASS: --expect-fail never accepts a timeout as the expected counterexample
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_strip_leading.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --call-timeout 1
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_strip_leading.py --repo /tmp/poteto-examples-m9y_losv/todo-app --call-timeout 1
 gen_check: seed 0; limits 90 s per run, 1 s per call
 gen_check: /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_strip_leading.py (seed 0)
   strip_leading: timeout (1 accepted, 0/2 generated rejected)
@@ -1733,7 +1733,7 @@ ERROR: INCOMPLETE check due to call timeout (exit 2)
 
 [exit 2; expected 2]
 ASSERT PASS: text mode prints the seed before checking and the timed-out input in its report
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_filter_then_fail.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --json
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_filter_then_fail.py --repo /tmp/poteto-examples-m9y_losv/todo-app --json
 {
   "seed": 0,
   "ok": false,
@@ -1764,7 +1764,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 
 [exit 1; expected 1]
 ASSERT PASS: a counterexample found after two rejected inputs reports fail with 60, not filter_too_much
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_filter_then_fail.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --expect-fail rare --json
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_filter_then_fail.py --repo /tmp/poteto-examples-m9y_losv/todo-app --expect-fail rare --json
 {
   "seed": 0,
   "ok": true,
@@ -1794,7 +1794,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 }
 
 [exit 0; expected 0]
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_filter_then_fail.py --repo /tmp/poteto-examples-qxu2y85c/todo-app
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_filter_then_fail.py --repo /tmp/poteto-examples-m9y_losv/todo-app
 gen_check: seed 0; limits 90 s per run, 10 s per call
 gen_check: /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_filter_then_fail.py (seed 0)
   rare: fail (2 of 3 generated inputs rejected before the counterexample)
@@ -1852,7 +1852,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspa
   "detail": null,
   "exhaustive": false,
   "seconds": 2.0,
-  "incomplete": "stopped at the 2 s limit",
+  "incomplete": "stopped at the 2 s limit outside the search",
   "not_run": [],
   "mutants": {},
   "expect_violation": null
@@ -1907,7 +1907,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspa
   "detail": null,
   "exhaustive": false,
   "seconds": 2.0,
-  "incomplete": "stopped at the 2 s limit",
+  "incomplete": "stopped at the 2 s limit outside the search",
   "not_run": [],
   "mutants": {},
   "expect_violation": "below_two"
@@ -1924,11 +1924,11 @@ FAIL: invariant "below_two" violated after 2 step(s)
     2  inc                                  2
   trace descriptions incomplete: stopped at the 2 s limit; confirmed finding retained
 explored 3 states
-INCOMPLETE: stopped at the 2 s limit; confirmed findings retained
+INCOMPLETE: stopped at the 2 s limit outside the search; confirmed findings retained
 
 [exit 1; expected 1]
 ASSERT PASS: text output retains the failure and explains incomplete trace descriptions
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_shrink_interrupt.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --json
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_shrink_interrupt.py --repo /tmp/poteto-examples-m9y_losv/todo-app --json
 {
   "seed": 0,
   "ok": false,
@@ -1963,7 +1963,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 
 [exit 1; expected 1]
 ASSERT PASS: SIGINT during shrinking preserves the best counterexample, accepted target calls and failure exit 1
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_shrink_interrupt.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --expect-fail broken --json
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_shrink_interrupt.py --repo /tmp/poteto-examples-m9y_losv/todo-app --expect-fail broken --json
 {
   "seed": 0,
   "ok": false,
@@ -1998,7 +1998,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 
 [exit 3; expected 3]
 ASSERT PASS: an interrupted shrink keeps its failure but cannot complete an --expect-fail proof
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_independent_seeds.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --seed 42 --examples 5 --call-timeout 2 --json
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_independent_seeds.py --repo /tmp/poteto-examples-m9y_losv/todo-app --seed 42 --examples 5 --call-timeout 2 --json
 {
   "seed": 42,
   "ok": false,
@@ -2040,7 +2040,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 
 [exit 1; expected 1]
 ASSERT PASS: leading property times out after 1 draws with seed 42
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_independent_seeds.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --seed 42 --examples 5 --call-timeout 2 --json
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_independent_seeds.py --repo /tmp/poteto-examples-m9y_losv/todo-app --seed 42 --examples 5 --call-timeout 2 --json
 {
   "seed": 42,
   "ok": false,
@@ -2082,7 +2082,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 
 [exit 1; expected 1]
 ASSERT PASS: leading property times out after 3 draws with seed 42
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_independent_seeds.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --seed 43 --examples 5 --call-timeout 2 --json
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_independent_seeds.py --repo /tmp/poteto-examples-m9y_losv/todo-app --seed 43 --examples 5 --call-timeout 2 --json
 {
   "seed": 43,
   "ok": false,
@@ -2163,67 +2163,268 @@ $ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification
 
 [exit 0; expected 0]
 ASSERT PASS: bounded_check.py warns that both limits are not enforced for worker, while stdout stays JSON
-$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/unsupported_limits.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py no_timer /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_unsupported.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --examples 1 --timeout 0.02 --call-timeout 0.02 --json
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/unsupported_limits.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py no_timer /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_unsupported.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 0.02 --call-timeout 0.02 --json
 {"code": 0, "report": {"seed": 0, "ok": true, "properties": {"ok": {"result": "pass", "accepted": 1, "generated": 1, "rejected": 0, "counterexample": null, "detail": null, "shrink_attempts": 0}}, "called": ["todo/store.py:Store.__init__", "todo/store.py:Store._transaction", "todo/store.py:Store.add", "todo/store.py:Store.add.<locals>.change", "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>", "todo/store.py:Store.list_all"], "missing_targets": [], "timeout": 0.02, "call_timeout": 0.02, "incomplete": null}, "stderr": "gen_check: WARNING: --timeout and --call-timeout are not enforced; SIGALRM/setitimer in the main thread is required. Use an external process deadline.\n"}
 
 [exit 0; expected 0]
 ASSERT PASS: gen_check.py warns that both limits are not enforced for no_timer, while stdout stays JSON
-$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/unsupported_limits.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py worker /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_unsupported.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --examples 1 --timeout 0.02 --call-timeout 0.02 --json
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/unsupported_limits.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py worker /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_unsupported.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 0.02 --call-timeout 0.02 --json
 {"code": 0, "report": {"seed": 0, "ok": true, "properties": {"ok": {"result": "pass", "accepted": 1, "generated": 1, "rejected": 0, "counterexample": null, "detail": null, "shrink_attempts": 0}}, "called": ["todo/store.py:Store.__init__", "todo/store.py:Store._transaction", "todo/store.py:Store.add", "todo/store.py:Store.add.<locals>.change", "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>", "todo/store.py:Store.list_all"], "missing_targets": [], "timeout": 0.02, "call_timeout": 0.02, "incomplete": null}, "stderr": "gen_check: WARNING: --timeout and --call-timeout are not enforced; SIGALRM/setitimer in the main thread is required. Use an external process deadline.\n"}
 
 [exit 0; expected 0]
 ASSERT PASS: gen_check.py warns that both limits are not enforced for worker, while stdout stays JSON
 ASSERT PASS: formal-verification documents timer/thread support, native-code limits and an external deadline
 $ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 5 --call-timeout 6 --json
-{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 6.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 5 s limit\",\n  \"detail\": \"stopped at the 5 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 20.0,\n  \"incomplete\": \"stopped at the 5 s limit\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 6.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 5 s limit\",\n  \"detail\": \"stopped at the 5 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 20.0,\n  \"incomplete\": \"stopped at the 5 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
 
 [exit 0; expected 0]
 ASSERT PASS: bounded_check.py: simultaneous expiry uses the first absolute deadline (run=5, call=6, exit 3)
 $ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 6 --call-timeout 5 --json
-{"code": 2, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 6.0,\n  \"call_timeout\": 5.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"error\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": {\n    \"kind\": \"error\",\n    \"name\": \"ok\",\n    \"detail\": \"no return within 5 s\",\n    \"trace\": [\n      {\n        \"step\": 0,\n        \"action\": \"init\",\n        \"state\": 0,\n        \"describe\": null\n      }\n    ],\n    \"timeout\": true\n  },\n  \"stopped\": \"no return within 5 s\",\n  \"detail\": \"no return within 5 s\",\n  \"seconds\": 20.0,\n  \"incomplete\": \"no return within 5 s\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+{"code": 2, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 6.0,\n  \"call_timeout\": 5.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"error\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": {\n    \"kind\": \"error\",\n    \"name\": \"ok\",\n    \"detail\": \"no return within 5 s\",\n    \"trace\": [\n      {\n        \"step\": 0,\n        \"action\": \"init\",\n        \"state\": 0,\n        \"describe\": null\n      }\n    ],\n    \"timeout\": true,\n    \"trace_incomplete\": \"stopped at the 6 s limit\"\n  },\n  \"stopped\": \"stopped at the 6 s limit\",\n  \"detail\": \"no return within 5 s\",\n  \"exhaustive\": false,\n  \"seconds\": 20.0,\n  \"incomplete\": \"stopped at the 6 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
 
 [exit 0; expected 0]
 ASSERT PASS: bounded_check.py: simultaneous expiry uses the first absolute deadline (run=6, call=5, exit 2)
 $ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 5 --call-timeout 5 --json
-{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 5.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 5 s limit\",\n  \"detail\": \"stopped at the 5 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 20.0,\n  \"incomplete\": \"stopped at the 5 s limit\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 5.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 5 s limit\",\n  \"detail\": \"stopped at the 5 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 20.0,\n  \"incomplete\": \"stopped at the 5 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
 
 [exit 0; expected 0]
 ASSERT PASS: bounded_check.py: simultaneous expiry uses the first absolute deadline (run=5, call=5, exit 3)
 $ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 5 --call-timeout 2 --json
-{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 2.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 5 s limit\",\n  \"detail\": \"stopped at the 5 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 16,\n  \"incomplete\": \"stopped at the 5 s limit\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 2.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 5 s limit\",\n  \"detail\": \"stopped at the 5 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 16,\n  \"incomplete\": \"stopped at the 5 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
 
 [exit 0; expected 0]
 ASSERT PASS: bounded_check.py: deadline order includes the call start time
-$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --examples 1 --timeout 5 --call-timeout 6 --json
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 5 --call-timeout 6 --json
 {"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"stopped at the 5 s limit\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"run\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"todo/store.py:Store.add\"\n  ],\n  \"timeout\": 5.0,\n  \"call_timeout\": 6.0,\n  \"incomplete\": \"stopped at the 5 s limit in ok\"\n}\n", "stderr": "", "events": []}
 
 [exit 0; expected 0]
 ASSERT PASS: gen_check.py: simultaneous expiry uses the first absolute deadline (run=5, call=6, exit 3)
-$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --examples 1 --timeout 6 --call-timeout 5 --json
-{"code": 2, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"no return within 5 s\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"call\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"todo/store.py:Store.add\"\n  ],\n  \"timeout\": 6.0,\n  \"call_timeout\": 5.0,\n  \"incomplete\": null\n}\n", "stderr": "", "events": []}
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 6 --call-timeout 5 --json
+{"code": 2, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"no return within 5 s\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"call\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"todo/store.py:Store.add\"\n  ],\n  \"timeout\": 6.0,\n  \"call_timeout\": 5.0,\n  \"incomplete\": \"stopped at the 6 s limit in ok\"\n}\n", "stderr": "", "events": []}
 
 [exit 0; expected 0]
 ASSERT PASS: gen_check.py: simultaneous expiry uses the first absolute deadline (run=6, call=5, exit 2)
-$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --examples 1 --timeout 5 --call-timeout 5 --json
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 5 --call-timeout 5 --json
 {"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"stopped at the 5 s limit\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"run\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"todo/store.py:Store.add\"\n  ],\n  \"timeout\": 5.0,\n  \"call_timeout\": 5.0,\n  \"incomplete\": \"stopped at the 5 s limit in ok\"\n}\n", "stderr": "", "events": []}
 
 [exit 0; expected 0]
 ASSERT PASS: gen_check.py: simultaneous expiry uses the first absolute deadline (run=5, call=5, exit 3)
-$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --examples 1 --timeout 5 --call-timeout 2 --json
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 5 --call-timeout 2 --json
 {"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"stopped at the 5 s limit\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"run\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"todo/store.py:Store.add\"\n  ],\n  \"timeout\": 5.0,\n  \"call_timeout\": 2.0,\n  \"incomplete\": \"stopped at the 5 s limit in ok\"\n}\n", "stderr": "", "events": []}
 
 [exit 0; expected 0]
 ASSERT PASS: gen_check.py: deadline order includes the call start time
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 5 --call-timeout 6 --json
+{"code": 0, "stdout": "{\n  \"seed\": 0,\n  \"ok\": true,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"pass\",\n      \"accepted\": 1,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": null,\n      \"shrink_attempts\": 0\n    }\n  },\n  \"called\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"missing_targets\": [],\n  \"timeout\": 5.0,\n  \"call_timeout\": 6.0,\n  \"incomplete\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 5 --call-timeout 6 --json
+{"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"stopped at the 5 s limit\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"run\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"timeout\": 5.0,\n  \"call_timeout\": 6.0,\n  \"incomplete\": \"stopped at the 5 s limit in ok\"\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 5 --call-timeout 6 --json
+{"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"stopped at the 5 s limit\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"run\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"timeout\": 5.0,\n  \"call_timeout\": 6.0,\n  \"incomplete\": \"stopped at the 5 s limit in ok\"\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 6 --call-timeout 5 --json
+{"code": 2, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"no return within 5 s\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"call\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"timeout\": 6.0,\n  \"call_timeout\": 5.0,\n  \"incomplete\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 6 --call-timeout 5 --json
+{"code": 2, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"no return within 5 s\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"call\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"timeout\": 6.0,\n  \"call_timeout\": 5.0,\n  \"incomplete\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 10 --call-timeout 2 --json
+{"code": 2, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"no return within 2 s\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"call\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"timeout\": 10.0,\n  \"call_timeout\": 2.0,\n  \"incomplete\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 5 --call-timeout 5 --json
+{"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"stopped at the 5 s limit\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"run\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"timeout\": 5.0,\n  \"call_timeout\": 5.0,\n  \"incomplete\": \"stopped at the 5 s limit in ok\"\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 5 --call-timeout 2 --json
+{"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"stopped at the 5 s limit\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"run\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"timeout\": 5.0,\n  \"call_timeout\": 2.0,\n  \"incomplete\": \"stopped at the 5 s limit in ok\"\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 6 --call-timeout 5 --json
+{"code": 2, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"no return within 5 s\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"call\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"timeout\": 6.0,\n  \"call_timeout\": 5.0,\n  \"incomplete\": \"stopped at the 6 s limit in ok\"\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 5 --call-timeout 6 --json
+{"code": 0, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 0,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 6.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": true,\n  \"result\": \"pass\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": true,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": null,\n  \"detail\": null,\n  \"exhaustive\": false,\n  \"seconds\": 4.99,\n  \"incomplete\": null,\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 5 --call-timeout 6 --json
+{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 0,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 6.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 5 s limit\",\n  \"detail\": \"stopped at the 5 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 5,\n  \"incomplete\": \"stopped at the 5 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 5 --call-timeout 6 --json
+{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 0,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 6.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 5 s limit\",\n  \"detail\": \"stopped at the 5 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 5.02,\n  \"incomplete\": \"stopped at the 5 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 6 --call-timeout 5 --json
+{"code": 2, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 0,\n  \"max_states\": 200000,\n  \"timeout\": 6.0,\n  \"call_timeout\": 5.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"error\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": {\n    \"kind\": \"error\",\n    \"name\": \"ok\",\n    \"detail\": \"no return within 5 s\",\n    \"trace\": [\n      {\n        \"step\": 0,\n        \"action\": \"init\",\n        \"state\": 0,\n        \"describe\": null\n      }\n    ],\n    \"timeout\": true\n  },\n  \"stopped\": \"no return within 5 s\",\n  \"detail\": \"no return within 5 s\",\n  \"seconds\": 5.02,\n  \"incomplete\": \"no return within 5 s\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 6 --call-timeout 5 --json
+{"code": 2, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 0,\n  \"max_states\": 200000,\n  \"timeout\": 6.0,\n  \"call_timeout\": 5.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"error\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": {\n    \"kind\": \"error\",\n    \"name\": \"ok\",\n    \"detail\": \"no return within 5 s\",\n    \"trace\": [\n      {\n        \"step\": 0,\n        \"action\": \"init\",\n        \"state\": 0,\n        \"describe\": null\n      }\n    ],\n    \"timeout\": true\n  },\n  \"stopped\": \"no return within 5 s\",\n  \"detail\": \"no return within 5 s\",\n  \"seconds\": 5,\n  \"incomplete\": \"no return within 5 s\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 10 --call-timeout 2 --json
+{"code": 2, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 0,\n  \"max_states\": 200000,\n  \"timeout\": 10.0,\n  \"call_timeout\": 2.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"error\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": {\n    \"kind\": \"error\",\n    \"name\": \"ok\",\n    \"detail\": \"no return within 2 s\",\n    \"trace\": [\n      {\n        \"step\": 0,\n        \"action\": \"init\",\n        \"state\": 0,\n        \"describe\": null\n      }\n    ],\n    \"timeout\": true\n  },\n  \"stopped\": \"no return within 2 s\",\n  \"detail\": \"no return within 2 s\",\n  \"seconds\": 2,\n  \"incomplete\": \"no return within 2 s\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 5 --call-timeout 5 --json
+{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 0,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 5.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 5 s limit\",\n  \"detail\": \"stopped at the 5 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 5.02,\n  \"incomplete\": \"stopped at the 5 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 5 --call-timeout 2 --json
+{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 0,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 2.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 5 s limit\",\n  \"detail\": \"stopped at the 5 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 1.02,\n  \"incomplete\": \"stopped at the 5 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 6 --call-timeout 5 --json
+{"code": 2, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 0,\n  \"max_states\": 200000,\n  \"timeout\": 6.0,\n  \"call_timeout\": 5.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"error\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": {\n    \"kind\": \"error\",\n    \"name\": \"ok\",\n    \"detail\": \"no return within 5 s\",\n    \"trace\": [\n      {\n        \"step\": 0,\n        \"action\": \"init\",\n        \"state\": 0,\n        \"describe\": null\n      }\n    ],\n    \"timeout\": true,\n    \"trace_incomplete\": \"stopped at the 6 s limit\"\n  },\n  \"stopped\": \"stopped at the 6 s limit\",\n  \"detail\": \"no return within 5 s\",\n  \"exhaustive\": false,\n  \"seconds\": 20,\n  \"incomplete\": \"stopped at the 6 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 5 --call-timeout 6 --json
+{"code": 0, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 6.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": true,\n  \"result\": \"pass\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": null,\n  \"detail\": null,\n  \"exhaustive\": true,\n  \"seconds\": 4.99,\n  \"incomplete\": null,\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 5 --call-timeout 6 --json
+{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 6.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 5 s limit\",\n  \"detail\": \"stopped at the 5 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 5,\n  \"incomplete\": \"stopped at the 5 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 5 --call-timeout 6 --json
+{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 6.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 5 s limit\",\n  \"detail\": \"stopped at the 5 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 5.02,\n  \"incomplete\": \"stopped at the 5 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 6 --call-timeout 5 --json
+{"code": 2, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 6.0,\n  \"call_timeout\": 5.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"error\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": {\n    \"kind\": \"error\",\n    \"name\": \"actions\",\n    \"detail\": \"no return within 5 s\",\n    \"trace\": [\n      {\n        \"step\": 0,\n        \"action\": \"init\",\n        \"state\": 0,\n        \"describe\": null\n      }\n    ],\n    \"timeout\": true\n  },\n  \"stopped\": \"no return within 5 s\",\n  \"detail\": \"no return within 5 s\",\n  \"seconds\": 5.02,\n  \"incomplete\": \"no return within 5 s\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 6 --call-timeout 5 --json
+{"code": 2, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 6.0,\n  \"call_timeout\": 5.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"error\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": {\n    \"kind\": \"error\",\n    \"name\": \"actions\",\n    \"detail\": \"no return within 5 s\",\n    \"trace\": [\n      {\n        \"step\": 0,\n        \"action\": \"init\",\n        \"state\": 0,\n        \"describe\": null\n      }\n    ],\n    \"timeout\": true\n  },\n  \"stopped\": \"no return within 5 s\",\n  \"detail\": \"no return within 5 s\",\n  \"seconds\": 5,\n  \"incomplete\": \"no return within 5 s\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 10 --call-timeout 2 --json
+{"code": 2, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 10.0,\n  \"call_timeout\": 2.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"error\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": {\n    \"kind\": \"error\",\n    \"name\": \"actions\",\n    \"detail\": \"no return within 2 s\",\n    \"trace\": [\n      {\n        \"step\": 0,\n        \"action\": \"init\",\n        \"state\": 0,\n        \"describe\": null\n      }\n    ],\n    \"timeout\": true\n  },\n  \"stopped\": \"no return within 2 s\",\n  \"detail\": \"no return within 2 s\",\n  \"seconds\": 2,\n  \"incomplete\": \"no return within 2 s\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 5 --call-timeout 5 --json
+{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 5.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 5 s limit\",\n  \"detail\": \"stopped at the 5 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 5.02,\n  \"incomplete\": \"stopped at the 5 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 5 --call-timeout 2 --json
+{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 2.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 5 s limit\",\n  \"detail\": \"stopped at the 5 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 1.02,\n  \"incomplete\": \"stopped at the 5 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 6 --call-timeout 5 --json
+{"code": 2, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 6.0,\n  \"call_timeout\": 5.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"error\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": {\n    \"kind\": \"error\",\n    \"name\": \"actions\",\n    \"detail\": \"no return within 5 s\",\n    \"trace\": [\n      {\n        \"step\": 0,\n        \"action\": \"init\",\n        \"state\": 0,\n        \"describe\": null\n      }\n    ],\n    \"timeout\": true,\n    \"trace_incomplete\": \"stopped at the 6 s limit\"\n  },\n  \"stopped\": \"stopped at the 6 s limit\",\n  \"detail\": \"no return within 5 s\",\n  \"exhaustive\": false,\n  \"seconds\": 20,\n  \"incomplete\": \"stopped at the 6 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 5 --call-timeout 6 --json
+{"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"stopped at the 5 s limit\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"run\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"timeout\": 5.0,\n  \"call_timeout\": 6.0,\n  \"incomplete\": \"stopped at the 5 s limit in ok\"\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 6 --call-timeout 5 --json
+{"code": 2, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"no return within 5 s\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"call\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"timeout\": 6.0,\n  \"call_timeout\": 5.0,\n  \"incomplete\": null\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 5 --call-timeout 6 --json
+{"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"stopped at the 5 s limit\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"run\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"timeout\": 5.0,\n  \"call_timeout\": 6.0,\n  \"incomplete\": \"stopped at the 5 s limit in ok\"\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 6 --call-timeout 5 --json
+{"code": 2, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"no return within 5 s\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"call\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"timeout\": 6.0,\n  \"call_timeout\": 5.0,\n  \"incomplete\": null\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 5 --call-timeout 6 --json
+{"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"stopped at the 5 s limit\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"run\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"timeout\": 5.0,\n  \"call_timeout\": 6.0,\n  \"incomplete\": \"stopped at the 5 s limit in ok\"\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 6 --call-timeout 5 --json
+{"code": 2, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"no return within 5 s\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"call\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"timeout\": 6.0,\n  \"call_timeout\": 5.0,\n  \"incomplete\": null\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 5 --call-timeout 6 --json
+{"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"stopped at the 5 s limit\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"run\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"timeout\": 5.0,\n  \"call_timeout\": 6.0,\n  \"incomplete\": \"stopped at the 5 s limit in ok\"\n}\n", "stderr": "", "events": ["setup"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 6 --call-timeout 5 --json
+{"code": 2, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"no return within 5 s\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"call\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"timeout\": 6.0,\n  \"call_timeout\": 5.0,\n  \"incomplete\": null\n}\n", "stderr": "", "events": ["setup"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 5 --call-timeout 6 --json
+{"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"stopped at the 5 s limit\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"run\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"timeout\": 5.0,\n  \"call_timeout\": 6.0,\n  \"incomplete\": \"stopped at the 5 s limit in ok\"\n}\n", "stderr": "", "events": ["reset"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 6 --call-timeout 5 --json
+{"code": 2, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"no return within 5 s\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"call\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"timeout\": 6.0,\n  \"call_timeout\": 5.0,\n  \"incomplete\": null\n}\n", "stderr": "", "events": ["reset"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 5 --call-timeout 6 --json
+{"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"first\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"stopped at the 5 s limit\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"run\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"timeout\": 5.0,\n  \"call_timeout\": 6.0,\n  \"incomplete\": \"stopped at the 5 s limit in first\"\n}\n", "stderr": "", "events": ["first"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 6 --call-timeout 5 --json
+{"code": 2, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"first\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"no return within 5 s\",\n      \"shrink_attempts\": 0,\n      \"input\": \"0\",\n      \"timeout_scope\": \"call\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"timeout\": 6.0,\n  \"call_timeout\": 5.0,\n  \"incomplete\": \"stopped at the 6 s limit in first\"\n}\n", "stderr": "", "events": ["first"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 5 --call-timeout 10 --json
+{"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"timeout\",\n      \"accepted\": 0,\n      \"generated\": 0,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": \"stopped at the 5 s limit\",\n      \"shrink_attempts\": 0,\n      \"input\": null,\n      \"timeout_scope\": \"run\"\n    }\n  },\n  \"called\": [],\n  \"missing_targets\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"timeout\": 5.0,\n  \"call_timeout\": 10.0,\n  \"incomplete\": \"stopped at the 5 s limit in ok\"\n}\n", "stderr": "", "events": ["draw"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 5 --call-timeout 6 --expect-fail broken --json
+{"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"broken\": {\n      \"result\": \"fail\",\n      \"accepted\": 1,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": \"2\",\n      \"detail\": \"returned False\",\n      \"shrink_attempts\": 1,\n      \"timeout_scope\": \"run\",\n      \"timeout_phase\": \"shrink\",\n      \"input\": \"1\",\n      \"incomplete\": \"run timeout during shrink: stopped at the 5 s limit\"\n    }\n  },\n  \"called\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"missing_targets\": [],\n  \"timeout\": 5.0,\n  \"call_timeout\": 6.0,\n  \"incomplete\": \"stopped at the 5 s limit in broken\"\n}\n", "stderr": "", "events": [2, 1]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 6 --call-timeout 5 --expect-fail broken --json
+{"code": 2, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"broken\": {\n      \"result\": \"fail\",\n      \"accepted\": 1,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": \"2\",\n      \"detail\": \"returned False\",\n      \"shrink_attempts\": 1,\n      \"timeout_scope\": \"call\",\n      \"timeout_phase\": \"shrink\",\n      \"input\": \"1\",\n      \"incomplete\": \"call timeout during shrink: no return within 5 s\"\n    }\n  },\n  \"called\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"missing_targets\": [],\n  \"timeout\": 6.0,\n  \"call_timeout\": 5.0,\n  \"incomplete\": \"broken: call timeout during shrink: no return within 5 s\"\n}\n", "stderr": "", "events": [2, 1]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 5 --call-timeout 10 --json
+{"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"first\": {\n      \"result\": \"pass\",\n      \"accepted\": 1,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": null,\n      \"shrink_attempts\": 0\n    }\n  },\n  \"called\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"missing_targets\": [],\n  \"timeout\": 5.0,\n  \"call_timeout\": 10.0,\n  \"incomplete\": \"stopped at the 5 s limit in first\"\n}\n", "stderr": "", "events": ["check"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 5 --call-timeout 10 --json
+{"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"first\": {\n      \"result\": \"pass\",\n      \"accepted\": 1,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": null,\n      \"shrink_attempts\": 0\n    }\n  },\n  \"called\": [\n    \"review_sync_target.py:checked\"\n  ],\n  \"missing_targets\": [],\n  \"timeout\": 5.0,\n  \"call_timeout\": 10.0,\n  \"incomplete\": \"stopped at the 5 s limit in first\"\n}\n", "stderr": "", "events": ["check"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 5 --call-timeout 10 --deadlock --json
+{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 0,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 5 s limit\",\n  \"detail\": \"stopped at the 5 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 5.02,\n  \"incomplete\": \"stopped at the 5 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["init"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 5 --call-timeout 10 --deadlock --json
+{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 5 s limit\",\n  \"detail\": \"stopped at the 5 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 5.02,\n  \"incomplete\": \"stopped at the 5 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["terminal"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 5 --call-timeout 10 --mutants --json
+{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"pass\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": null,\n  \"detail\": null,\n  \"exhaustive\": true,\n  \"seconds\": 0.0,\n  \"incomplete\": \"stopped at the 5 s limit outside the search\",\n  \"not_run\": [\n    \"later\"\n  ],\n  \"mutants\": {\n    \"broken\": {\n      \"killed\": true,\n      \"by\": \"ok\",\n      \"steps\": 1,\n      \"result\": \"violation\",\n      \"stopped\": \"stopped at the 5 s limit\",\n      \"detail\": null,\n      \"states\": 2,\n      \"transitions\": 1,\n      \"max_depth\": 1,\n      \"trace\": [\n        {\n          \"step\": 0,\n          \"action\": \"init\",\n          \"state\": 0,\n          \"describe\": true\n        },\n        {\n          \"step\": 1,\n          \"action\": \"bad\",\n          \"state\": -1,\n          \"describe\": null\n        }\n      ]\n    },\n    \"later\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit outside the search\",\n      \"detail\": \"not run: stopped at the 5 s limit outside the search\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    }\n  },\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["describe"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 5 --call-timeout 10 --mutants --json
+{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"pass\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": null,\n  \"detail\": null,\n  \"exhaustive\": true,\n  \"seconds\": 0.0,\n  \"incomplete\": \"stopped at the 5 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {\n    \"broken\": {\n      \"killed\": true,\n      \"by\": \"ok\",\n      \"steps\": 1,\n      \"result\": \"violation\",\n      \"stopped\": null,\n      \"detail\": null,\n      \"states\": 2,\n      \"transitions\": 1,\n      \"max_depth\": 1,\n      \"trace\": [\n        {\n          \"step\": 0,\n          \"action\": \"init\",\n          \"state\": 0,\n          \"describe\": null\n        },\n        {\n          \"step\": 1,\n          \"action\": \"bad\",\n          \"state\": -1,\n          \"describe\": null\n        }\n      ]\n    }\n  },\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 5 --call-timeout 6 --mutants --json
+{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 6.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"pass\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": null,\n  \"detail\": null,\n  \"exhaustive\": true,\n  \"seconds\": 0.0,\n  \"incomplete\": \"stopped at the 5 s limit outside the search\",\n  \"not_run\": [\n    \"later\"\n  ],\n  \"mutants\": {\n    \"late\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit\",\n      \"detail\": \"stopped at the 5 s limit\",\n      \"states\": 1,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    },\n    \"later\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit outside the search\",\n      \"detail\": \"not run: stopped at the 5 s limit outside the search\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    }\n  },\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["mutant"]}
+
+[exit 0; expected 0]
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 6 --call-timeout 5 --mutants --json
+{"code": 2, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 6.0,\n  \"call_timeout\": 5.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"pass\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": null,\n  \"detail\": null,\n  \"exhaustive\": true,\n  \"seconds\": 0.0,\n  \"incomplete\": \"stopped at the 6 s limit outside the search\",\n  \"not_run\": [\n    \"later\"\n  ],\n  \"mutants\": {\n    \"late\": {\n      \"killed\": false,\n      \"by\": \"actions\",\n      \"steps\": 0,\n      \"result\": \"error\",\n      \"stopped\": \"stopped at the 6 s limit\",\n      \"detail\": \"no return within 5 s\",\n      \"states\": 1,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": [\n        {\n          \"step\": 0,\n          \"action\": \"init\",\n          \"state\": 0,\n          \"describe\": null\n        }\n      ]\n    },\n    \"later\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 6 s limit outside the search\",\n      \"detail\": \"not run: stopped at the 6 s limit outside the search\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    }\n  },\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["mutant"]}
+
+[exit 0; expected 0]
+ASSERT PASS: synchronous deadline checks honor earliest expiry without timer delivery: []
 $ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --call-timeout 10 --json
 {"code": 0, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 1.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": true,\n  \"result\": \"pass\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": null,\n  \"detail\": null,\n  \"exhaustive\": true,\n  \"seconds\": 0.0,\n  \"incomplete\": null,\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["checked"]}
 
 [exit 0; expected 0]
 $ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --call-timeout 10 --json
-{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 1.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 0,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 1 s limit\",\n  \"detail\": \"stopped at the 1 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 0,\n  \"incomplete\": \"stopped at the 1 s limit\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 1.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 0,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 1 s limit\",\n  \"detail\": \"stopped at the 1 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 0,\n  \"incomplete\": \"stopped at the 1 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
 
 [exit 0; expected 0]
 $ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --call-timeout 10 --json
-{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 1.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 0,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 1 s limit\",\n  \"detail\": \"stopped at the 1 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 0.0,\n  \"incomplete\": \"stopped at the 1 s limit\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 1.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 0,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 1 s limit\",\n  \"detail\": \"stopped at the 1 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 0.0,\n  \"incomplete\": \"stopped at the 1 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
 
 [exit 0; expected 0]
 $ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 2 --call-timeout 10 --json
@@ -2231,53 +2432,53 @@ $ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification
 
 [exit 0; expected 0]
 $ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 2 --call-timeout 10 --json
-{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 2.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 0,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 2 s limit\",\n  \"detail\": \"stopped at the 2 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 0.0,\n  \"incomplete\": \"stopped at the 2 s limit\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 2.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 0,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 2 s limit\",\n  \"detail\": \"stopped at the 2 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 0.0,\n  \"incomplete\": \"stopped at the 2 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
 
 [exit 0; expected 0]
-$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --examples 1 --call-timeout 10 --json
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --call-timeout 10 --json
 {"code": 0, "stdout": "{\n  \"seed\": 0,\n  \"ok\": true,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"pass\",\n      \"accepted\": 1,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": null,\n      \"shrink_attempts\": 0\n    }\n  },\n  \"called\": [\n    \"review_budget_target.py:checked\"\n  ],\n  \"missing_targets\": [],\n  \"timeout\": 1.0,\n  \"call_timeout\": 10.0,\n  \"incomplete\": null\n}\n", "stderr": "", "events": ["checked"]}
 
 [exit 0; expected 0]
-$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --examples 1 --call-timeout 10 --json
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --call-timeout 10 --json
 {"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {},\n  \"called\": [],\n  \"missing_targets\": [\n    \"review_budget_target.py:checked\"\n  ],\n  \"timeout\": 1.0,\n  \"call_timeout\": 10.0,\n  \"incomplete\": \"stopped at the 1 s limit while importing PROPS.py\"\n}\n", "stderr": "", "events": []}
 
 [exit 0; expected 0]
-$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --examples 1 --call-timeout 10 --json
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --call-timeout 10 --json
 {"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {},\n  \"called\": [],\n  \"missing_targets\": [\n    \"review_budget_target.py:checked\"\n  ],\n  \"timeout\": 1.0,\n  \"call_timeout\": 10.0,\n  \"incomplete\": \"stopped at the 1 s limit while importing PROPS.py\"\n}\n", "stderr": "", "events": []}
 
 [exit 0; expected 0]
-$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --examples 1 --timeout 2 --call-timeout 10 --json
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 2 --call-timeout 10 --json
 {"code": 0, "stdout": "{\n  \"seed\": 0,\n  \"ok\": true,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"pass\",\n      \"accepted\": 1,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": null,\n      \"shrink_attempts\": 0\n    }\n  },\n  \"called\": [\n    \"review_budget_target.py:checked\"\n  ],\n  \"missing_targets\": [],\n  \"timeout\": 2.0,\n  \"call_timeout\": 10.0,\n  \"incomplete\": null\n}\n", "stderr": "", "events": ["checked"]}
 
 [exit 0; expected 0]
-$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --examples 1 --timeout 2 --call-timeout 10 --json
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 2 --call-timeout 10 --json
 {"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {},\n  \"called\": [],\n  \"missing_targets\": [\n    \"review_budget_target.py:checked\"\n  ],\n  \"timeout\": 2.0,\n  \"call_timeout\": 10.0,\n  \"incomplete\": \"stopped at the 2 s limit while importing PROPS.py\"\n}\n", "stderr": "", "events": []}
 
 [exit 0; expected 0]
 ASSERT PASS: import time counts toward TIMEOUT, including equality; explicit overrides retain their budget: []
-$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --examples 1 --timeout 20 --call-timeout 1 --expect-fail broken --json
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 20 --call-timeout 1 --expect-fail broken --json
 {"code": 2, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"broken\": {\n      \"result\": \"fail\",\n      \"accepted\": 1,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": \"60\",\n      \"detail\": \"returned False\",\n      \"shrink_attempts\": 2,\n      \"timeout_scope\": \"call\",\n      \"timeout_phase\": \"shrink\",\n      \"input\": \"0\",\n      \"incomplete\": \"call timeout during shrink: no return within 1 s\"\n    },\n    \"later\": {\n      \"result\": \"pass\",\n      \"accepted\": 1,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": null,\n      \"shrink_attempts\": 0\n    }\n  },\n  \"called\": [\n    \"review_shrink_target.py:confirmed\"\n  ],\n  \"missing_targets\": [],\n  \"timeout\": 20.0,\n  \"call_timeout\": 1.0,\n  \"incomplete\": \"broken: call timeout during shrink: no return within 1 s\"\n}\n", "stderr": "", "events": ["check 100", "check 60", "check 0", "later"]}
 
 [exit 0; expected 0]
 ASSERT PASS: shrink call timeout preserves the best confirmed failure and reports incomplete reduction (exit 2)
 ASSERT PASS: a shrink call timeout ends only that property and keeps only accepted target coverage
-$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --examples 1 --timeout 20 --call-timeout 1 --json
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 20 --call-timeout 1 --json
 {"code": 1, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"broken\": {\n      \"result\": \"fail\",\n      \"accepted\": 1,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": \"60\",\n      \"detail\": \"returned False\",\n      \"shrink_attempts\": 2,\n      \"timeout_scope\": \"call\",\n      \"timeout_phase\": \"shrink\",\n      \"input\": \"0\",\n      \"incomplete\": \"call timeout during shrink: no return within 1 s\"\n    },\n    \"later\": {\n      \"result\": \"pass\",\n      \"accepted\": 1,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": null,\n      \"shrink_attempts\": 0\n    }\n  },\n  \"called\": [\n    \"review_shrink_target.py:confirmed\"\n  ],\n  \"missing_targets\": [],\n  \"timeout\": 20.0,\n  \"call_timeout\": 1.0,\n  \"incomplete\": \"broken: call timeout during shrink: no return within 1 s\"\n}\n", "stderr": "", "events": ["check 100", "check 60", "check 0", "later"]}
 
 [exit 0; expected 0]
 ASSERT PASS: shrink call timeout preserves the best confirmed failure and reports incomplete reduction (exit 1)
 ASSERT PASS: a shrink call timeout ends only that property and keeps only accepted target coverage
-$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --examples 1 --timeout 20 --call-timeout 1 --expect-fail broken
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 20 --call-timeout 1 --expect-fail broken
 {"code": 2, "stdout": "gen_check: /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py (seed 0)\n  broken: fail (0 of 1 generated inputs rejected before the counterexample)\n    reduced counterexample: 60\n    returned False (2 shrink attempts)\n  later: pass (1 accepted, 0/1 generated rejected)\n  repo functions run: review_shrink_target.py:confirmed\n  incomplete: broken: call timeout during shrink: no return within 1 s\nERROR: INCOMPLETE check due to call timeout (exit 2)\n", "stderr": "gen_check: seed 0; limits 20 s per run, 1 s per call\n", "events": ["check 100", "check 60", "check 0", "later"]}
 
 [exit 0; expected 0]
 ASSERT PASS: text mode exposes the retained counterexample and incomplete shrink instead of PASS
-$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --examples 1 --timeout 20 --call-timeout 1 --expect-fail broken --json
+$ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 20 --call-timeout 1 --expect-fail broken --json
 {"code": 1, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {\n    \"broken\": {\n      \"result\": \"fail\",\n      \"accepted\": 1,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": \"60\",\n      \"detail\": \"returned False\",\n      \"shrink_attempts\": 2,\n      \"timeout_scope\": \"call\",\n      \"timeout_phase\": \"shrink\",\n      \"input\": \"0\",\n      \"incomplete\": \"call timeout during shrink: no return within 1 s\"\n    },\n    \"later\": {\n      \"result\": \"fail\",\n      \"accepted\": 1,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": \"1\",\n      \"detail\": \"returned False\",\n      \"shrink_attempts\": 0\n    }\n  },\n  \"called\": [\n    \"review_shrink_target.py:confirmed\"\n  ],\n  \"missing_targets\": [],\n  \"timeout\": 20.0,\n  \"call_timeout\": 1.0,\n  \"incomplete\": \"broken: call timeout during shrink: no return within 1 s\"\n}\n", "stderr": "", "events": ["check 100", "check 60", "check 0", "later"]}
 
 [exit 0; expected 0]
 ASSERT PASS: an independent unexpected failure retains exit 1 alongside the expected failure and shrink timeout
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/shrink_hang.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --examples 1 --timeout 20 --call-timeout 2 --expect-fail broken --json
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/shrink_hang.py --repo /tmp/poteto-examples-m9y_losv/todo-app --examples 1 --timeout 20 --call-timeout 2 --expect-fail broken --json
 {
   "seed": 0,
   "ok": false,
@@ -2308,24 +2509,24 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 [exit 2; expected 2]
 ASSERT PASS: a genuinely hung shrink candidate is interrupted and cannot satisfy --expect-fail
 $ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 5 --call-timeout 10 --mutants --json
-{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"nonnegative\"\n  ],\n  \"ok\": false,\n  \"result\": \"pass\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": null,\n  \"detail\": null,\n  \"exhaustive\": true,\n  \"seconds\": 0.0,\n  \"incomplete\": \"stopped at the 5 s limit\",\n  \"not_run\": [\n    \"later\",\n    \"last\"\n  ],\n  \"mutants\": {\n    \"broken\": {\n      \"killed\": true,\n      \"by\": \"nonnegative\",\n      \"steps\": 1,\n      \"result\": \"violation\",\n      \"stopped\": \"stopped at the 5 s limit\",\n      \"detail\": null,\n      \"states\": 2,\n      \"transitions\": 1,\n      \"max_depth\": 1,\n      \"trace\": [\n        {\n          \"step\": 0,\n          \"action\": \"init\",\n          \"state\": 0,\n          \"describe\": null\n        },\n        {\n          \"step\": 1,\n          \"action\": \"bad\",\n          \"state\": -1,\n          \"describe\": null\n        }\n      ]\n    },\n    \"later\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit\",\n      \"detail\": \"not run: stopped at the 5 s limit\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    },\n    \"last\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit\",\n      \"detail\": \"not run: stopped at the 5 s limit\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    }\n  },\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["describe"]}
+{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"nonnegative\"\n  ],\n  \"ok\": false,\n  \"result\": \"pass\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": null,\n  \"detail\": null,\n  \"exhaustive\": true,\n  \"seconds\": 0.0,\n  \"incomplete\": \"stopped at the 5 s limit outside the search\",\n  \"not_run\": [\n    \"later\",\n    \"last\"\n  ],\n  \"mutants\": {\n    \"broken\": {\n      \"killed\": true,\n      \"by\": \"nonnegative\",\n      \"steps\": 1,\n      \"result\": \"violation\",\n      \"stopped\": \"stopped at the 5 s limit\",\n      \"detail\": null,\n      \"states\": 2,\n      \"transitions\": 1,\n      \"max_depth\": 1,\n      \"trace\": [\n        {\n          \"step\": 0,\n          \"action\": \"init\",\n          \"state\": 0,\n          \"describe\": null\n        },\n        {\n          \"step\": 1,\n          \"action\": \"bad\",\n          \"state\": -1,\n          \"describe\": null\n        }\n      ]\n    },\n    \"later\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit outside the search\",\n      \"detail\": \"not run: stopped at the 5 s limit outside the search\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    },\n    \"last\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit outside the search\",\n      \"detail\": \"not run: stopped at the 5 s limit outside the search\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    }\n  },\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["describe"]}
 
 [exit 0; expected 0]
 ASSERT PASS: a timed-out mutant description retains its kill and starts no later search
 ASSERT PASS: confirmed mutant kill and raw trace survive the total deadline; pending names stay visible
 $ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 5 --call-timeout 10 --mutants
-{"code": 3, "stdout": "bounded_check: /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py (depth <= 25, 1 invariant(s): nonnegative)\nPASS: invariants hold on 1 states (0 transitions, max depth 0); state space exhausted: complete for this model\nmutants (each broken variant must be caught, or the check proves nothing):\n  broken                   killed by nonnegative after 1 step(s)\n  later                    INCOMPLETE: stopped at the 5 s limit after 0 states; not run\n  last                     INCOMPLETE: stopped at the 5 s limit after 0 states; not run\ncounterexample for mutant broken:\n    0  init                                 0\n    1  bad                                  -1\n  trace descriptions incomplete: stopped at the 5 s limit; confirmed finding retained\nINCOMPLETE: stopped at the 5 s limit; confirmed findings retained\n", "stderr": "bounded_check: /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py: depth <= 25, max 200000 states, 5 s run limit, 10 s per call\n", "events": ["describe"]}
+{"code": 3, "stdout": "bounded_check: /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py (depth <= 25, 1 invariant(s): nonnegative)\nPASS: invariants hold on 1 states (0 transitions, max depth 0); state space exhausted: complete for this model\nmutants (each broken variant must be caught, or the check proves nothing):\n  broken                   killed by nonnegative after 1 step(s)\n  later                    INCOMPLETE: stopped at the 5 s limit outside the search after 0 states; not run\n  last                     INCOMPLETE: stopped at the 5 s limit outside the search after 0 states; not run\ncounterexample for mutant broken:\n    0  init                                 0\n    1  bad                                  -1\n  trace descriptions incomplete: stopped at the 5 s limit; confirmed finding retained\nINCOMPLETE: stopped at the 5 s limit outside the search; confirmed findings retained\n", "stderr": "bounded_check: /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py: depth <= 25, max 200000 states, 5 s run limit, 10 s per call\n", "events": ["describe"]}
 
 [exit 0; expected 0]
 ASSERT PASS: a timed-out mutant description retains its kill and starts no later search
 ASSERT PASS: unrun mutants print INCOMPLETE instead of SURVIVED
 $ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 5 --call-timeout 10 --mutants --json
-{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"nonnegative\"\n  ],\n  \"ok\": false,\n  \"result\": \"pass\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": null,\n  \"detail\": null,\n  \"exhaustive\": true,\n  \"seconds\": 20.0,\n  \"incomplete\": \"stopped at the 5 s limit outside the search\",\n  \"not_run\": [\n    \"broken\",\n    \"later\",\n    \"last\"\n  ],\n  \"mutants\": {\n    \"broken\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit outside the search\",\n      \"detail\": \"not run: stopped at the 5 s limit outside the search\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    },\n    \"later\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit outside the search\",\n      \"detail\": \"not run: stopped at the 5 s limit outside the search\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    },\n    \"last\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit outside the search\",\n      \"detail\": \"not run: stopped at the 5 s limit outside the search\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    }\n  },\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"nonnegative\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 5 s limit\",\n  \"detail\": \"stopped at the 5 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 20.0,\n  \"incomplete\": \"stopped at the 5 s limit outside the search\",\n  \"not_run\": [\n    \"broken\",\n    \"later\",\n    \"last\"\n  ],\n  \"mutants\": {\n    \"broken\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit outside the search\",\n      \"detail\": \"not run: stopped at the 5 s limit outside the search\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    },\n    \"later\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit outside the search\",\n      \"detail\": \"not run: stopped at the 5 s limit outside the search\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    },\n    \"last\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit outside the search\",\n      \"detail\": \"not run: stopped at the 5 s limit outside the search\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    }\n  },\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
 
 [exit 0; expected 0]
 ASSERT PASS: an expired deadline between searches cannot start the first mutant
 $ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 5 --call-timeout 10 --mutants --json
-{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"pass\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": null,\n  \"detail\": null,\n  \"exhaustive\": true,\n  \"seconds\": 0.0,\n  \"incomplete\": \"stopped at the 5 s limit\",\n  \"not_run\": [\n    \"pending\"\n  ],\n  \"mutants\": {\n    \"killed\": {\n      \"killed\": true,\n      \"by\": \"ok\",\n      \"steps\": 1,\n      \"result\": \"violation\",\n      \"stopped\": null,\n      \"detail\": null,\n      \"states\": 2,\n      \"transitions\": 1,\n      \"max_depth\": 1,\n      \"trace\": [\n        {\n          \"step\": 0,\n          \"action\": \"init\",\n          \"state\": 0,\n          \"describe\": null\n        },\n        {\n          \"step\": 1,\n          \"action\": \"bad\",\n          \"state\": -1,\n          \"describe\": null\n        }\n      ]\n    },\n    \"slow\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit\",\n      \"detail\": \"stopped at the 5 s limit\",\n      \"states\": 1,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    },\n    \"pending\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit\",\n      \"detail\": \"not run: stopped at the 5 s limit\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    }\n  },\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"pass\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": null,\n  \"detail\": null,\n  \"exhaustive\": true,\n  \"seconds\": 0.0,\n  \"incomplete\": \"stopped at the 5 s limit outside the search\",\n  \"not_run\": [\n    \"pending\"\n  ],\n  \"mutants\": {\n    \"killed\": {\n      \"killed\": true,\n      \"by\": \"ok\",\n      \"steps\": 1,\n      \"result\": \"violation\",\n      \"stopped\": null,\n      \"detail\": null,\n      \"states\": 2,\n      \"transitions\": 1,\n      \"max_depth\": 1,\n      \"trace\": [\n        {\n          \"step\": 0,\n          \"action\": \"init\",\n          \"state\": 0,\n          \"describe\": null\n        },\n        {\n          \"step\": 1,\n          \"action\": \"bad\",\n          \"state\": -1,\n          \"describe\": null\n        }\n      ]\n    },\n    \"slow\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit\",\n      \"detail\": \"stopped at the 5 s limit\",\n      \"states\": 1,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    },\n    \"pending\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit outside the search\",\n      \"detail\": \"not run: stopped at the 5 s limit outside the search\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    }\n  },\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
 
 [exit 0; expected 0]
 ASSERT PASS: mutant JSON preserves timeout, stop reason, detail, states and top-level incompleteness
@@ -2337,12 +2538,12 @@ $ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification
 ASSERT PASS: mutant JSON preserves error, stop reason, detail, states and top-level incompleteness
 ASSERT PASS: every mutant has an explicit status and unrun names are separate from survivors
 $ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 5 --call-timeout 10 --mutants --json
-{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 5 s limit\",\n  \"detail\": \"stopped at the 5 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 20.0,\n  \"incomplete\": \"stopped at the 5 s limit\",\n  \"not_run\": [\n    \"killed\",\n    \"slow\",\n    \"pending\"\n  ],\n  \"mutants\": {\n    \"killed\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit\",\n      \"detail\": \"not run: stopped at the 5 s limit\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    },\n    \"slow\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit\",\n      \"detail\": \"not run: stopped at the 5 s limit\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    },\n    \"pending\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit\",\n      \"detail\": \"not run: stopped at the 5 s limit\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    }\n  },\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+{"code": 3, "stdout": "{\n  \"model\": \"/workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 5 s limit\",\n  \"detail\": \"stopped at the 5 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 20.0,\n  \"incomplete\": \"stopped at the 5 s limit outside the search\",\n  \"not_run\": [\n    \"killed\",\n    \"slow\",\n    \"pending\"\n  ],\n  \"mutants\": {\n    \"killed\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit outside the search\",\n      \"detail\": \"not run: stopped at the 5 s limit outside the search\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    },\n    \"slow\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit outside the search\",\n      \"detail\": \"not run: stopped at the 5 s limit outside the search\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    },\n    \"pending\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"result\": \"timeout\",\n      \"stopped\": \"stopped at the 5 s limit outside the search\",\n      \"detail\": \"not run: stopped at the 5 s limit outside the search\",\n      \"states\": 0,\n      \"transitions\": 0,\n      \"max_depth\": 0,\n      \"trace\": null\n    }\n  },\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
 
 [exit 0; expected 0]
 ASSERT PASS: a main-search timeout lists every unrun mutant as incomplete with zero explored states
 $ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_driver.py /workspace/pr-fix/skills/formal-verification/scripts/bounded_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py --timeout 5 --call-timeout 10 --mutants
-{"code": 2, "stdout": "bounded_check: /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py (depth <= 25, 1 invariant(s): ok)\nPASS: invariants hold on 1 states (0 transitions, max depth 0); state space exhausted: complete for this model\nmutants (each broken variant must be caught, or the check proves nothing):\n  crash                    ERROR: model error in actions: actions() raised ValueError: broken mutant after 0 step(s)\n  slow                     INCOMPLETE: stopped at the 5 s limit after 1 states\ntrace to the error in mutant crash:\n    0  init                                 0\nINCOMPLETE: stopped at the 5 s limit; confirmed findings retained\n", "stderr": "bounded_check: /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py: depth <= 25, max 200000 states, 5 s run limit, 10 s per call\n", "events": []}
+{"code": 2, "stdout": "bounded_check: /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py (depth <= 25, 1 invariant(s): ok)\nPASS: invariants hold on 1 states (0 transitions, max depth 0); state space exhausted: complete for this model\nmutants (each broken variant must be caught, or the check proves nothing):\n  crash                    ERROR: model error in actions: actions() raised ValueError: broken mutant after 0 step(s)\n  slow                     INCOMPLETE: stopped at the 5 s limit after 1 states\ntrace to the error in mutant crash:\n    0  init                                 0\nINCOMPLETE: stopped at the 5 s limit outside the search; confirmed findings retained\n", "stderr": "bounded_check: /workspace/pr-fix/logs/examples/artifacts/formal-verification/clock_fixture.py: depth <= 25, max 200000 states, 5 s run limit, 10 s per call\n", "events": []}
 
 [exit 0; expected 0]
 ASSERT PASS: a crashing mutant reports model error exit 2, including before a later run timeout
@@ -2351,7 +2552,7 @@ $ /usr/bin/python3 /workspace/pr-fix/logs/examples/artifacts/formal-verification
 
 [exit 0; expected 0]
 ASSERT PASS: a crashing mutant reports model error exit 2, including before a later run timeout
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_shrink_interrupt.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --json
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_shrink_interrupt.py --repo /tmp/poteto-examples-m9y_losv/todo-app --json
 {
   "seed": 0,
   "ok": false,
@@ -2386,7 +2587,7 @@ $ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/p
 
 [exit 1; expected 1]
 ASSERT PASS: SIGINT during shrinking preserves the best counterexample, accepted target calls and failure exit 1
-$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_shrink_interrupt.py --repo /tmp/poteto-examples-qxu2y85c/todo-app --expect-fail broken --json
+$ /workspace/pr-fix/skills/formal-verification/scripts/gen_check.py /workspace/pr-fix/logs/examples/artifacts/formal-verification/props_shrink_interrupt.py --repo /tmp/poteto-examples-m9y_losv/todo-app --expect-fail broken --json
 {
   "seed": 0,
   "ok": false,

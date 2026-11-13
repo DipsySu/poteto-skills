@@ -6,7 +6,7 @@
   "files_scanned": 3,
   "untracked": [],
   "rev": null,
-  "root": "/tmp/poteto-examples-qxu2y85c/past-direct-write",
+  "root": "/tmp/poteto-examples-m9y_losv/past-direct-write",
   "failing": [
     {
       "rule": "no-direct-json-write",

@@ -51,7 +51,7 @@ class Timeout(BaseException):
 
 
 class Limits:
-    """Run and per-call limits, checked by a SIGALRM tick from signal.setitimer.
+    """Run and per-call limits, checked synchronously and by a SIGALRM tick.
 
     Where setitimer is missing (Windows) or off the main thread, warn that the limits are not enforced.
     """
@@ -90,10 +90,17 @@ class Limits:
         return False
 
     def tick(self, signum, frame):
+        # Keep interrupting a call until it unwinds; leave timeout reporting alone afterward.
+        if self.started is not None or not self.expired:
+            self.check()
+
+    def check(self):
+        """Check both absolute deadlines before clearing the current call's start time."""
+        if not self.active:
+            return
         now = time.monotonic()
         call_deadline = self.started + self.call_seconds if self.started is not None else float('inf')
-        # Inside a call, keep raising until it unwinds, even past a bare `except:`.
-        if now >= self.deadline and (self.started is not None or not self.expired):
+        if now >= self.deadline:
             if call_deadline < self.deadline:
                 raise Timeout('call', self.call_seconds)
             self.expired = True
@@ -107,8 +114,21 @@ class Limits:
             self.expired = True
             raise Timeout('run', self.run_seconds)
 
+    def iterate(self, values):
+        """Check before and after generation, including an iterator's final StopIteration."""
+        iterator = iter(values)
+        while True:
+            self.check_run()
+            try:
+                value = next(iterator)
+            except StopIteration:
+                self.check_run()
+                return
+            self.check_run()
+            yield value
 
-LIMIT_CODES = {Limits.tick.__code__, Timeout.__init__.__code__}
+
+LIMIT_CODES = {Limits.tick.__code__, Limits.check.__code__, Limits.check_run.__code__, Timeout.__init__.__code__}
 
 
 def seconds(value, name):
@@ -314,13 +334,17 @@ def load_props(path, repo):
 
 def attempt(mod, check, value, repo, limits):
     """Run one input's hooks and check under the per-call limit; a Timeout propagates."""
+    limits.check_run()
     limits.started = time.monotonic()
     try:
+        limits.check()
         for name in ('setup', 'reset'):
             hook = getattr(mod, name, None)
             if hook is not None:
                 hook()
+                limits.check()
         value = copy.deepcopy(value)
+        limits.check()
         called = set()
         profile_error = None
 
@@ -354,7 +378,10 @@ def attempt(mod, check, value, repo, limits):
             if profile_error is not None:
                 raise PropsError(f"profiling failed: {profile_error}")
     finally:
-        limits.started = None
+        try:
+            limits.check()
+        finally:
+            limits.started = None
 
 
 def reduce_failure(mod, gen, check, value, detail, repo, limits):
@@ -364,7 +391,8 @@ def reduce_failure(mod, gen, check, value, detail, repo, limits):
     checking = None
     try:
         while attempts < 500:
-            for candidate in itertools.islice(gen.shrink(value), 500 - attempts):
+            limits.check_run()
+            for candidate in limits.iterate(itertools.islice(gen.shrink(value), 500 - attempts)):
                 attempts += 1
                 key = repr(candidate)
                 if key in seen:
@@ -378,6 +406,7 @@ def reduce_failure(mod, gen, check, value, detail, repo, limits):
                     break
             else:
                 break
+        limits.check_run()
     except (Timeout, KeyboardInterrupt) as error:
         return value, detail, attempts, error, checking
     return value, detail, attempts, None, None
@@ -393,7 +422,7 @@ def run_property(mod, name, gen, check, rng, count, repo, limits):
     inputs = itertools.chain(((False, value) for value in pinned),
                              ((True, gen.draw(rng)) for _ in range(count)))
     try:
-        for generated, value in inputs:
+        for generated, value in limits.iterate(inputs):
             result['generated'] += int(generated)
             checking = (value,)
             status, detail, ran = attempt(mod, check, value, repo, limits)
@@ -416,6 +445,7 @@ def run_property(mod, name, gen, check, rng, count, repo, limits):
                     if scope == 'call':
                         stopped = None  # End this property's shrinking; other properties still run.
                 break
+        limits.check_run()
     except (Timeout, KeyboardInterrupt) as error:
         stopped = error if isinstance(error, KeyboardInterrupt) or error.scope == 'run' else None
         # An interrupted check is inconclusive; interruption after a confirmed failure cannot erase it.
@@ -465,6 +495,7 @@ def main(argv=None):
                     print(f"gen_check: seed {args.seed}; limits {limits.run_seconds:g} s per run, "
                           f"{limits.call_seconds:g} s per call", file=sys.stderr, flush=True)
                 for name, (gen, check) in mod.properties.items():
+                    limits.check_run()
                     rng = random.Random(f"{args.seed}:{name}")
                     result, ran, stopped = run_property(mod, name, gen, check, rng, args.examples, repo, limits)
                     report['properties'][name] = result
@@ -474,6 +505,7 @@ def main(argv=None):
                         report['incomplete'] = '; '.join(filter(None, (report['incomplete'], detail)))
                     if stopped is not None:
                         raise stopped
+                limits.check_run()
         except Timeout as error:
             where = f"in {list(report['properties'])[-1]}" if report['properties'] else "while importing PROPS.py"
             report['incomplete'] = f"{error} {where}"

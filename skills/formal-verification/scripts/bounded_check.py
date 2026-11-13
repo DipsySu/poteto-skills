@@ -50,7 +50,7 @@ class Timeout(BaseException):
 
 
 class Limits:
-    """Run and per-call limits, checked by a SIGALRM tick from signal.setitimer.
+    """Run and per-call limits, checked synchronously and by a SIGALRM tick.
 
     Where setitimer is missing (Windows) or off the main thread, warn that the limits are not enforced.
     """
@@ -89,10 +89,17 @@ class Limits:
         return False
 
     def tick(self, signum, frame):
+        # Keep interrupting a call until it unwinds; leave timeout reporting alone afterward.
+        if self.started is not None or not self.expired:
+            self.check()
+
+    def check(self):
+        """Check both absolute deadlines before clearing the current call's start time."""
+        if not self.active:
+            return
         now = time.monotonic()
         call_deadline = self.started + self.call_seconds if self.started is not None else float("inf")
-        # Inside a call, keep raising until it unwinds, even past a bare `except:`.
-        if now >= self.deadline and (self.started is not None or not self.expired):
+        if now >= self.deadline:
             if call_deadline < self.deadline:
                 raise Timeout("call", self.call_seconds)
             self.expired = True
@@ -110,9 +117,13 @@ class Limits:
         self.check_run()
         self.started = time.monotonic()
         try:
+            self.check()
             return fn(*args)
         finally:
-            self.started = None
+            try:
+                self.check()
+            finally:
+                self.started = None
 
 
 def seconds(value, name: str) -> float:
@@ -196,7 +207,9 @@ def explore(mod, actions_fn, invariants: dict, depth: int, max_states: int, dead
         out = search_result()
     try:
         limits.check_run()
-        return search(mod, actions_fn, invariants, depth, max_states, deadlock, limits, states, out)
+        search(mod, actions_fn, invariants, depth, max_states, deadlock, limits, states, out)
+        limits.check_run()
+        return out
     except Timeout as e:
         if e.scope != "run":
             raise
@@ -229,7 +242,9 @@ def search(mod, actions_fn, invariants: dict, depth: int, max_states: int, deadl
             steps.append({"step": d, "action": act, "state": jsonable(s), "describe": None})
         if callable(describe):
             for k, step in zip(keys, steps):
+                limits.check_run()
                 step["describe"] = describe(states[k])
+                limits.check_run()
 
     def bad(k, kind: str, name: str, detail: str | None = None, timeout: bool = False) -> dict:
         out["result"] = "error" if kind == "error" else "violation"
@@ -257,9 +272,11 @@ def search(mod, actions_fn, invariants: dict, depth: int, max_states: int, deadl
         return None
 
     starts = initial_states(mod)
+    limits.check_run()
     if not starts:
         raise ModelError("model has no initial states")
     for s in starts:
+        limits.check_run()
         k = freeze(s)
         if k in states:
             continue
@@ -269,6 +286,7 @@ def search(mod, actions_fn, invariants: dict, depth: int, max_states: int, deadl
             return r
         queue.append(k)
     while queue:
+        limits.check_run()
         k = queue.popleft()
         s = states[k]
         d = parent[k][2]
@@ -283,9 +301,14 @@ def search(mod, actions_fn, invariants: dict, depth: int, max_states: int, deadl
             return bad(k, "error", "actions", str(e), timeout=True)
         except Exception as e:  # noqa: BLE001
             return bad(k, "error", "actions", f"actions() raised {type(e).__name__}: {e}")
-        if not succ and deadlock and not (callable(terminal) and terminal(s)):
-            return bad(k, "deadlock", "deadlock", "no action is enabled and terminal(state) is not true")
+        if not succ and deadlock:
+            limits.check_run()
+            is_terminal = callable(terminal) and terminal(s)
+            limits.check_run()
+            if not is_terminal:
+                return bad(k, "deadlock", "deadlock", "no action is enabled and terminal(state) is not true")
         for item in succ:
+            limits.check_run()
             if not (isinstance(item, tuple) and len(item) == 2):
                 return bad(k, "error", "actions", f"actions() must yield (name, next_state) pairs, got {item!r:.80}")
             name, ns = item
@@ -393,6 +416,7 @@ def main(argv: list[str] | None = None) -> int:
                     current = None
                     if searches[name]["result"] == "timeout" or limits.expired:
                         break
+            limits.check_run()
     except ModelError as e:
         print(f"bounded_check: {e}", file=sys.stderr)
         return 2
@@ -427,7 +451,7 @@ def main(argv: list[str] | None = None) -> int:
         definitive = main_res["result"] != "timeout"
     else:
         ok = (main_res["result"] == "pass" and all(m["killed"] for m in mutant_res.values())
-              and len(mutant_res) == (len(muts) if args.mutants else 0))
+              and len(mutant_res) == (len(muts) if args.mutants else 0) and not incomplete)
         definitive = main_res["result"] == "violation" or any(
             not m["killed"] and m["result"]["result"] in ("pass", "violation") for m in mutant_res.values())
     if main_res["result"] == "error" or any(r["result"] == "error" for r in searches.values()):

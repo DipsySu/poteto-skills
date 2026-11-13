@@ -6,14 +6,14 @@
     "reject-http"
   ],
   "read_only": true,
-  "started": "2026-11-13T10:39:55Z",
+  "started": "2026-11-13T16:48:11Z",
   "method": "GET",
-  "url": "http://127.0.0.1:43707/todos",
+  "url": "http://127.0.0.1:58331/todos",
   "request_body": null,
   "status": 200,
   "response_headers": {
     "Server": "BaseHTTP/0.6 Python/3.13.5",
-    "Date": "Fri, 13 Nov 2026 10:39:55 GMT",
+    "Date": "Fri, 13 Nov 2026 16:48:11 GMT",
     "Content-Type": "application/json",
     "Content-Length": "105"
   },
@@ -39,5 +39,5 @@
   ],
   "execution_ok": true,
   "ok": true,
-  "elapsed_ms": 8.2
+  "elapsed_ms": 9.1
 }
