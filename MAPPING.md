@@ -31,7 +31,7 @@ Pyramid layers (S1): 1 codebase improvements (architecture, types, invariants) >
 | architect | `sketch_check.py SKETCH.md` | candidates, distinctness, red-flags screen, synthesis decision |
 | sharpen | `brief.py "task"` / `brief.py --check BRIEF.md` | the brief, with candidate raw sources from the repo |
 | formal-verification | `bounded_check.py MODEL.py [--mutants] [--timeout S] [--call-timeout S]` | BFS model check, shortest counterexample, mutant kill table; the run limit exits 3 (inconclusive), and a call past its limit is a model error with its trace |
-| formal-verification | `gen_check.py PROPS.py --repo DIR [--seed N] [--examples N] [--expect-fail NAME] [--timeout S] [--call-timeout S] [--json]` | Python-only property checks on declared TARGETS, reduced counterexamples, repo call report, per-call and per-run time limits (a timeout exits 3 with its input and seed; `filter_too_much` never replaces a failure); no harness mode |
+| formal-verification | `gen_check.py PROPS.py --repo DIR [--seed N] [--examples N] [--expect-fail NAME] [--timeout S] [--call-timeout S] [--json]` | Python-only property checks on declared TARGETS, reduced counterexamples, repo call report, per-call and per-run time limits (run timeout exits 3; call timeout exits 2 unless an independent property failed; reports input and seed; `filter_too_much` never replaces a failure); no harness mode |
 | formal-verification | `tla_available.sh [--json]` | whether java and tla2tools.jar are present |
 | curator | `upstream_diff.sh [--json]`, `curate.sh [--propose\|--apply] [--offline]`, `check_proposals.py FILE` | upstream report, proposals, local curator branch |
 

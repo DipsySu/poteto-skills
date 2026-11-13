@@ -235,7 +235,8 @@ def git_toplevel(cwd: Path) -> Path | None:
     try:
         out = git(cwd, "rev-parse", "--show-toplevel").strip()
         return Path(out) if out else None
-    except (RuntimeError, OSError):
+    except (RuntimeError, OSError) as error:
+        print(f"patlint: WARNING: git root lookup failed: {error}; fallback to the working directory", file=sys.stderr)
         return None
 
 
@@ -250,9 +251,12 @@ def git_names(cwd: Path, *args: str) -> list[str] | None:
     """NUL-separated names printed by a git command run in CWD; None outside a git checkout."""
     try:
         res = subprocess.run(["git", "-C", str(cwd), "--literal-pathspecs", *args], capture_output=True)
-    except OSError:
+    except OSError as error:
+        print(f"patlint: WARNING: git file lookup failed: {error}; fallback to filesystem traversal", file=sys.stderr)
         return None
     if res.returncode != 0:
+        detail = res.stderr.decode(errors="replace").strip()
+        print(f"patlint: WARNING: git file lookup failed: {detail}; fallback to filesystem traversal", file=sys.stderr)
         return None
     return [os.fsdecode(n) for n in res.stdout.split(b"\0") if n]
 
@@ -267,7 +271,9 @@ def git_file_set(directory: Path) -> tuple[list[str], set[str]] | None:
     tracked = git_names(directory, "ls-files", "-z", "--cached", "--", ".")
     if tracked is None:
         return None
-    others = git_names(directory, "ls-files", "-z", "--others", "--exclude-standard", "--", ".") or []
+    others = git_names(directory, "ls-files", "-z", "--others", "--exclude-standard", "--", ".")
+    if others is None:
+        return None
     nested: dict[Path, bool] = {}
 
     def in_nested_checkout(name: str) -> bool:
@@ -682,7 +688,7 @@ def main(argv: list[str] | None = None) -> int:
 
     ratchet = args.baseline is not None
     baseline = load_baseline(args.baseline) if ratchet else {}
-    over, improved, refused = [], [], []
+    over, improved, refused, deferred = [], [], [], []
     if ratchet:
         for rid, files in counts.items():
             for path, n in files.items():
@@ -702,6 +708,12 @@ def main(argv: list[str] | None = None) -> int:
         for rid in rule_ids:
             cur = counts.get(rid, {})
             if rid not in baseline:
+                untracked = sorted(set(cur) - tracked)
+                if untracked:
+                    deferred.append({"rule": rid, "untracked": untracked})
+                    print(f"patlint: rule {rid} not adopted: untracked hits in {', '.join(untracked)}; "
+                          "track or ignore these files and rerun --update-baseline", file=sys.stderr)
+                    continue
                 # Adopt a new rule at its current counts, in tracked files only.
                 new[rid] = {path: n for path, n in cur.items() if path in tracked}
                 continue
@@ -714,7 +726,7 @@ def main(argv: list[str] | None = None) -> int:
         new = {r: f for r, f in new.items() if r in rule_ids}
         write_baseline(args.baseline, new)
         # Adopted counts are not "over"; hits in an untracked file stay over.
-        over = [o for o in over if o["rule"] in baseline or o["path"] not in tracked]
+        over = [o for o in over if o["rule"] in baseline or o["rule"] not in new or o["path"] not in tracked]
 
     over_keys = {(o["rule"], o["path"]) for o in over}
     if ratchet:
@@ -730,6 +742,7 @@ def main(argv: list[str] | None = None) -> int:
                           "rev": args.rev, "root": str(root), "failing": failing, **report,
                           "baseline": {"path": str(args.baseline) if args.baseline else None, "over": over,
                                        "improved": improved, "refused": refused,
+                                       "deferred": deferred,
                                        "updated": bool(args.update_baseline)}}, indent=2))
         return 0 if ok else 1
 

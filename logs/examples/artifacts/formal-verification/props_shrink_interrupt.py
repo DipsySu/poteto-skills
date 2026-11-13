@@ -7,5 +7,6 @@ def check(x):
     return x < 10
 def shrink(x):
     if x == 100: yield 60
+    signal.signal(signal.SIGINT, signal.default_int_handler)
     signal.raise_signal(signal.SIGINT)
 properties = {"broken": (Generator(lambda rng: 100, shrink), check)}

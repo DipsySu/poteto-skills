@@ -6,6 +6,8 @@ All notable changes to this project are documented in this file. The format is b
 
 ### Changed
 
+- Replay migration: `gen_check.py` now uses a separate random stream per property, keyed by seed and property name. The same `--seed` can produce a different sample sequence than earlier versions. Keep the old checker version to replay old evidence exactly; revalidate recorded `--seed N --expect-fail NAME` commands on this version and preserve known counterexamples as pinned `examples` inputs.
+- Timeout migration: both checkers now default to **90 s per run / 10 s per call**. Long checks that previously completed may stop at these limits. Set `TIMEOUT` in MODEL.py / PROPS.py or pass `--timeout S` for the run budget; pass `--call-timeout S` for slower covered calls. The earlier absolute deadline wins (ties use the run limit): run timeout exits 3, call timeout exits 2. A confirmed failure is retained; in `gen_check.py` an independent property failure still exits 1 even if another property timed out.
 - curator 2026-11-09: proposals 1, 2 and 4: patlint lints the files git would commit (tracked plus untracked, not ignored; nested checkouts such as a leftover .claude/worktrees/NAME/ left out) and --update-baseline adopts only tracked files; scan_repo keeps declared routes named like filesystem roots (/home, SCIM's /Users) and records takes_value per option, so drift_check no longer reads a store_true flag as swallowing the subcommand; gen_check and bounded_check get --timeout/--call-timeout with an inconclusive exit 3, a Ctrl-C is never a counterexample, and filter_too_much no longer overwrites a found failure. Sources: see proposals/2026-11-09.md.
 
 ### Added
@@ -15,6 +17,8 @@ All notable changes to this project are documented in this file. The format is b
 
 ### Fixed
 
+- Follow-up review: `bounded_check.py` starts no new mutant after the run deadline, preserves confirmed results, and reports each mutant's result, stop reason, detail and state counts in JSON. Top-level `incomplete` and `not_run` distinguish unfinished checks from survivors; crashing mutants consistently report model errors (exit 2).
+- Route scanning requires same-function request-path assignments for bare variables, preserves filesystem-prefix filtering for unconfirmed tables/segments, and restricts Go route receivers. Failed first baseline adoption leaves rules with untracked hits unadopted and explains how to retry; git lookup failures warn on stderr before filesystem fallback. Regression fixtures reset SIGINT handling and use second-scale real-time budgets.
 - Curator review fixes (2026-11-13): request-path equality, prefix, regex and match/case declarations keep filesystem-like route names without promoting filesystem or environment checks to routes. Explicit argparse `nargs=0` takes precedence over registered string actions; `default=False` alone still consumes an option value, as argparse does.
 - `bounded_check.py` retains confirmed violations and raw traces when optional descriptions hit the run limit, and emits JSON for import-time timeouts. `gen_check.py` retains counterexamples and accepted target coverage when shrinking is interrupted, and uses a separate seeded random stream per property so earlier timeouts cannot change later inputs.
 - Both stdlib checkers warn on stderr when signal/thread support cannot enforce their limits. The formal-verification skill documents supported execution, native-code limitations, and the need for an external process deadline.

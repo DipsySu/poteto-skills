@@ -4,14 +4,14 @@
   "write": null,
   "read_back": [],
   "read_only": true,
-  "started": "2026-11-09T02:27:27Z",
+  "started": "2026-11-13T10:13:32Z",
   "method": "GET",
-  "url": "http://127.0.0.1:48715/todos",
+  "url": "http://127.0.0.1:54089/todos",
   "request_body": null,
   "status": 200,
   "response_headers": {
     "Server": "BaseHTTP/0.6 Python/3.13.5",
-    "Date": "Mon, 09 Nov 2026 02:27:27 GMT",
+    "Date": "Fri, 13 Nov 2026 10:13:32 GMT",
     "Content-Type": "application/json",
     "Content-Length": "113"
   },
@@ -42,5 +42,5 @@
   ],
   "execution_ok": true,
   "ok": true,
-  "elapsed_ms": 11.0
+  "elapsed_ms": 8.9
 }

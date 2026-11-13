@@ -4,9 +4,9 @@
   "properties": {
     "round_trip": {
       "result": "pass",
-      "accepted": 96,
+      "accepted": 91,
       "generated": 100,
-      "rejected": 5,
+      "rejected": 10,
       "counterexample": null,
       "detail": null,
       "shrink_attempts": 0

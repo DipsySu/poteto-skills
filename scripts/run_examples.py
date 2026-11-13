@@ -18,6 +18,7 @@ import sys
 import tempfile
 import time
 import traceback
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parent.parent
 SKILLS = sorted(p.name for p in (ROOT / "skills").iterdir() if (p / "SKILL.md").is_file())
@@ -44,13 +45,14 @@ class Examples:
         self.log.write(f"ASSERT PASS: {description}\n")
         self.log.flush()
 
-    def run(self, *argv, expected=0, cwd=None, env=None, timeout=90):
+    def run(self, *argv, expected=0, cwd=None, env=None, timeout=90, json_stdout=False):
         args = [str(a) for a in argv]
         self.log.write("$ " + shlex.join(args) + "\n")
         self.log.flush()
         result = subprocess.run(args, cwd=cwd or self.repo, env=env or self.env,
-                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=timeout)
-        self.log.write(result.stdout + f"\n[exit {result.returncode}; expected {expected}]\n")
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE if json_stdout else subprocess.STDOUT,
+                                text=True, timeout=timeout)
+        self.log.write(result.stdout + (result.stderr or '') + f"\n[exit {result.returncode}; expected {expected}]\n")
         self.log.flush()
         self.last_output = result.stdout
         self.last_returncode = result.returncode
@@ -60,7 +62,7 @@ class Examples:
         return result.stdout
 
     def json(self, *argv, **kwargs):
-        return json.loads(self.run(*argv, **kwargs))
+        return json.loads(self.run(*argv, json_stdout=True, **kwargs))
 
     def script(self, skill, file):
         return ROOT / "skills" / skill / "scripts" / file
@@ -505,6 +507,7 @@ class Examples:
                 feature.write_text(original)
             self.maintain_scan_regressions()
             self.maintain_path_comparisons()
+            self.review_phantom_routes()
             self.maintain_zero_nargs()
             self.maintain_exit_contract()
             self.run(*command)
@@ -559,6 +562,7 @@ class Examples:
 from http.server import BaseHTTPRequestHandler
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
+        path = self.path
         if data_dir == "/tmp/cache": pass
         if data_dir.startswith("/var/lib/"): pass
         if real.startswith("/var/www/"): pass
@@ -613,6 +617,98 @@ class Handler(BaseHTTPRequestHandler):
         finally:
             for p, text in originals.items():
                 p.write_text(text)
+
+    def review_phantom_routes(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'recheck_scan')
+        prefix = 'from http.server import BaseHTTPRequestHandler\nclass Handler(BaseHTTPRequestHandler):\n'
+        negatives = [
+            'path = self.translate_path(self.path)\nif path.startswith("/var/www/"): pass',
+            'cmd = ["curl","-X","POST","-o","/tmp/out",url]',
+            'if args[0] == "dev": pass',
+            'if tokens[0] == "var": pass',
+            'if folders == ["tmp", "cache"]: pass',
+            'if path.startswith("/var/www/"): pass',
+        ]
+        unexpected = {}
+        for source in negatives:
+            body = prefix + '    def do_GET(self):\n' + ''.join('        ' + line + '\n' for line in source.splitlines())
+            routes = scanner.analyze_python('server.py', body)['routes']
+            if routes:
+                unexpected[source] = routes
+        # A request-path assignment in another function must not bless this function's bare name.
+        body = (prefix + '    def do_POST(self):\n        path = self.path\n'
+                '    def do_GET(self):\n        if path == "/var/files": pass\n')
+        if routes := scanner.analyze_python('server.py', body)['routes']:
+            unexpected['cross-function path'] = routes
+        root = self.art / 'go-routes'
+        root.mkdir()
+        (root / 'main.go').write_text('package main\nfunc main() {\n'
+                                      'kv.Put("/var/lib/data", v)\n'
+                                      'r.Put("/var/routes", handler)\n'
+                                      'router.GET("/Users", handler)\n}\n')
+        go = self.json(self.script('create-verification-skill', 'scan_repo.py'), root, '--json')
+        if any(r['path'] == '/var/lib/data' for r in go['http_routes']):
+            unexpected['kv.Put("/var/lib/data", v)'] = go['http_routes']
+        self.ensure(not unexpected, f'filesystem, curl, args, folders and non-router Go calls create no phantom routes: {unexpected}')
+        self.ensure({(r['method'], r['path']) for r in go['http_routes']} == {('PUT', '/var/routes'), ('GET', '/Users')},
+                    'known Go route receivers retain filesystem-like route names')
+        body = (prefix + '    def do_GET(self):\n'
+                '        path = urlsplit(self.path).path\n'
+                '        if path.startswith("/var/routes/"): pass\n'
+                '        parts = path.strip("/").split("/")\n'
+                '        if parts == ["tmp", "cache"]: pass\n'
+                '        if parts[0] == "dev": pass\n'
+                '        path = self.translate_path(self.path)\n'
+                '        if path.startswith("/var/www/"): pass\n')
+        self.ensure({r['path'] for r in scanner.analyze_python('server.py', body)['routes']}
+                    == {'/var/routes/<*>', '/tmp/cache', '/dev'},
+                    'same-function request-path aliases and split segments keep real routes; reassignment revokes provenance')
+
+    def review_baseline_retry(self):
+        root = self.art / 'adoption'
+        root.mkdir()
+        self.run('git', 'init', '-q', cwd=root)
+        rules, baseline = root / 'rules.json', root / 'baseline.json'
+        rules.write_text(json.dumps({'rules': [
+            {'id': 'probe', 'regex': 'BAD', 'include': ['*.py'], 'message': 'Use good() instead.'},
+            {'id': 'clean', 'regex': 'OTHER', 'include': ['*.py'], 'message': 'Use good() instead.'}]}))
+        (root / 'new.py').write_text('BAD\n')
+        (root / 'tracked.py').write_text('BAD\n')
+        self.run('git', 'add', 'tracked.py', cwd=root)
+        command = [str(self.script('correct', 'patlint.py')), '--rules', str(rules), '--root', str(root),
+                   '--baseline', str(baseline), '--update-baseline', '--json', str(root)]
+        result = subprocess.run(command, env=self.env, capture_output=True, text=True, timeout=10)
+        self.log.write(result.stdout + result.stderr)
+        counts = json.loads(baseline.read_text())['counts']
+        self.ensure(result.returncode == 1 and 'probe' not in counts and counts.get('clean') == {}
+                    and 'probe' in result.stderr and 'track' in result.stderr and 'rerun' in result.stderr,
+                    'failed first adoption leaves no rule key, preserves other rules and explains how to retry')
+        self.run('git', 'add', 'new.py', cwd=root)
+        adopted = self.json(*command)
+        self.ensure(adopted['ok'] and json.loads(baseline.read_text())['counts']['probe'] == {'new.py': 1, 'tracked.py': 1},
+                    'tracking the hit after a failed first adoption lets the retry adopt all current counts')
+        (root / 'new.py').write_text('BAD\nBAD\n')
+        refused = self.json(*command, expected=1)
+        self.ensure(refused['baseline']['refused'], 'successful retry still ratchets subsequent increases')
+
+    def review_git_warning(self):
+        import contextlib
+        import io
+        lint = load_module(self.script('correct', 'patlint.py'), 'recheck_patlint')
+        root = self.art / 'git-fallback'
+        root.mkdir()
+        (root / 'hit.py').write_text('BAD\n')
+        for error in (FileNotFoundError('git unavailable'),
+                      subprocess.CompletedProcess(['git'], 128, b'', b'fatal: dubious ownership')):
+            err = io.StringIO()
+            kwargs = {'side_effect': error} if isinstance(error, Exception) else {'return_value': error}
+            with patch.object(lint.subprocess, 'run', **kwargs), contextlib.redirect_stderr(err):
+                files = list(lint.walk([root], root))
+                top = lint.git_toplevel(root)
+            self.ensure([f[0] for f in files] == ['hit.py'] and top is None
+                        and 'WARNING' in err.getvalue() and 'git' in err.getvalue()
+                        and 'fallback' in err.getvalue(),
+                        f'git failure retains disk fallback but warns on stderr: {error}')
 
     def maintain_exit_contract(self):
         """Prove both clean-map regressions reject a checker that returns clean JSON with exit 1."""
@@ -743,6 +839,8 @@ class Handler(BaseHTTPRequestHandler):
                             for c in mined['classes']), 'status-transition class contains both fix commits')
             self.correct_grok_regressions()
             self.correct_baseline_contract()
+            self.review_baseline_retry()
+            self.review_git_warning()
             rules = self.save('rules.json', {'rules':[{'id':'no-direct-json-write','regex':r'\b\w+\.path\.write_text\s*\(',
                 'include':['todo/*.py'], 'exclude':['todo/store.py'],
                 'message':'Use Store.add or Store.transition in todo/store.py for atomic persistence; avoid json.dump.',
@@ -956,6 +1054,168 @@ class Handler(BaseHTTPRequestHandler):
             self.formal_property_seeds()
             self.formal_import_timeout_json()
             self.formal_limit_support()
+            self.review_deadline_order()
+            self.review_mutant_deadline()
+            self.review_mutant_json()
+            self.review_mutant_errors()
+            self.review_sigint()
+            self.review_fixture_limits()
+            self.review_docs()
+
+    def clock_check(self, checker, body, *, run=5, call=10, flags=()):
+        """CLI semantics with a manually advanced clock: no scheduler or disk-speed assumptions."""
+        driver = self.art / 'clock_driver.py'
+        driver.write_text('''import contextlib, importlib.util, io, json, sys, types
+checker, fixture, *argv = sys.argv[1:]
+spec = importlib.util.spec_from_file_location("gen_check" if "gen_check" in checker else "bounded_check", checker)
+mod = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = mod
+spec.loader.exec_module(mod)
+clock = types.ModuleType("review_clock")
+clock.now, clock.events = 0.0, []
+def advance(now, tick=True):
+    clock.now = now
+    if tick: clock.limits.tick(None, None)
+clock.advance = advance
+sys.modules[clock.__name__] = clock
+mod.time = types.SimpleNamespace(monotonic=lambda: clock.now, time=lambda: clock.now)
+class ManualLimits(mod.Limits):
+    def __enter__(self):
+        self.active = True
+        clock.limits = self
+        return self
+    def __exit__(self, *exc):
+        return False
+mod.Limits = ManualLimits
+out, err = io.StringIO(), io.StringIO()
+with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+    code = mod.main([fixture, *argv])
+print(json.dumps({"code": code, "stdout": out.getvalue(), "stderr": err.getvalue(), "events": clock.events}))
+''')
+        fixture = self.art / 'clock_fixture.py'
+        fixture.write_text(body)
+        args = ('--repo', self.repo, '--examples', '1') if checker == 'gen_check.py' else ()
+        return self.json(sys.executable, driver, self.script('formal-verification', checker), fixture,
+                         *args, '--timeout', run, '--call-timeout', call, *flags, timeout=10)
+
+    def review_deadline_order(self):
+        for checker in ('bounded_check.py', 'gen_check.py'):
+            for run, call, code in ((5, 6, 3), (6, 5, 2), (5, 5, 3)):
+                body = ('import review_clock as clock\n'
+                        'def check(s):\n    clock.advance(20)\n    return True\n')
+                if checker == 'bounded_check.py':
+                    body += 'def init(): return 0\ndef actions(s): return []\ninvariants = {"ok": check}\n'
+                else:
+                    body += ('from gen_check import sampled_from\nTARGETS = ["todo/store.py:Store.add"]\n'
+                             'properties = {"ok": (sampled_from([0]), check)}\n')
+                result = self.clock_check(checker, body, run=run, call=call, flags=('--json',))
+                report = json.loads(result['stdout'])
+                self.ensure(result['code'] == code and not report['ok'],
+                            f'{checker}: simultaneous expiry uses the first absolute deadline ({run=}, {call=}, exit {code})')
+            # A later-started call has a later absolute deadline even when its duration is shorter.
+            result = self.clock_check(checker, body.replace('def check(s):', 'clock.advance(4, tick=False)\ndef check(s):'),
+                                      run=5, call=2, flags=('--json',))
+            self.ensure(result['code'] == 3, f'{checker}: deadline order includes the call start time')
+
+    def review_mutant_deadline(self):
+        body = ('import review_clock as clock\ndef init(): return 0\ndef actions(s): return []\n'
+                'invariants = {"nonnegative": lambda s: s >= 0}\n'
+                'def broken(s): return [("bad", -1)]\n'
+                'def later(s):\n    clock.events.append("later search started")\n    return []\n'
+                'def describe(s):\n    clock.events.append("describe")\n    clock.advance(20)\n'
+                'mutants = {"broken": broken, "later": later, "last": later}\n')
+        for flags in (('--json',), ()):
+            result = self.clock_check('bounded_check.py', body, flags=('--mutants', *flags))
+            self.ensure(result['events'] == ['describe'] and result['code'] == 3,
+                        'a timed-out mutant description retains its kill and starts no later search')
+            if flags:
+                report = json.loads(result['stdout'])
+                self.ensure(report['mutants']['broken']['killed'] and report['incomplete']
+                            and report['not_run'] == ['later', 'last']
+                            and [s['state'] for s in report['mutants']['broken']['trace']] == [0, -1],
+                            'confirmed mutant kill and raw trace survive the total deadline; pending names stay visible')
+            else:
+                self.ensure('SURVIVED' not in result['stdout'] and 'INCOMPLETE' in result['stdout']
+                            and 'later' in result['stdout'] and 'last' in result['stdout'],
+                            'unrun mutants print INCOMPLETE instead of SURVIVED')
+        # Deadline passes without a signal between searches: a preflight must prevent new work.
+        result = self.clock_check('bounded_check.py', body.replace('def actions(s): return []',
+                                  'def actions(s):\n    clock.advance(20, tick=False)\n    return []'),
+                                  flags=('--mutants', '--json'))
+        report = json.loads(result['stdout'])
+        self.ensure(not result['events'] and result['code'] == 3 and report['not_run'] == ['broken', 'later', 'last'],
+                    'an expired deadline between searches cannot start the first mutant')
+
+    def review_mutant_json(self):
+        body = ('import review_clock as clock\ndef init(): return 0\ndef actions(s): return []\n'
+                'invariants = {"ok": lambda s: s >= 0}\n'
+                'def killed(s): return [("bad", -1)]\n'
+                'def slow(s):\n    clock.advance(20)\n    return []\n'
+                'mutants = {"killed": killed, "slow": slow, "pending": actions}\n')
+        for run, call, code, status in ((5, 10, 3, 'timeout'), (30, 5, 2, 'error')):
+            result = self.clock_check('bounded_check.py', body, run=run, call=call, flags=('--mutants', '--json'))
+            report = json.loads(result['stdout'])
+            slow = report['mutants']['slow']
+            self.ensure(result['code'] == code and slow.get('result') == status and slow.get('stopped')
+                        and slow.get('detail') and slow.get('states') == 1 and report.get('incomplete'),
+                        f'mutant JSON preserves {status}, stop reason, detail, states and top-level incompleteness')
+            self.ensure(report['mutants']['killed']['killed']
+                        and all({'result', 'stopped', 'detail'} <= m.keys() for m in report['mutants'].values())
+                        and report['not_run'] == (['pending'] if status == 'timeout' else []),
+                        'every mutant has an explicit status and unrun names are separate from survivors')
+        result = self.clock_check('bounded_check.py', body.replace('def actions(s): return []',
+                                  'def actions(s):\n    clock.advance(20)\n    return []'),
+                                  flags=('--mutants', '--json'))
+        report = json.loads(result['stdout'])
+        self.ensure(result['code'] == 3 and report['not_run'] == ['killed', 'slow', 'pending']
+                    and all(m['result'] == 'timeout' and m['states'] == 0 for m in report['mutants'].values()),
+                    'a main-search timeout lists every unrun mutant as incomplete with zero explored states')
+
+    def review_mutant_errors(self):
+        body = ('import review_clock as clock\ndef init(): return 0\ndef actions(s): return []\n'
+                'invariants = {"ok": lambda s: True}\n'
+                'def crash(s): raise ValueError("broken mutant")\n'
+                'def slow(s):\n    clock.advance(20)\n    return []\n'
+                'mutants = {"crash": crash, "slow": slow}\n')
+        for suffix in ('', 'mutants = {"crash": crash}\n'):
+            result = self.clock_check('bounded_check.py', body + suffix, flags=('--mutants',))
+            self.ensure(result['code'] == 2 and 'ERROR' in result['stdout'] and 'broken mutant' in result['stdout']
+                        and 'SURVIVED' not in result['stdout'],
+                        'a crashing mutant reports model error exit 2, including before a later run timeout')
+
+    def review_sigint(self):
+        self.copy(ROOT / 'examples/fixtures/todo_props.py')
+        # A child interpreter inherits SIG_IGN in non-interactive/background execution.
+        previous = signal.signal(signal.SIGINT, signal.SIG_IGN)
+        try:
+            self.formal_shrink_interrupt()
+        finally:
+            signal.signal(signal.SIGINT, previous)
+
+    def review_docs(self):
+        text = (ROOT / 'CHANGELOG.md').read_text()
+        self.ensure('same `--seed`' in text and '90 s' in text and '10 s' in text
+                    and 'TIMEOUT' in text and 'revalidate' in text and 'pinned' in text,
+                    'changelog documents changed seed sequences, default limits and replay/timeout migration')
+        readme = (ROOT / 'logs/review-fixes/README.md').read_text()
+        self.ensure('recheck-before' in readme and 'recheck-after' in readme
+                    and 'No commit or push was made in the working branch.' not in readme,
+                    'review evidence distinguishes this follow-up from the already committed first review fixes')
+
+    def review_fixture_limits(self):
+        import ast
+        tree = ast.parse(Path(__file__).read_text())
+        names = {'formal_trace_timeout', 'formal_property_seeds', 'formal_import_timeout_json'}
+        values = []
+        for fn in ast.walk(tree):
+            if isinstance(fn, ast.FunctionDef) and fn.name in names:
+                for node in ast.walk(fn):
+                    items = node.args if isinstance(node, ast.Call) else node.elts if isinstance(node, ast.List) else []
+                    for flag, value in zip(items, items[1:]):
+                        if isinstance(flag, ast.Constant) and flag.value in ('--timeout', '--call-timeout'):
+                            values.append(float(ast.literal_eval(value)))
+        self.ensure(len(values) == 4 and all(v >= 1 for v in values),
+                    'disk-using timeout fixtures use second-scale limits instead of subsecond scheduling assumptions')
 
     def formal_trace_timeout(self):
         checker = self.script('formal-verification', 'bounded_check.py')
@@ -963,15 +1223,15 @@ class Handler(BaseHTTPRequestHandler):
         model.write_text('import time\ndef init(): return 0\n'
                          'def actions(s): return [("inc", s + 1)]\n'
                          'invariants = {"below_two": lambda s: s < 2}\n'
-                         'def describe(s):\n    if s == 1: time.sleep(2)\n    return f"state {s}"\n')
+                         'def describe(s):\n    if s == 1: time.sleep(10)\n    return f"state {s}"\n')
         for flags, code in (((), 1), (('--expect-violation', 'below_two'), 0)):
-            result = self.json(checker, model, '--timeout', '0.2', '--json', *flags, expected=code)
+            result = self.json(checker, model, '--timeout', '2', '--json', *flags, expected=code)
             violation = result['violation']
             self.ensure(result['result'] == 'violation' and violation['name'] == 'below_two'
                         and [s['state'] for s in violation['trace']] == [0, 1, 2]
                         and violation['trace'][0]['describe'] == 'state 0' and violation.get('trace_incomplete'),
                         f'a describe timeout retains the confirmed invariant violation and raw trace (exit {code})')
-        output = self.run(checker, model, '--timeout', '0.2', expected=1)
+        output = self.run(checker, model, '--timeout', '2', expected=1)
         self.ensure('invariant "below_two" violated' in output and 'trace' in output,
                     'text output retains the failure and explains incomplete trace descriptions')
 
@@ -982,7 +1242,8 @@ class Handler(BaseHTTPRequestHandler):
                          'from todo_props import reset, round_trip\n'
                          'TARGETS = ["todo/store.py:Store.add"]\n'
                          'def check(x):\n    round_trip("valid")\n    return x < 10\n'
-                         'def shrink(x):\n    if x == 100: yield 60\n    signal.raise_signal(signal.SIGINT)\n'
+                         'def shrink(x):\n    if x == 100: yield 60\n'
+                         '    signal.signal(signal.SIGINT, signal.default_int_handler)\n    signal.raise_signal(signal.SIGINT)\n'
                          'properties = {"broken": (Generator(lambda rng: 100, shrink), check)}\n')
         result = self.json(checker, props, '--repo', self.repo, '--json', expected=1)
         found = result['properties']['broken']
@@ -1001,7 +1262,7 @@ class Handler(BaseHTTPRequestHandler):
                 'from todo_props import reset, round_trip\nTARGETS = ["todo/store.py:Store.add"]\n'
                 'calls = 0\nSTOP_AFTER = {stop}\n'
                 'def lead(x):\n    global calls\n    calls += 1\n'
-                '    if calls == STOP_AFTER: time.sleep(1)\n'
+                '    if calls == STOP_AFTER: time.sleep(10)\n'
                 'def later(x):\n    round_trip("valid")\n    return False\n'
                 'gen = Generator(lambda rng: rng.randrange(2**60), lambda x: [])\n'
                 'properties = {{"lead": (gen, lead), "later": (gen, later)}}\n')
@@ -1009,7 +1270,7 @@ class Handler(BaseHTTPRequestHandler):
         for stop, seed in ((1, 42), (3, 42), (1, 43)):
             props.write_text(body.format(stop=stop))
             result = self.json(checker, props, '--repo', self.repo, '--seed', seed, '--examples', '5',
-                               '--call-timeout', '0.1', '--json', expected=1)
+                               '--call-timeout', '2', '--json', expected=1)
             self.ensure(result['properties']['lead']['result'] == 'timeout'
                         and result['properties']['lead']['generated'] == stop and not result['missing_targets'],
                         f'leading property times out after {stop} draws with seed {seed}')
@@ -1020,16 +1281,16 @@ class Handler(BaseHTTPRequestHandler):
     def formal_import_timeout_json(self):
         checker = self.script('formal-verification', 'bounded_check.py')
         model = self.art / 'slow_import_model.py'
-        model.write_text('import time\ntime.sleep(2)\n'
+        model.write_text('import time\ntime.sleep(10)\n'
                          'def init(): return 0\ndef actions(s): return []\ninvariants = {"ok": lambda s: True}\n')
-        argv = [str(checker), str(model), '--timeout', '0.1', '--json']
+        argv = [str(checker), str(model), '--timeout', '2', '--json']
         self.log.write('$ ' + shlex.join(argv) + '\n')
         result = subprocess.run(argv, cwd=self.repo, env=self.env, capture_output=True, text=True, timeout=10)
         self.log.write(result.stdout + result.stderr + f'\n[exit {result.returncode}; expected 3]\n')
         self.ensure(result.returncode == 3, 'an import-time run limit exits 3')
         report = json.loads(result.stdout)
         self.ensure(report['result'] == 'timeout' and not report['ok'] and report['violation'] is None
-                    and report['model'] == str(model) and report['timeout'] == 0.1 and report['stopped'],
+                    and report['model'] == str(model) and report['timeout'] == 2 and report['stopped'],
                     '--json remains parseable on an import-time timeout and identifies an inconclusive run')
 
     def formal_limit_support(self):
@@ -1218,7 +1479,7 @@ properties = {"copy": (sampled_from([" title "]), check)}
             source.write_text('def strip_leading(t):\n    i = 0\n    while i < len(t) and t[i] == " ":\n'
                               '        pass\n    return t[i:]\n')
             command = [checker, props, '--repo', self.repo, '--call-timeout', '1']
-            result = self.json(*command, '--json', expected=3, timeout=30)
+            result = self.json(*command, '--json', expected=2, timeout=30)
             hung = result['properties']['strip_leading']
             import ast
             self.ensure(hung['result'] == 'timeout' and ast.literal_eval(hung['input']).startswith(' ')
@@ -1226,10 +1487,10 @@ properties = {"copy": (sampled_from([" title "]), check)}
                         'a check that never returns ends its property as timeout with the leading-space input and seed 0')
             self.ensure(result['properties']['no_leading_space']['result'] == 'pass' and not result['missing_targets'],
                         'the other property in the same file still runs and passes after the timeout')
-            result = self.json(*command, '--expect-fail', 'strip_leading', '--json', expected=3, timeout=30)
+            result = self.json(*command, '--expect-fail', 'strip_leading', '--json', expected=2, timeout=30)
             self.ensure(result['properties']['strip_leading']['result'] == 'timeout' and not result['ok'],
                         '--expect-fail never accepts a timeout as the expected counterexample')
-            output = self.run(*command, expected=3, timeout=30)
+            output = self.run(*command, expected=2, timeout=30)
             self.ensure(output.startswith('gen_check: seed 0;') and f"input: {hung['input']}" in output
                         and 'INCOMPLETE' in output,
                         'text mode prints the seed before checking and the timed-out input in its report')
@@ -1446,6 +1707,35 @@ properties = {"copy": (sampled_from([" title "]), check)}
                 shutil.rmtree(self.scratch)
         return 0 if all(s['status']=='pass' for s in self.summary.values()) else 1
 
+    def review_regressions(self, output):
+        """Run follow-up regressions independently so every pre-fix failure is recorded."""
+        output.mkdir(parents=True, exist_ok=True)
+        methods = [self.review_deadline_order, self.review_mutant_deadline, self.review_mutant_json,
+                   self.review_mutant_errors, self.review_sigint, self.review_fixture_limits, self.review_phantom_routes,
+                   self.review_baseline_retry, self.review_git_warning, self.review_docs]
+        results = {}
+        try:
+            with (output / 'run.log').open('w') as self.log:
+                self.run(ROOT / 'examples/build-todo-app.sh', self.repo, cwd=ROOT)
+                for method in methods:
+                    self.name = method.__name__
+                    self.summary[self.name] = {'checks': []}
+                    self.art = output / self.name
+                    self.art.mkdir()
+                    try:
+                        method()
+                    except Exception as error:
+                        results[self.name] = {'status': 'fail', 'error': f'{type(error).__name__}: {error}'}
+                        traceback.print_exc(file=self.log)
+                    else:
+                        results[self.name] = {'status': 'pass', 'assertions': len(self.summary[self.name]['checks'])}
+                    print(f"{results[self.name]['status'].upper()} {self.name}", flush=True)
+                (output / 'summary.json').write_text(json.dumps(results, indent=2) + '\n')
+        finally:
+            if not self.keep:
+                shutil.rmtree(self.scratch)
+        return int(any(r['status'] != 'pass' for r in results.values()))
+
 
 def load_module(path, name):
     spec = importlib.util.spec_from_file_location(name,path)
@@ -1458,8 +1748,11 @@ def load_module(path, name):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--keep-scratch',action='store_true',help='keep the isolated scratch directory for diagnosis')
+    ap.add_argument('--review-regressions', type=Path, metavar='OUT', help='run follow-up review regressions and save independent results in OUT')
     args = ap.parse_args()
-    return Examples(args.keep_scratch).execute()
+    examples = Examples(args.keep_scratch)
+    return (examples.review_regressions(args.review_regressions.resolve()) if args.review_regressions
+            else examples.execute())
 
 
 if __name__=='__main__':

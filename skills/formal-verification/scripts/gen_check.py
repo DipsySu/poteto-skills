@@ -9,7 +9,7 @@ profiled; rejected and timed-out inputs do not count toward target coverage. A
 failure is reduced with at most 500 attempts, not guaranteed minimal. An input
 whose hooks and check run past --call-timeout ends its property as timeout; the
 other properties still run. Exit 0 pass, 1 property/filter/target failure, 2
-usage or infrastructure error, 3 inconclusive: a time limit or Ctrl-C stopped a
+usage, infrastructure error or call timeout, 3 inconclusive: the run limit or Ctrl-C stopped a
 check and nothing failed outright. --expect-fail never accepts infrastructure
 failures or timeouts.
 """
@@ -89,12 +89,15 @@ class Limits:
 
     def tick(self, signum, frame):
         now = time.monotonic()
+        call_deadline = self.started + self.call_seconds if self.started is not None else float('inf')
         # Inside a call, keep raising until it unwinds, even past a bare `except:`.
-        if self.started is not None and now - self.started >= self.call_seconds:
-            raise Timeout('call', self.call_seconds)
         if now >= self.deadline and (self.started is not None or not self.expired):
+            if call_deadline < self.deadline:
+                raise Timeout('call', self.call_seconds)
             self.expired = True
             raise Timeout('run', self.run_seconds)
+        if now >= call_deadline:
+            raise Timeout('call', self.call_seconds)
 
 
 LIMIT_CODES = {Limits.tick.__code__, Timeout.__init__.__code__}
@@ -404,6 +407,7 @@ def run_property(mod, name, gen, check, rng, count, repo, limits):
         # An interrupted check is inconclusive; interruption after a confirmed failure cannot erase it.
         if result['result'] != 'fail':
             result.update(result='timeout', input=repr(checking[0]) if checking else None,
+                          timeout_scope='interrupted' if isinstance(error, KeyboardInterrupt) else error.scope,
                           detail='interrupted' if isinstance(error, KeyboardInterrupt) else str(error))
     # Too many rejections is a warning about a property that otherwise passed; it never hides a result.
     if result['result'] == 'pass' and result['rejected'] * 2 > result['generated']:
@@ -471,7 +475,8 @@ def main(argv=None):
             definitive = any(r['result'] not in (expected(n), 'timeout') for n, r in results.items())
             report['ok'] = ok
             # A timeout is not a failure and not a proof: exit 3 unless something failed outright.
-            code = 0 if ok else 3 if inconclusive and not definitive else 1
+            call_timeout = any(r.get('timeout_scope') == 'call' for r in results.values())
+            code = 0 if ok else (2 if call_timeout else 3) if inconclusive and not definitive else 1
     except (Exception, SystemExit) as error:
         report.update(result='error', error=f"{type(error).__name__}: {error}")
         code = 2
@@ -497,7 +502,9 @@ def main(argv=None):
             print(f"  incomplete: {report['incomplete']}")
         if 'error' in report:
             print(f"  error: {report['error']}")
-        print('PASS' if report['ok'] else 'INCOMPLETE: a time limit is not a failure and not a proof' if code == 3 else 'FAIL')
+        print('PASS' if report['ok'] else 'INCOMPLETE: a time limit is not a failure and not a proof'
+              if code == 3 else 'ERROR: INCOMPLETE check due to call timeout (exit 2)'
+              if code == 2 and 'error' not in report else 'FAIL')
     return code
 
 

@@ -19,8 +19,10 @@ Heuristics (stdlib only, no execution of repo code):
   Make    targets (test/check, build/all, run/serve/start/dev).
 Test files and agent dirs (.claude, .cursor, ...) are not scanned for routes or commands.
 A path under a filesystem root (/home, /tmp, /Users, ...) is a route only where the source declares it: a router
-call, decorator, route table, "GET /x" string, or comparison with the request path. In a container or a generic
-call argument it is taken for a file path. Each CLI option records takes_value: false for argparse's store_true,
+call, decorator, explicitly named route table, "GET /x" string, or comparison with a recognized request path.
+Bare names need a preceding request-path assignment in the same function; path segments need a split of that path.
+Unconfirmed containers/segments retain filesystem-prefix filtering. Go receiver names are restricted to common
+router conventions (r, router, mux, app, engine, group, api, server; http for Handle/HandleFunc). Each CLI option records takes_value: false for argparse's store_true,
 store_false, store_const, append_const, count, help, version, and BooleanOptionalAction, and for click flags.
 """
 from __future__ import annotations
@@ -243,16 +245,65 @@ def _usage(node) -> str | None:
     return None
 
 
+def _function(node):
+    while node is not None:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
+            return node
+        node = getattr(node, "_parent", None)
+    return None
+
+
+def _assigned_value(node):
+    """Latest preceding assignment in this function; names alone are never path provenance."""
+    if not isinstance(node, ast.Name) or (fn := _function(node)) is None:
+        return None
+    assignments = []
+    for candidate in ast.walk(fn):
+        if not isinstance(candidate, (ast.Assign, ast.AnnAssign, ast.AugAssign)) or _function(candidate) is not fn:
+            continue
+        targets = candidate.targets if isinstance(candidate, ast.Assign) else [candidate.target]
+        if (any(isinstance(t, ast.Name) and t.id == node.id for t in targets)
+                and (candidate.end_lineno, candidate.end_col_offset) <= (node.lineno, node.col_offset)):
+            assignments.append(candidate)
+    if not assignments:
+        return None
+    latest = max(assignments, key=lambda n: (n.lineno, n.col_offset))
+    return None if isinstance(latest, ast.AugAssign) else latest.value
+
+
 def _request_path(node) -> bool:
-    """Recognize request-path conventions, without treating every filesystem path as a route."""
+    """Recognize direct request paths and same-function aliases, never translated filesystem paths."""
     if isinstance(node, ast.Name):
-        return node.id in {"path", "request_path", "url_path"}
+        return _request_path(_assigned_value(node))
+    if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+            and node.func.attr in {"strip", "rstrip", "lstrip"}):
+        return _request_path(node.func.value)
     if isinstance(node, ast.Attribute) and node.attr in {"path", "path_info"}:
         if isinstance(node.value, ast.Name):
             return node.value.id in {"self", "request", "req"}
         return (isinstance(node.value, ast.Call) and _call_name(node.value) in {"urlsplit", "urlparse"}
                 and bool(node.value.args) and _request_path(node.value.args[0]))
     return False
+
+
+def _request_segments(node) -> bool:
+    if isinstance(node, ast.Name):
+        return _request_segments(_assigned_value(node))
+    return (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "split" and node.args and _str(node.args[0]) == "/"
+            and _request_path(node.func.value))
+
+
+def _route_table(node) -> bool:
+    """Only explicit route-table bindings authorize filesystem-like route names."""
+    if _str(node.elts[0]) not in HTTP_METHODS:
+        return False
+    parent = getattr(node, "_parent", None)
+    while isinstance(parent, (ast.List, ast.Tuple, ast.Dict)):
+        parent = getattr(parent, "_parent", None)
+    targets = (parent.targets if isinstance(parent, ast.Assign) else [parent.target]
+               if isinstance(parent, ast.AnnAssign) else [])
+    return any(isinstance(t, ast.Name) and t.id.lower() in {"routes", "route_table", "urlpatterns"} for t in targets)
 
 
 def _compares_path(node) -> bool:
@@ -307,10 +358,11 @@ def _enclosing_boolop(node):
     return None
 
 
-def _segment_route(test: ast.AST) -> str | None:
+def _segment_route(test: ast.AST) -> tuple[str, bool] | None:
     """`parts == ["todos"]` or `len(parts) == 3 and parts[0] == "todos" and parts[2] == "done"`."""
     segs: dict[int, str] = {}
     length = None
+    sources = []
     conds = test.values if isinstance(test, ast.BoolOp) and isinstance(test.op, ast.And) else [test]
     for c in conds:
         if not (isinstance(c, ast.Compare) and len(c.ops) == 1 and isinstance(c.ops[0], ast.Eq)):
@@ -319,18 +371,19 @@ def _segment_route(test: ast.AST) -> str | None:
         lit = _literal(right)
         if isinstance(lit, list | tuple) and lit and all(isinstance(x, str) for x in lit) and isinstance(left, ast.Name):
             if all(re.fullmatch(r"[\w.-]+", x) for x in lit):
-                return "/" + "/".join(lit)
+                return "/" + "/".join(lit), _request_segments(left)
         if isinstance(left, ast.Subscript) and isinstance(right, ast.Constant) and isinstance(right.value, str):
             idx = _literal(left.slice)
             if isinstance(idx, int) and idx >= 0 and re.fullmatch(r"[\w.-]+", right.value):
                 segs[idx] = right.value
+                sources.append(left.value)
         if (isinstance(left, ast.Call) and _call_name(left) == "len" and isinstance(right, ast.Constant)
                 and isinstance(right.value, int)):
             length = right.value
     if not segs or 0 not in segs:
         return None
     n = length or (max(segs) + 1)
-    return "/" + "/".join(segs.get(i, "<id>") for i in range(n))
+    return "/" + "/".join(segs.get(i, "<id>") for i in range(n)), all(_request_segments(s) for s in sources)
 
 
 def _body_keys(fn) -> list[str]:
@@ -481,7 +534,7 @@ def analyze_python(rel: str, text: str) -> dict:
                     if s is None and isinstance(e, ast.Call) and _call_name(e) in RE_FUNCS and e.args:
                         s = _str(e.args[0])
                     if s and s not in HTTP_METHODS:
-                        paths.append(normalize_route(s, "regex" if re.search(r"[\^$()\\]", s) else "eq", declared=True))
+                        paths.append(normalize_route(s, "regex" if re.search(r"[\^$()\\]", s) else "eq", declared=_route_table(node)))
                 for m in ms[:1]:
                     for p in paths:
                         add_route(m, p, node, "route table")
@@ -495,7 +548,7 @@ def analyze_python(rel: str, text: str) -> dict:
                     seg = _segment_route(node.test)
                     if seg:
                         for m in _method_context(node.test) or ["ANY"]:
-                            add_route(m, normalize_route(seg, declared=True), node, "path segments", body)
+                            add_route(m, normalize_route(seg[0], declared=seg[1]), node, "path segments", body)
                 s = _str(node)
                 if not s or not (s.startswith("/") or s.startswith("^/") or s.startswith("\\A/")):
                     continue
@@ -552,8 +605,8 @@ NODE_ROUTE = re.compile(r"""\b(?:app|router|server|api|routes|r|fastify|instance
 NODE_CLI = re.compile(r"""\.command\(\s*(['"])([\w:-]+)""")
 NODE_PORTS = [re.compile(r"\.listen\(\s*(\d{2,5})\b"), re.compile(r"\bPORT\s*(?:\|\||\?\?)\s*['\"]?(\d{2,5})")]
 NODE_ENV = re.compile(r"process\.env\.([A-Z][A-Z0-9_]*)|process\.env\[['\"]([A-Z][A-Z0-9_]*)['\"]\]")
-GO_HANDLE = re.compile(r"""\.(?:HandleFunc|Handle)\(\s*"([^"]+)\"""")
-GO_ROUTER = re.compile(r"""\.(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS|Get|Post|Put|Patch|Delete|Head|Options)\(\s*"(/[^"]*)\"""")
+GO_HANDLE = re.compile(r"""(?<![\w.])(?:http|mux|router|r|server|app)\s*\.(?:HandleFunc|Handle)\(\s*"([^"]+)\"""")
+GO_ROUTER = re.compile(r"""(?<![\w.])(?:r|router|mux|app|engine|group|api|server)\s*\.(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS|Get|Post|Put|Patch|Delete|Head|Options)\(\s*"(/[^"]*)\"""")
 GO_PORTS = [re.compile(r"""ListenAndServe(?:TLS)?\(\s*"[^"]*:(\d{2,5})\""""), re.compile(r"""Addr:\s*"[^"]*:(\d{2,5})\""""),
             re.compile(r"""flag\.(?:Int|String)\(\s*"(?:port|addr)"\s*,\s*"?:?(\d{2,5})""")]
 GO_FLAGS = re.compile(r"""flag\.(?:Int|String|Bool)(?:Var)?\([^"]*"([\w-]+)\"""")

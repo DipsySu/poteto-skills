@@ -1,5 +1,5 @@
 {
-  "model": "/home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/logs/examples/artifacts/formal-verification/repeat_done.py",
+  "model": "/workspace/pr-fix/logs/examples/artifacts/formal-verification/repeat_done.py",
   "depth": 20,
   "max_states": 10000,
   "timeout": 90.0,
@@ -99,7 +99,11 @@
       }
     ]
   },
+  "stopped": null,
+  "detail": null,
   "seconds": 0.0,
+  "incomplete": null,
+  "not_run": [],
   "mutants": {},
   "expect_violation": null
 }

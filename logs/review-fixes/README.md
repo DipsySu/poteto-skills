@@ -1,27 +1,36 @@
-# Curator review fixes, 2026-11-13
+# Curator review follow-up, 2026-11-13
 
-The ten regression groups added to `scripts/run_examples.py` were executed against the unchanged production helpers first, then against the fixes. All ten failed before the fixes and passed afterward. The strict-exit regression injects exit 1 into otherwise clean drift reports and checks that both clean-map examples reject it.
+This follow-up addresses `reviews/codex-curator-2026-11-09.md` and `reviews/claude-curator-2026-11-09.md` on `curator/2026-11-09`, starting from `77c8dd9`. The first review fixes were already committed before this task. No commits or pushes are made by this follow-up.
 
-| Regression | Fix |
+Ten independent regression groups in `scripts/run_examples.py` failed before this follow-up's fixes. At that point only the regression runner had changed; the production helpers, existing fixtures and documentation were unchanged. [recheck-before/summary.json](recheck-before/summary.json) and [recheck-before/run.log](recheck-before/run.log) record the failures. After the fixes, **all ten groups passed, with 33 assertions**, in [recheck-after/summary.json](recheck-after/summary.json) and [recheck-after/run.log](recheck-after/run.log).
+
+| Regression group | Verified behavior |
 |---|---|
-| maintain_path_comparisons | Only request-path comparisons bypass filesystem-root filtering; filesystem checks do not create route drift. |
-| maintain_zero_nargs | Explicit nargs=0 takes precedence over a registered string argparse action. |
-| maintain_exit_contract | Clean drift examples require exit 0; the known missing route requires exit 1. |
-| correct_git_file_set | An explicitly named ignored directory expanding to zero files returns a visible usage error. |
-| correct_baseline_contract | Documentation distinguishes first rule adoption from increasing an existing baseline; actual ratchet behavior is exercised. |
-| formal_trace_timeout | A timeout in describe() retains the confirmed violation, raw states and completed descriptions. |
-| formal_shrink_interrupt | SIGINT while shrinking retains the best confirmed counterexample and accepted target coverage. |
-| formal_property_seeds | Earlier per-call timeouts cannot change later properties' seeded input streams. |
-| formal_import_timeout_json | Import-time bounded-check timeouts emit parseable JSON and exit 3. |
-| formal_limit_support | Both checkers warn on stderr for unavailable interval timers and worker-thread execution; skill documentation states the scope. |
+| review_deadline_order | Both checkers compare absolute run/call deadlines, including delayed call starts and ties; run timeout exits 3 and call timeout exits 2. |
+| review_mutant_deadline | A timeout during description retains the confirmed kill and raw trace, starts no later mutant, and lists pending work as incomplete. A deadline between searches also prevents a new search. |
+| review_mutant_json | Every mutant exposes result, stopped, detail and explored-state counts; top-level incomplete and not_run distinguish timeouts and unrun work from survivors. |
+| review_mutant_errors | A crashing mutant reports ERROR and exit 2, alone or before a later run timeout. |
+| review_sigint | The shrink fixture works when the parent ignores SIGINT and preserves the accepted counterexample and target coverage. |
+| review_fixture_limits | Disk-using trace, seeded-property and import fixtures use 2-second budgets. Deadline-order checks use a manual clock. |
+| review_phantom_routes | All five requested counterexamples, plus unbound/cross-function path names and tokens, produce no routes; proven path aliases, split segments and Go router calls remain discoverable. |
+| review_baseline_retry | Untracked hits leave a new rule absent; staging the files permits retry; other rules and later ratchet enforcement remain intact. |
+| review_git_warning | Missing git and failing git commands warn on stderr while retaining disk fallback. |
+| review_docs | The changelog describes changed seed sequences, 90 s / 10 s defaults and migration; this README distinguishes current and historical evidence. |
 
-Evidence: `regressions-before.json`, `regressions-before.log`, `regressions-after.json`, `regressions-after.log` and their fixtures under `before/` and `after/`.
+The historical `before/`, `after/`, `regressions-*.json`, `regressions-*.log` and `verify.log` belong to the first review pass and are unchanged. They are not the evidence for this follow-up.
 
-`scripts/verify.sh --run-examples` was run twice after the fixes. Both runs exited 1 with **7 PASS, 2 FAIL**. Full verification has not passed. The failures are the example-regeneration check and its summary check:
+[recheck-hang.json](recheck-hang.json) additionally records a real-signal reproduction with two mutants sharing an infinite `describe()`: the starting-commit checker exceeded an external 5-second deadline despite `--timeout 1`; the fixed checker exited 3, retained the first confirmed kill, and left the second mutant unrun.
 
-- create-verification-skill and maintain-verification-skill cannot launch their local HTTP server: binding `127.0.0.1` returns `PermissionError: [Errno 1] Operation not permitted`. An independent loopback-bind probe reproduced the denial.
-- curator cannot open its output process-substitution path: `curate.sh: line 57: /dev/fd/63: Operation not permitted`. A captured-output process-substitution probe reproduced the denial.
+Reproduce the focused run with `python3 scripts/run_examples.py --review-regressions /tmp/poteto-review-results` (use a fresh output directory). It exercises deadline order using a manual monotonic clock, mutant result retention and JSON, error exit codes, inherited SIGINT ignore, real-time fixture budgets, phantom routes, baseline retry, git warnings, and migration documentation.
 
-The second full run recorded 53 passing formal-verification assertions and 39 passing correct assertions. All new maintain regressions passed before that skill reached the blocked HTTP launch. Frontmatter, 27 executable help contracts, Python and shell syntax, docs/mapping, installer isolation, and the fresh example app's seven unit tests and lint passed. `verify.log` records the first complete verification attempt; `logs/examples/` contains the second run's per-skill logs and summary.
+`bash scripts/verify.sh --run-examples` was run once for this follow-up: **7 PASS / 2 FAIL, exit 1**. [recheck-verify.log](recheck-verify.log) is the complete gate output; `logs/examples/` now contains that run's regenerated per-skill logs, summary and artifacts, rather than the older passing snapshot. Full verification has not passed.
 
-No assertions were weakened or skipped to accommodate these restrictions. Only the eight directly related non-log files were changed. No commit or push was made in the working branch. The full verification command still needs to run in an environment permitting the existing local HTTP and output-redirection checks.
+- formal-verification passed all **78** assertions; correct passed **44**. The route/CLI regressions passed before maintain-verification-skill reached the blocked server launch.
+- create-verification-skill and maintain-verification-skill failed launching their local HTTP server. The sandbox denied binding `127.0.0.1` with `PermissionError: [Errno 1] Operation not permitted`.
+- curator passed 62 assertions before its offline proposal command failed at `curate.sh:57`: `/dev/fd/63: Operation not permitted`.
+- [recheck-environment.json](recheck-environment.json) independently reproduces the loopback-bind and captured-output process-substitution denials. The two failing verification gates are example regeneration and the example-results summary, not two separate source-check failures.
+- Frontmatter, all 27 executable help contracts, Python and shell syntax, documentation/mapping, installer isolation, and a fresh example app's seven unit tests and lint passed.
+
+The pre-existing Linux-specific `ps --ppid` check is intentionally unchanged; this run failed earlier at HTTP launch. No assertion was removed or relaxed. Existing `gen_check.py` call-timeout checks now require exact exit 2 to match the requested contract; the request-path positive fixture now explicitly assigns `path = self.path`. JSON test commands parse stdout separately while retaining stderr in the logs, so expected fallback warnings cannot corrupt JSON parsing.
+
+The full command still needs an environment permitting the existing HTTP and output-redirection checks. The working branch remains at its starting commit with these fixes uncommitted and unpushed.

@@ -11,6 +11,8 @@ Design for the worst-case contributor: an agent that sees only the files it open
 
 `$SKILL_DIR` is the directory holding this file. All scripts: Python 3 stdlib, `--help`, `--json`.
 
+A new rule with untracked hits is not adopted by `--update-baseline`: its rule key stays absent, and stderr explains how to track or ignore the files and rerun. Other rules may still be updated. Git lookup failures warn on stderr before falling back to filesystem traversal.
+
 ## 1. Mine the classes
 
 ```bash

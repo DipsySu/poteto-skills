@@ -6,14 +6,14 @@
     "reject-cli"
   ],
   "read_only": true,
-  "started": "2026-11-09T02:27:26Z",
+  "started": "2026-11-13T10:13:31Z",
   "argv": [
     "/usr/bin/python3",
     "-m",
     "todo",
     "list",
     "--data",
-    "/tmp/poteto-examples-nh6_xegi/verify-state-initial/initial/data"
+    "/tmp/poteto-examples-690s1lq1/verify-state-initial/initial/data"
   ],
   "exit_code": 0,
   "stdout": "[{\"id\": 1, \"status\": \"open\", \"title\": \"verify HTTP\"}, {\"id\": 2, \"status\": \"open\", \"title\": \"verify CLI\"}]\n",
@@ -28,5 +28,5 @@
   ],
   "execution_ok": true,
   "ok": true,
-  "elapsed_ms": 55.6
+  "elapsed_ms": 49.4
 }

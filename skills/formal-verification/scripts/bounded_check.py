@@ -90,14 +90,24 @@ class Limits:
 
     def tick(self, signum, frame):
         now = time.monotonic()
+        call_deadline = self.started + self.call_seconds if self.started is not None else float("inf")
         # Inside a call, keep raising until it unwinds, even past a bare `except:`.
-        if self.started is not None and now - self.started >= self.call_seconds:
-            raise Timeout("call", self.call_seconds)
         if now >= self.deadline and (self.started is not None or not self.expired):
+            if call_deadline < self.deadline:
+                raise Timeout("call", self.call_seconds)
+            self.expired = True
+            raise Timeout("run", self.run_seconds)
+        if now >= call_deadline:
+            raise Timeout("call", self.call_seconds)
+
+    def check_run(self):
+        """Do not start new work after the run deadline, even between timer ticks."""
+        if self.active and time.monotonic() >= self.deadline:
             self.expired = True
             raise Timeout("run", self.run_seconds)
 
     def call(self, fn, *args):
+        self.check_run()
         self.started = time.monotonic()
         try:
             return fn(*args)
@@ -173,12 +183,19 @@ def initial_states(mod) -> list:
     return [mod.init()]
 
 
-def explore(mod, actions_fn, invariants: dict, depth: int, max_states: int, deadlock: bool, limits: Limits) -> dict:
+def search_result() -> dict:
+    return {"result": "pass", "states": 0, "transitions": 0, "max_depth": 0, "hit_depth_bound": False,
+            "hit_state_bound": False, "violation": None, "stopped": None, "detail": None}
+
+
+def explore(mod, actions_fn, invariants: dict, depth: int, max_states: int, deadlock: bool, limits: Limits,
+            out: dict | None = None) -> dict:
     """Search breadth-first; the run limit returns result "timeout" with the states seen so far."""
     states: dict = {}
-    out = {"result": "pass", "states": 0, "transitions": 0, "max_depth": 0, "hit_depth_bound": False,
-           "hit_state_bound": False, "violation": None}
+    if out is None:
+        out = search_result()
     try:
+        limits.check_run()
         return search(mod, actions_fn, invariants, depth, max_states, deadlock, limits, states, out)
     except Timeout as e:
         if e.scope != "run":
@@ -186,6 +203,7 @@ def explore(mod, actions_fn, invariants: dict, depth: int, max_states: int, dead
         out.update(stopped=str(e), states=len(states), exhaustive=False)
         if out["violation"] is None:
             out["result"] = "timeout"
+            out["detail"] = str(e)
         else:
             out["violation"]["trace_incomplete"] = str(e)
         return out
@@ -215,9 +233,11 @@ def search(mod, actions_fn, invariants: dict, depth: int, max_states: int, deadl
 
     def bad(k, kind: str, name: str, detail: str | None = None, timeout: bool = False) -> dict:
         out["result"] = "error" if kind == "error" else "violation"
+        out["detail"] = detail
         out["violation"] = {"kind": kind, "name": name, "detail": detail, "trace": []}
         if timeout:  # a call over --call-timeout: a model error, with the trace to the state it hung on
             out["violation"]["timeout"] = True
+            out["stopped"] = detail
         out["states"] = len(states)
         trace(k, out["violation"]["trace"])
         return out
@@ -327,6 +347,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--json", action="store_true", help="machine-readable output")
     args = ap.parse_args(argv)
 
+    main_res, searches, muts = search_result(), {}, {}
+    main_started = False
+    current = None
+    stopped_reason = None
     try:
         if args.timeout is not None:
             seconds(args.timeout, "--timeout")
@@ -345,7 +369,7 @@ def main(argv: list[str] | None = None) -> int:
             max_states = args.max_states if args.max_states is not None else getattr(mod, "MAX_STATES", 200_000)
             if depth < 0 or max_states < 1:
                 raise ModelError("depth must be nonnegative and max-states must be positive")
-            muts = getattr(mod, "mutants", None)
+            muts = getattr(mod, "mutants", {})
             if args.mutants and (not isinstance(muts, dict) or not muts):
                 raise ModelError("--mutants needs MODEL.mutants = {name: broken_actions_fn}")
             if args.timeout is None:
@@ -355,34 +379,48 @@ def main(argv: list[str] | None = None) -> int:
                       f"{limits.run_seconds:g} s run limit, {limits.call_seconds:g} s per call",
                       file=sys.stderr, flush=True)
             t0 = time.time()
-            main_res = explore(mod, mod.actions, invariants, depth, max_states, args.deadlock, limits)
+            main_started = True
+            current = main_res
+            explore(mod, mod.actions, invariants, depth, max_states, args.deadlock, limits, main_res)
+            current = None
             main_res["seconds"] = round(time.time() - t0, 3)
-            mutant_res = {}
-            if args.mutants and main_res["result"] != "timeout":
+            if args.mutants and main_res["result"] != "timeout" and not limits.expired:
                 for name, fn in muts.items():
-                    r = explore(mod, fn, invariants, depth, max_states, args.deadlock, limits)
-                    mutant_res[name] = {"killed": r["result"] == "violation" and r["violation"]["kind"] == "invariant", "by": (r["violation"] or {}).get("name"),
-                                        "steps": len((r["violation"] or {}).get("trace", [])) - 1 if r["violation"] else None,
-                                        "result": r}
-                    if r["result"] == "timeout":
+                    limits.check_run()
+                    # Store before exploring so a signal between searches cannot discard prior results.
+                    current = searches[name] = search_result()
+                    explore(mod, fn, invariants, depth, max_states, args.deadlock, limits, current)
+                    current = None
+                    if searches[name]["result"] == "timeout" or limits.expired:
                         break
     except ModelError as e:
         print(f"bounded_check: {e}", file=sys.stderr)
         return 2
     except Timeout as e:  # outside a search: while importing the model or between searches
-        stopped = f"{e} outside the search"
-        if args.json:
-            print(json.dumps({"model": str(args.model), "ok": False, "result": "timeout", "violation": None,
-                              "timeout": limits.run_seconds, "call_timeout": limits.call_seconds,
-                              "stopped": stopped, "states": 0, "transitions": 0, "max_depth": 0,
-                              "exhaustive": False, "mutants": {}}, indent=2))
-        else:
-            print(f"bounded_check: INCOMPLETE: {stopped}; not a failure and not a proof", file=sys.stderr)
-        return 3
+        stopped_reason = f"{e} outside the search"
+        if current is not None:
+            current.update(stopped=stopped_reason, exhaustive=False)
+            if current["violation"] is None:
+                current.update(result="timeout", detail=stopped_reason)
+        if not main_started:
+            # Import/validation stopped before the main search was started.
+            main_res.update(result="timeout", stopped=stopped_reason, detail=stopped_reason, exhaustive=False)
+            depth, max_states, invariants = args.depth, args.max_states, {}
 
     # The run limit is inconclusive, so exit 3 unless a completed search failed outright.
-    stopped = main_res["result"] == "timeout" or any(m["result"]["result"] == "timeout" for m in mutant_res.values())
-    hung = any(m["result"]["result"] == "error" and m["result"]["violation"].get("timeout") for m in mutant_res.values())
+    not_run = [name for name in muts if name not in searches] if args.mutants else []
+    incomplete = stopped_reason or next((r["stopped"] for r in (main_res, *searches.values()) if r["stopped"]), None)
+    if not_run:
+        incomplete = incomplete or str(Timeout("run", limits.run_seconds))
+        for name in not_run:
+            searches[name] = dict(search_result(), result="timeout", stopped=incomplete,
+                                  detail=f"not run: {incomplete}", exhaustive=False)
+    mutant_res = {}
+    for name, r in searches.items():
+        v = r["violation"]
+        mutant_res[name] = {"killed": r["result"] == "violation" and v["kind"] == "invariant",
+                            "by": v["name"] if v else None,
+                            "steps": len(v["trace"]) - 1 if v else None, "result": r}
     if args.expect_violation:
         v = main_res["violation"]
         ok = bool(v) and v["name"] == args.expect_violation and v["kind"] == "invariant"
@@ -392,16 +430,19 @@ def main(argv: list[str] | None = None) -> int:
               and len(mutant_res) == (len(muts) if args.mutants else 0))
         definitive = main_res["result"] == "violation" or any(
             not m["killed"] and m["result"]["result"] in ("pass", "violation") for m in mutant_res.values())
-    if main_res["result"] == "error" or hung:
+    if main_res["result"] == "error" or any(r["result"] == "error" for r in searches.values()):
         code = 2
     else:
-        code = 0 if ok else 3 if stopped and not definitive else 1
+        code = 0 if ok else 3 if incomplete and not definitive else 1
+    ok = ok and code == 0
 
     if args.json:
         print(json.dumps({"model": str(args.model), "depth": depth, "max_states": max_states,
                           "timeout": limits.run_seconds, "call_timeout": limits.call_seconds,
                           "invariants": list(invariants), "ok": ok, **main_res,
+                          "incomplete": incomplete, "not_run": not_run,
                           "mutants": {k: {kk: vv for kk, vv in m.items() if kk != "result"} | {
+                              **{key: m["result"].get(key) for key in ("result", "stopped", "detail", "states", "transitions", "max_depth")},
                               "trace": (m["result"]["violation"] or {}).get("trace")} for k, m in mutant_res.items()},
                           "expect_violation": args.expect_violation}, indent=2))
         return code
@@ -437,8 +478,9 @@ def main(argv: list[str] | None = None) -> int:
             if m["killed"]:
                 print(f"  {name:<24} killed by {m['by']} after {m['steps']} step(s)")
             elif r["result"] == "timeout":
-                print(f"  {name:<24} INCOMPLETE: {r['stopped']} after {r['states']} states")
-            elif r["result"] == "error" and r["violation"].get("timeout"):
+                print(f"  {name:<24} INCOMPLETE: {r['stopped']} after {r['states']} states"
+                      + ("; not run" if name in not_run else ""))
+            elif r["result"] == "error":
                 print(f"  {name:<24} ERROR: model error in {m['by']}: {r['violation']['detail']} after {m['steps']} step(s)")
             else:
                 print(f"  {name:<24} SURVIVED: no invariant catches this broken variant; strengthen the property or the model")
@@ -446,9 +488,11 @@ def main(argv: list[str] | None = None) -> int:
             if m["killed"]:
                 print(f"counterexample for mutant {name}:")
                 print_trace(m["result"]["violation"])
-            elif m["result"]["result"] == "error" and m["result"]["violation"].get("timeout"):
-                print(f"trace to the state where mutant {name} did not return:")
+            elif m["result"]["result"] == "error":
+                print(f"trace to the error in mutant {name}:")
                 print_trace(m["result"]["violation"])
+    if incomplete:
+        print(f"INCOMPLETE: {incomplete}; confirmed findings retained")
     if args.expect_violation:
         print(f"expect-violation {args.expect_violation}: {'met' if ok else 'NOT met'}")
     return code

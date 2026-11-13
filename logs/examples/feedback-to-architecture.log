@@ -1,13 +1,13 @@
-scratch: /tmp/poteto-examples-nh6_xegi
-$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/feedback-to-architecture/scripts/collect_feedback.py --repo /tmp/poteto-examples-nh6_xegi/todo-app --pr-comments /tmp/poteto-examples-nh6_xegi/todo-app/review-comments.json --chat /tmp/poteto-examples-nh6_xegi/todo-app/chat-feedback.md --out /tmp/poteto-examples-nh6_xegi/feedback.json
-collect_feedback: wrote /tmp/poteto-examples-nh6_xegi/feedback.json (3 chat, 6 commit, 4 review)
+scratch: /tmp/poteto-examples-690s1lq1
+$ /workspace/pr-fix/skills/feedback-to-architecture/scripts/collect_feedback.py --repo /tmp/poteto-examples-690s1lq1/todo-app --pr-comments /tmp/poteto-examples-690s1lq1/todo-app/review-comments.json --chat /tmp/poteto-examples-690s1lq1/todo-app/chat-feedback.md --out /tmp/poteto-examples-690s1lq1/feedback.json
+collect_feedback: wrote /tmp/poteto-examples-690s1lq1/feedback.json (3 chat, 6 commit, 4 review)
 
 [exit 0; expected 0]
 ASSERT PASS: every normalized feedback item has source provenance
 ASSERT PASS: collection includes commit, review and chat evidence
-$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/feedback-to-architecture/scripts/plan.py /tmp/poteto-examples-nh6_xegi/feedback.json --out-dir /tmp/poteto-examples-nh6_xegi/plan
+$ /workspace/pr-fix/skills/feedback-to-architecture/scripts/plan.py /tmp/poteto-examples-690s1lq1/feedback.json --out-dir /tmp/poteto-examples-690s1lq1/plan
 {
-  "out_dir": "/tmp/poteto-examples-nh6_xegi/plan",
+  "out_dir": "/tmp/poteto-examples-690s1lq1/plan",
   "themes": 2,
   "rules": [
     "no-rows-append-outside-store"
@@ -20,16 +20,16 @@ $ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/feedb
     "T2": "types"
   },
   "files": [
-    "/tmp/poteto-examples-nh6_xegi/plan/REFACTOR_PLAN.md",
-    "/tmp/poteto-examples-nh6_xegi/plan/lint-rules.json",
-    "/tmp/poteto-examples-nh6_xegi/plan/plan.json"
+    "/tmp/poteto-examples-690s1lq1/plan/REFACTOR_PLAN.md",
+    "/tmp/poteto-examples-690s1lq1/plan/lint-rules.json",
+    "/tmp/poteto-examples-690s1lq1/plan/plan.json"
   ]
 }
 
 [exit 0; expected 0]
 ASSERT PASS: generated lint is proven against history
 ASSERT PASS: planner writes refactor plan and machine-readable lint rules
-$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-nh6_xegi/plan/lint-rules.json --root /tmp/poteto-examples-nh6_xegi/todo-app --json --rev dbd44008685859312aee6a60154fd0258c1c063b /tmp/poteto-examples-nh6_xegi/todo-app/todo
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-690s1lq1/plan/lint-rules.json --root /tmp/poteto-examples-690s1lq1/todo-app --json --rev dbd44008685859312aee6a60154fd0258c1c063b /tmp/poteto-examples-690s1lq1/todo-app/todo
 {
   "ok": false,
   "rules": [
@@ -38,7 +38,7 @@ $ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/corre
   "files_scanned": 3,
   "untracked": [],
   "rev": "dbd44008685859312aee6a60154fd0258c1c063b",
-  "root": "/tmp/poteto-examples-nh6_xegi/todo-app",
+  "root": "/tmp/poteto-examples-690s1lq1/todo-app",
   "failing": [
     {
       "rule": "no-rows-append-outside-store",
@@ -84,13 +84,14 @@ $ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/corre
     "over": [],
     "improved": [],
     "refused": [],
+    "deferred": [],
     "updated": false
   }
 }
 
 [exit 1; expected 1]
 ASSERT PASS: generated lint fires on the real direct-write mistake
-$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-nh6_xegi/plan/lint-rules.json --root /tmp/poteto-examples-nh6_xegi/todo-app --json /tmp/poteto-examples-nh6_xegi/todo-app/todo
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-690s1lq1/plan/lint-rules.json --root /tmp/poteto-examples-690s1lq1/todo-app --json /tmp/poteto-examples-690s1lq1/todo-app/todo
 {
   "ok": true,
   "rules": [
@@ -99,7 +100,7 @@ $ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/corre
   "files_scanned": 3,
   "untracked": [],
   "rev": null,
-  "root": "/tmp/poteto-examples-nh6_xegi/todo-app",
+  "root": "/tmp/poteto-examples-690s1lq1/todo-app",
   "failing": [],
   "violations": [],
   "allowed": [],
@@ -111,13 +112,14 @@ $ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/corre
     "over": [],
     "improved": [],
     "refused": [],
+    "deferred": [],
     "updated": false
   }
 }
 
 [exit 0; expected 0]
 ASSERT PASS: generated lint also passes the fixed HEAD
-$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-nh6_xegi/plan/lint-rules.json --root /tmp/poteto-examples-nh6_xegi/todo-app --test --json
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-690s1lq1/plan/lint-rules.json --root /tmp/poteto-examples-690s1lq1/todo-app --test --json
 {
   "ok": true,
   "tests": 21,
@@ -126,9 +128,9 @@ $ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/corre
 
 [exit 0; expected 0]
 ASSERT PASS: planner retains executable bad and quiet cases from successful whole-file proofs
-$ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/feedback-to-architecture/scripts/plan.py /tmp/poteto-examples-nh6_xegi/feedback.json --out-dir /tmp/poteto-examples-nh6_xegi/unproved-plan --no-prove
+$ /workspace/pr-fix/skills/feedback-to-architecture/scripts/plan.py /tmp/poteto-examples-690s1lq1/feedback.json --out-dir /tmp/poteto-examples-690s1lq1/unproved-plan --no-prove
 {
-  "out_dir": "/tmp/poteto-examples-nh6_xegi/unproved-plan",
+  "out_dir": "/tmp/poteto-examples-690s1lq1/unproved-plan",
   "themes": 2,
   "rules": [
     "no-json-dumps-outside-store"
@@ -139,9 +141,9 @@ $ /home/box/.cache/poteto-skills/worktrees/curator-2026-11-09-31025/skills/feedb
     "T2": "types"
   },
   "files": [
-    "/tmp/poteto-examples-nh6_xegi/unproved-plan/REFACTOR_PLAN.md",
-    "/tmp/poteto-examples-nh6_xegi/unproved-plan/lint-rules.json",
-    "/tmp/poteto-examples-nh6_xegi/unproved-plan/plan.json"
+    "/tmp/poteto-examples-690s1lq1/unproved-plan/REFACTOR_PLAN.md",
+    "/tmp/poteto-examples-690s1lq1/unproved-plan/lint-rules.json",
+    "/tmp/poteto-examples-690s1lq1/unproved-plan/plan.json"
   ]
 }
 
