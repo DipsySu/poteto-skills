@@ -509,6 +509,7 @@ class Examples:
             self.maintain_path_comparisons()
             self.review_phantom_routes()
             self.review_path_rebindings()
+            self.review_path_branches()
             self.review_go_receivers()
             self.maintain_zero_nargs()
             self.maintain_exit_contract()
@@ -751,6 +752,70 @@ class Handler(BaseHTTPRequestHandler):
         refused = self.json(*command, expected=1)
         self.ensure(refused['baseline']['refused'], 'successful retry still ratchets subsequent increases')
 
+    def review_path_branches(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'branch_scan')
+        prefix = 'class Handler:\n    def do_GET(self):\n'
+        probe = 'if path.startswith("/var/www/"): pass'
+        negatives = [
+            'path = self.translate_path(self.path)\nif flag:\n    path = self.path\nelif path.startswith("/var/www/"): pass',
+            'path = self.translate_path(self.path)\nif flag:\n    path = self.path\nelse:\n    ' + probe,
+            'path = self.translate_path(self.path)\nif flag: pass\nelif other:\n    path = self.path\nelse:\n    ' + probe,
+            'path = self.translate_path(self.path)\nif flag:\n    path = self.path\n' + probe,
+            'path = self.path\nif flag:\n    path = filesystem\nelse:\n    path = self.path\n' + probe,
+            'path = filesystem\nif flag:\n    if other:\n        path = self.path\n    ' + probe,
+        ]
+        positives = [
+            'path = self.path\nif flag:\n    path = filesystem\nelif path.startswith("/var/www/"): pass',
+            'path = self.path\nif flag:\n    path = filesystem\nelse:\n    ' + probe,
+            'if flag:\n    path = self.path\n    ' + probe,
+            'path = self.path\nif flag:\n    if other: pass\n    ' + probe,
+            'if flag:\n    path = filesystem\npath = self.path\n' + probe,
+        ]
+        failures = []
+        for expected, sources in ((set(), negatives), ({('GET', '/var/www/<*>')}, positives)):
+            for source in sources:
+                body = prefix + ''.join('        ' + line + '\n' for line in source.splitlines())
+                info = scanner.analyze_python('server.py', body)
+                routes = {(r['method'], r['path']) for r in info['routes']}
+                if routes != expected or info['notes']:
+                    failures.append((source, sorted(routes), info['notes']))
+        self.ensure(not failures, f'exclusive branches cannot lend path provenance; uncertain joins revoke it: {failures}')
+
+    def review_git_fail_closed(self):
+        root = self.scratch / 'review-git-errors'
+        root.mkdir()
+        self.run('git', 'init', '-q', cwd=root)
+        (root / 'tracked.py').write_text('BAD\n')
+        (root / 'scratch.py').write_text('BAD\n')
+        self.run('git', 'add', 'tracked.py', cwd=root)
+        rules = self.save('rules.json', {'rules': [
+            {'id': 'probe', 'regex': 'BAD', 'include': ['*.py'], 'message': 'Use good() instead.'}]})
+        baseline = root / 'baseline.json'
+        original = '{"counts": {}}\n'
+        baseline.write_text(original)
+        env = dict(self.env, GIT_DIR=str(root / 'missing.git'))
+        failures = []
+        for target in (root, root / 'tracked.py'):
+            for explicit_root in ((), ('--root', str(root))):
+                for mode in ((), ('--baseline', str(baseline), '--update-baseline')):
+                    command = [str(self.script('correct', 'patlint.py')), '--rules', str(rules),
+                               *explicit_root, *mode, str(target)]
+                    result = subprocess.run(command, cwd=root, env=env, capture_output=True, text=True, timeout=10)
+                    self.log.write(result.stdout + result.stderr)
+                    if (result.returncode != 2 or 'git' not in result.stderr.lower()
+                            or 'missing.git' not in result.stderr or 'Traceback' in result.stderr
+                            or baseline.read_text() != original):
+                        failures.append((command, result.returncode, result.stderr, baseline.read_text()))
+                    baseline.write_text(original)
+        self.ensure(not failures, f'git failure inside a worktree exits 2 without adopting any baseline hits: {failures}')
+        outside = self.scratch / 'review-non-git'
+        outside.mkdir()
+        (outside / 'clean.py').write_text('GOOD\n')
+        result = subprocess.run([str(self.script('correct', 'patlint.py')), '--rules', str(rules), str(outside)],
+                                cwd=outside, env=self.env, capture_output=True, text=True, timeout=10)
+        self.ensure(result.returncode == 0 and not result.stderr,
+                    'ordinary non-git directories retain quiet filesystem fallback')
+
     def review_git_warning(self):
         import contextlib
         import io
@@ -763,8 +828,14 @@ class Handler(BaseHTTPRequestHandler):
             err = io.StringIO()
             kwargs = {'side_effect': error} if isinstance(error, Exception) else {'return_value': error}
             with patch.object(lint.subprocess, 'run', **kwargs), contextlib.redirect_stderr(err):
-                files = list(lint.walk([root], root))
-                top = lint.git_toplevel(root)
+                try:
+                    files = list(lint.walk([root], root))
+                    top = lint.git_toplevel(root)
+                except RuntimeError as failure:
+                    self.ensure(isinstance(error, subprocess.CompletedProcess)
+                                and 'dubious ownership' in str(failure) and 'refusing filesystem fallback' in str(failure),
+                                'dubious ownership is a git error, never permission to traverse the disk')
+                    continue
             self.ensure([f[0] for f in files] == ['hit.py'] and top is None
                         and 'WARNING' in err.getvalue() and 'git' in err.getvalue()
                         and 'fallback' in err.getvalue(),
@@ -901,6 +972,7 @@ class Handler(BaseHTTPRequestHandler):
             self.correct_baseline_contract()
             self.review_baseline_retry()
             self.review_git_warning()
+            self.review_git_fail_closed()
             rules = self.save('rules.json', {'rules':[{'id':'no-direct-json-write','regex':r'\b\w+\.path\.write_text\s*\(',
                 'include':['todo/*.py'], 'exclude':['todo/store.py'],
                 'message':'Use Store.add or Store.transition in todo/store.py for atomic persistence; avoid json.dump.',
@@ -1124,6 +1196,10 @@ class Handler(BaseHTTPRequestHandler):
             self.review_sigint()
             self.review_fixture_limits()
             self.review_docs()
+            self.review_property_handoff()
+            self.review_call_timeout_exit()
+            self.review_oneshot_timers()
+            self.review_disabled_limits()
 
     def clock_check(self, checker, body, *, run=5, call=10, flags=()):
         """CLI semantics with a manually advanced clock: no scheduler or disk-speed assumptions."""
@@ -1162,6 +1238,179 @@ print(json.dumps({"code": code, "stdout": out.getvalue(), "stderr": err.getvalue
         return self.json(sys.executable, driver, self.script('formal-verification', checker), fixture,
                          *args, *timeout_args, '--call-timeout', call, *flags, timeout=10)
 
+    def review_property_handoff(self):
+        target = self.repo / 'handoff_target.py'
+        target.write_text('def checked(x): return False\n')
+        fixture = self.art / 'handoff_props.py'
+        fixture.write_text('from gen_check import sampled_from\nfrom handoff_target import checked\n'
+                           'TARGETS = ["handoff_target.py:checked"]\n'
+                           'properties = {"broken": (sampled_from([42]), checked)}\n')
+        driver = self.art / 'handoff_driver.py'
+        driver.write_text('''import importlib.util, signal, sys
+checker, *argv = sys.argv[1:]
+spec = importlib.util.spec_from_file_location("gen_check", checker)
+mod = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = mod
+spec.loader.exec_module(mod)
+original = mod.run_property
+def interrupted_return(*args, **kwargs):
+    result = original(*args, **kwargs)
+    assert result[0]["result"] == "fail" and result[0]["counterexample"] == "42"
+    limits = args[7]
+    limits.deadline = limits.begun - 1
+    signal.raise_signal(signal.SIGALRM)  # exactly after return, before main can write back
+    raise AssertionError("injected SIGALRM was not delivered")
+mod.run_property = interrupted_return
+raise SystemExit(mod.main(argv))
+''')
+        try:
+            for flags, code in (((), 1), (('--expect-fail', 'broken'), 3)):
+                report = self.json(sys.executable, driver, self.script('formal-verification', 'gen_check.py'),
+                                   fixture, '--repo', self.repo, '--examples', '1', '--json', *flags, expected=code)
+                found = report['properties']['broken']
+                self.ensure(not report['ok'] and found['result'] == 'fail' and found['counterexample'] == '42'
+                            and found['detail'] == 'returned False' and found['accepted'] == 1
+                            and report['called'] == ['handoff_target.py:checked'] and not report['missing_targets']
+                            and 'in broken' in report['incomplete'] and 'import' not in report['incomplete'],
+                            f'SIGALRM at property return retains the confirmed counterexample and coverage (exit {code})')
+        finally:
+            target.unlink()
+
+    def review_call_timeout_exit(self):
+        body = ('import review_clock as clock\nfrom gen_check import sampled_from\n'
+                'TARGETS = ["todo/store.py:Store.add"]\n'
+                'def check(x): clock.advance(2)\n'
+                'properties = {"slow": (sampled_from([42]), check), "later": (sampled_from([0]), lambda x: True)}\n')
+        failures = []
+        for flags in ((), ('--expect-fail', 'slow')):
+            result = self.clock_check('gen_check.py', body, run=20, call=1, flags=(*flags, '--json'))
+            report = json.loads(result['stdout'])
+            if (result['code'] != 3 or report['ok'] or report['properties']['slow']['result'] != 'timeout'
+                    or report['properties']['slow']['input'] != '42'
+                    or report['properties']['slow']['timeout_scope'] != 'call'
+                    or report['properties']['later']['result'] != 'pass'):
+                failures.append(result)
+            text = self.clock_check('gen_check.py', body, run=20, call=1, flags=flags)
+            if (text['code'] != 3 or 'ERROR' in text['stdout'] or 'INCONCLUSIVE' not in text['stdout']
+                    or 'input: 42' not in text['stdout']):
+                failures.append(text)
+        self.ensure(not failures, f'property call timeouts are inconclusive exit 3 in JSON and text, never ERROR: {failures}')
+
+    def review_oneshot_timers(self):
+        from types import SimpleNamespace
+        failures = []
+        for checker in ('gen_check.py', 'bounded_check.py'):
+            mod = load_module(self.script('formal-verification', checker), 'timer_' + checker[:-3])
+            now, due, interval = 0.0, 40.0, 2.0
+            previous = handler = lambda *args: None
+            calls = []
+
+            def set_handler(sig, value):
+                nonlocal handler
+                old, handler = handler, value
+                return old
+
+            def get_timer(which):
+                return (max(0.0, due - now) if due else 0.0, interval)
+
+            def set_timer(which, delay, repeat=0.0):
+                nonlocal due, interval
+                old = get_timer(which)
+                due, interval = now + delay if delay else 0.0, repeat
+                calls.append((now, delay, repeat))
+                return old
+
+            alarm = SimpleNamespace(SIGALRM=signal.SIGALRM, ITIMER_REAL=signal.ITIMER_REAL, SIG_DFL=signal.SIG_DFL,
+                                    signal=set_handler, getsignal=lambda sig: handler,
+                                    getitimer=get_timer, setitimer=set_timer)
+            with patch.object(mod, 'signal', alarm), patch.object(mod, 'time', SimpleNamespace(monotonic=lambda: now)):
+                with mod.Limits(20, 5) as limits:
+                    if (due, interval) != (20, 0):
+                        failures.append((checker, 'run timer', due, interval))
+                    for start, finish, expected in ((3, 4, 8), (18, 19, 20)):
+                        now = start
+
+                        def check(*args):
+                            nonlocal now
+                            if (due, interval) != (expected, 0):
+                                failures.append((checker, 'nearest call deadline', due, interval, expected))
+                            now = finish
+                            return True
+
+                        if checker == 'bounded_check.py':
+                            limits.call(check)
+                        else:
+                            mod.attempt(SimpleNamespace(), check, 0, self.repo, limits)
+                        if (due, interval) != (20, 0):
+                            failures.append((checker, 'run timer after call', due, interval))
+                if handler is not previous or (due, interval) != (40, 2):
+                    failures.append((checker, 'previous handler/timer not restored', due, interval))
+                if any(repeat for _, _, repeat in calls[:-1]):
+                    failures.append((checker, 'periodic checker timer', calls))
+                # If the owner changed, cleanup must leave that owner's handler and timer alone.
+                with mod.Limits(20, 5):
+                    replacement = lambda *args: None
+                    set_handler(signal.SIGALRM, replacement)
+                    set_timer(signal.ITIMER_REAL, 7)
+                if handler is not replacement or (due, interval) != (now + 7, 0):
+                    failures.append((checker, 'cleared another owner timer', due, interval))
+                old_due = due
+                elapsed = mod.Limits(1, 5)
+                now += 2
+                try:
+                    with elapsed:
+                        failures.append((checker, 'entered after startup budget elapsed'))
+                except mod.Timeout as error:
+                    if error.scope != 'run':
+                        failures.append((checker, 'startup expiry used the call limit'))
+                if handler is not replacement or (due, interval) != (old_due, 0):
+                    failures.append((checker, 'startup timeout lost the previous signal state', due, interval))
+        self.ensure(not failures, f'checkers arm one-shot nearest deadlines and restore only their owned signal state: {failures}')
+
+    def review_disabled_limits(self):
+        target = self.repo / 'disabled_target.py'
+        target.write_text('def checked(x): return True\n')
+        failures = []
+        try:
+            for checker in ('gen_check.py', 'bounded_check.py'):
+                for run, call, end, code in ((0, 0, 1000, 0), (0, 1, 2, 3 if checker == 'gen_check.py' else 2),
+                                             (1, 0, 2, 3), (None, 0, 1000, 0)):
+                    body = ('import review_clock as clock\nTIMEOUT = 0\n'
+                            'def check(x):\n    clock.advance(' + str(end) + ')\n    return True\n')
+                    if checker == 'gen_check.py':
+                        body += ('from gen_check import sampled_from\nfrom disabled_target import checked\n'
+                                 'TARGETS = ["disabled_target.py:checked"]\n'
+                                 'def covered(x):\n    check(x)\n    return checked(x)\n'
+                                 'properties = {"ok": (sampled_from([0]), covered)}\n')
+                    else:
+                        body += 'def init(): return 0\ndef actions(s): return []\ninvariants = {"ok": check}\n'
+                    result = self.clock_check(checker, body, run=run, call=call, flags=('--json',))
+                    if (result['code'] != code or not result['stdout']
+                            or json.loads(result['stdout']).get('ok') != (code == 0)):
+                        failures.append((checker, run, call, code, result))
+                mod = load_module(self.script('formal-verification', checker), 'disabled_' + checker[:-3])
+                # Fully disabled limits must not take over an embedding process's SIGALRM.
+                with patch.object(mod.signal, 'signal') as handler, patch.object(mod.signal, 'setitimer') as timer:
+                    with mod.Limits(0, 0):
+                        pass
+                    if handler.called or timer.called:
+                        failures.append((checker, 'disabled limits changed signal state'))
+                for value in (-1, float('nan'), float('inf'), True):
+                    try:
+                        mod.seconds(value, 'limit')
+                    except (ValueError, mod.PropsError if checker == 'gen_check.py' else mod.ModelError):
+                        pass
+                    else:
+                        failures.append((checker, 'invalid limit accepted', repr(value)))
+            self.ensure(not failures, f'zero disables each deadline independently while invalid limits remain errors: {failures}')
+        finally:
+            target.unlink()
+        text = (ROOT / 'skills/formal-verification/SKILL.md').read_text()
+        step4 = text.split('## 4. Leave a project-local skill')[1].split('## 5.')[0]
+        self.ensure(all(term in text and term in step4 for term in
+                        ('--seed N --expect-fail NAME', '90 s', '10 s', '--timeout 0', '--call-timeout 0', 'migration')),
+                    'skill and generated-skill instructions include replay and default-limit migration with opt-outs')
+
     def review_synchronous_deadlines(self):
         """Advance past deadlines without delivering SIGALRM, including the last covered call."""
         target = self.repo / 'review_sync_target.py'
@@ -1187,6 +1436,8 @@ print(json.dumps({"code": code, "stdout": out.getvalue(), "stderr": err.getvalue
                                                    (6, 5, 0, 5, 2), (10, 2, 4, 6, 2),
                                                    (5, 5, 0, 5.02, 3), (5, 2, 4, 5.02, 3),
                                                    (6, 5, 0, 20, 2)):
+                    if checker == 'gen_check.py' and code == 2:
+                        code = 3
                     body = ('import review_clock as clock\n' + (props if checker == 'gen_check.py' else model)
                             + f'clock.advance({start}, tick=False)\n'
                             'def check(x):\n    clock.events.append("checked")\n'
@@ -1206,7 +1457,7 @@ print(json.dumps({"code": code, "stdout": out.getvalue(), "stderr": err.getvalue
                 body = ('import review_clock as clock\n' + props + 'def check(x):\n    checked(x)\n'
                         '    clock.advance(5.02, tick=False)\n    ' + ending + '\n'
                         'properties = {"ok": (sampled_from([0]), check)}\n')
-                for run, call, code in ((5, 6, 3), (6, 5, 2)):
+                for run, call, code in ((5, 6, 3), (6, 5, 3)):
                     verify(('late outcome', ending, code), self.clock_check('gen_check.py', body, run=run,
                            call=call, flags=('--json',)), code)
             for hook in ('setup', 'reset'):
@@ -1214,7 +1465,7 @@ print(json.dumps({"code": code, "stdout": out.getvalue(), "stderr": err.getvalue
                         f'    clock.events.append("{hook}")\n    clock.advance(5.02, tick=False)\n'
                         'def check(x):\n    clock.events.append("check")\n    return checked(x)\n'
                         'properties = {"ok": (sampled_from([0]), check)}\n')
-                for run, call, code in ((5, 6, 3), (6, 5, 2)):
+                for run, call, code in ((5, 6, 3), (6, 5, 3)):
                     verify((hook, code), self.clock_check('gen_check.py', body, run=run, call=call,
                            flags=('--json',)), code, [hook])
             # A call timeout may end one property, but it cannot start another after the total budget elapsed.
@@ -1222,7 +1473,7 @@ print(json.dumps({"code": code, "stdout": out.getvalue(), "stderr": err.getvalue
                     '    clock.events.append("first")\n    checked(x)\n    clock.advance(20, tick=False)\n'
                     'def later(x):\n    clock.events.append("later")\n    return checked(x)\n'
                     'properties = {"first": (sampled_from([0]), first), "later": (sampled_from([0]), later)}\n')
-            for run, call, code in ((5, 6, 3), (6, 5, 2)):
+            for run, call, code in ((5, 6, 3), (6, 5, 3)):
                 verify(('no later property', code), self.clock_check('gen_check.py', body, run=run, call=call,
                        flags=('--json',)), code, ['first'])
             body = ('import review_clock as clock\n' + props + 'def draw(rng):\n'
@@ -1234,7 +1485,7 @@ print(json.dumps({"code": code, "stdout": out.getvalue(), "stderr": err.getvalue
             body = ('import review_clock as clock\n' + props + 'def check(x):\n    checked(x)\n'
                     '    clock.events.append(x)\n    if x == 1: clock.advance(5.02, tick=False)\n'
                     '    return False\nproperties = {"broken": (Generator(lambda rng: 2, lambda x: [1]), check)}\n')
-            for run, call, code in ((5, 6, 3), (6, 5, 2)):
+            for run, call, code in ((5, 6, 3), (6, 5, 3)):
                 report = verify(('shrink return', code), self.clock_check('gen_check.py', body, run=run, call=call,
                                 flags=('--expect-fail', 'broken', '--json')), code, [2, 1])
                 if report['properties']['broken']['counterexample'] != '2' or not report['incomplete']:
@@ -1358,7 +1609,7 @@ print(json.dumps({"code": code, "stdout": out.getvalue(), "stderr": err.getvalue
                 'properties = {"broken": (Generator(lambda rng: 100, shrink), check),\n'
                 '              "later": (sampled_from([1]), later)}\n')
         try:
-            for flags, code in ((('--expect-fail', 'broken'), 2), ((), 1)):
+            for flags, code in ((('--expect-fail', 'broken'), 3), ((), 1)):
                 result = self.clock_check('gen_check.py', body, run=20, call=1, flags=(*flags, '--json'))
                 report = json.loads(result['stdout'])
                 found = report['properties']['broken']
@@ -1373,7 +1624,7 @@ print(json.dumps({"code": code, "stdout": out.getvalue(), "stderr": err.getvalue
                             and report['called'] == ['review_shrink_target.py:confirmed'],
                             'a shrink call timeout ends only that property and keeps only accepted target coverage')
             result = self.clock_check('gen_check.py', body, run=20, call=1, flags=('--expect-fail', 'broken'))
-            self.ensure(result['code'] == 2 and 'reduced counterexample: 60' in result['stdout']
+            self.ensure(result['code'] == 3 and 'reduced counterexample: 60' in result['stdout']
                         and 'incomplete:' in result['stdout'] and 'shrink' in result['stdout']
                         and 'call timeout' in result['stdout'],
                         'text mode exposes the retained counterexample and incomplete shrink instead of PASS')
@@ -1390,7 +1641,7 @@ print(json.dumps({"code": code, "stdout": out.getvalue(), "stderr": err.getvalue
                              'properties = {"broken": (Generator(lambda rng: 100, lambda x: iter([0])), check)}\n')
             report = self.json(self.script('formal-verification', 'gen_check.py'), props, '--repo', self.repo,
                                '--examples', '1', '--timeout', '20', '--call-timeout', '2',
-                               '--expect-fail', 'broken', '--json', expected=2, timeout=30)
+                               '--expect-fail', 'broken', '--json', expected=3, timeout=30)
             self.ensure(not report['ok'] and report['incomplete'] and not report['missing_targets']
                         and report['properties']['broken']['counterexample'] == '100'
                         and report['properties']['broken'].get('timeout_scope') == 'call'
@@ -1402,6 +1653,8 @@ print(json.dumps({"code": code, "stdout": out.getvalue(), "stderr": err.getvalue
     def review_deadline_order(self):
         for checker in ('bounded_check.py', 'gen_check.py'):
             for run, call, code in ((5, 6, 3), (6, 5, 2), (5, 5, 3)):
+                if checker == 'gen_check.py' and code == 2:
+                    code = 3
                 body = ('import review_clock as clock\n'
                         'def check(s):\n    clock.advance(20)\n    return True\n')
                 if checker == 'bounded_check.py':
@@ -1780,7 +2033,7 @@ properties = {"copy": (sampled_from([" title "]), check)}
             source.write_text('def strip_leading(t):\n    i = 0\n    while i < len(t) and t[i] == " ":\n'
                               '        pass\n    return t[i:]\n')
             command = [checker, props, '--repo', self.repo, '--call-timeout', '1']
-            result = self.json(*command, '--json', expected=2, timeout=30)
+            result = self.json(*command, '--json', expected=3, timeout=30)
             hung = result['properties']['strip_leading']
             import ast
             self.ensure(hung['result'] == 'timeout' and ast.literal_eval(hung['input']).startswith(' ')
@@ -1788,10 +2041,10 @@ properties = {"copy": (sampled_from([" title "]), check)}
                         'a check that never returns ends its property as timeout with the leading-space input and seed 0')
             self.ensure(result['properties']['no_leading_space']['result'] == 'pass' and not result['missing_targets'],
                         'the other property in the same file still runs and passes after the timeout')
-            result = self.json(*command, '--expect-fail', 'strip_leading', '--json', expected=2, timeout=30)
+            result = self.json(*command, '--expect-fail', 'strip_leading', '--json', expected=3, timeout=30)
             self.ensure(result['properties']['strip_leading']['result'] == 'timeout' and not result['ok'],
                         '--expect-fail never accepts a timeout as the expected counterexample')
-            output = self.run(*command, expected=2, timeout=30)
+            output = self.run(*command, expected=3, timeout=30)
             self.ensure(output.startswith('gen_check: seed 0;') and f"input: {hung['input']}" in output
                         and 'INCOMPLETE' in output,
                         'text mode prints the seed before checking and the timed-out input in its report')
@@ -2016,6 +2269,8 @@ properties = {"copy": (sampled_from([" title "]), check)}
                    self.review_baseline_retry, self.review_git_warning, self.review_docs,
                    self.review_import_budget, self.review_go_receivers, self.review_shrink_call_timeout]
         methods += [self.review_synchronous_deadlines, self.review_path_rebindings]
+        methods += [self.review_property_handoff, self.review_path_branches, self.review_git_fail_closed,
+                    self.review_call_timeout_exit, self.review_oneshot_timers, self.review_disabled_limits]
         results = {}
         try:
             with (output / 'run.log').open('w') as self.log:

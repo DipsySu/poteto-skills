@@ -1,13 +1,13 @@
-scratch: /tmp/poteto-examples-m9y_losv
-$ /workspace/pr-fix/skills/feedback-to-architecture/scripts/collect_feedback.py --repo /tmp/poteto-examples-m9y_losv/todo-app --pr-comments /tmp/poteto-examples-m9y_losv/todo-app/review-comments.json --chat /tmp/poteto-examples-m9y_losv/todo-app/chat-feedback.md --out /tmp/poteto-examples-m9y_losv/feedback.json
-collect_feedback: wrote /tmp/poteto-examples-m9y_losv/feedback.json (3 chat, 6 commit, 4 review)
+scratch: /tmp/poteto-examples-ije6g8m1
+$ /workspace/pr-fix/skills/feedback-to-architecture/scripts/collect_feedback.py --repo /tmp/poteto-examples-ije6g8m1/todo-app --pr-comments /tmp/poteto-examples-ije6g8m1/todo-app/review-comments.json --chat /tmp/poteto-examples-ije6g8m1/todo-app/chat-feedback.md --out /tmp/poteto-examples-ije6g8m1/feedback.json
+collect_feedback: wrote /tmp/poteto-examples-ije6g8m1/feedback.json (3 chat, 6 commit, 4 review)
 
 [exit 0; expected 0]
 ASSERT PASS: every normalized feedback item has source provenance
 ASSERT PASS: collection includes commit, review and chat evidence
-$ /workspace/pr-fix/skills/feedback-to-architecture/scripts/plan.py /tmp/poteto-examples-m9y_losv/feedback.json --out-dir /tmp/poteto-examples-m9y_losv/plan
+$ /workspace/pr-fix/skills/feedback-to-architecture/scripts/plan.py /tmp/poteto-examples-ije6g8m1/feedback.json --out-dir /tmp/poteto-examples-ije6g8m1/plan
 {
-  "out_dir": "/tmp/poteto-examples-m9y_losv/plan",
+  "out_dir": "/tmp/poteto-examples-ije6g8m1/plan",
   "themes": 2,
   "rules": [
     "no-rows-append-outside-store"
@@ -20,16 +20,16 @@ $ /workspace/pr-fix/skills/feedback-to-architecture/scripts/plan.py /tmp/poteto-
     "T2": "types"
   },
   "files": [
-    "/tmp/poteto-examples-m9y_losv/plan/REFACTOR_PLAN.md",
-    "/tmp/poteto-examples-m9y_losv/plan/lint-rules.json",
-    "/tmp/poteto-examples-m9y_losv/plan/plan.json"
+    "/tmp/poteto-examples-ije6g8m1/plan/REFACTOR_PLAN.md",
+    "/tmp/poteto-examples-ije6g8m1/plan/lint-rules.json",
+    "/tmp/poteto-examples-ije6g8m1/plan/plan.json"
   ]
 }
 
 [exit 0; expected 0]
 ASSERT PASS: generated lint is proven against history
 ASSERT PASS: planner writes refactor plan and machine-readable lint rules
-$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-m9y_losv/plan/lint-rules.json --root /tmp/poteto-examples-m9y_losv/todo-app --json --rev dbd44008685859312aee6a60154fd0258c1c063b /tmp/poteto-examples-m9y_losv/todo-app/todo
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-ije6g8m1/plan/lint-rules.json --root /tmp/poteto-examples-ije6g8m1/todo-app --json --rev dbd44008685859312aee6a60154fd0258c1c063b /tmp/poteto-examples-ije6g8m1/todo-app/todo
 {
   "ok": false,
   "rules": [
@@ -38,7 +38,7 @@ $ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /tmp/poteto-exampl
   "files_scanned": 3,
   "untracked": [],
   "rev": "dbd44008685859312aee6a60154fd0258c1c063b",
-  "root": "/tmp/poteto-examples-m9y_losv/todo-app",
+  "root": "/tmp/poteto-examples-ije6g8m1/todo-app",
   "failing": [
     {
       "rule": "no-rows-append-outside-store",
@@ -91,7 +91,7 @@ $ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /tmp/poteto-exampl
 
 [exit 1; expected 1]
 ASSERT PASS: generated lint fires on the real direct-write mistake
-$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-m9y_losv/plan/lint-rules.json --root /tmp/poteto-examples-m9y_losv/todo-app --json /tmp/poteto-examples-m9y_losv/todo-app/todo
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-ije6g8m1/plan/lint-rules.json --root /tmp/poteto-examples-ije6g8m1/todo-app --json /tmp/poteto-examples-ije6g8m1/todo-app/todo
 {
   "ok": true,
   "rules": [
@@ -100,7 +100,7 @@ $ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /tmp/poteto-exampl
   "files_scanned": 3,
   "untracked": [],
   "rev": null,
-  "root": "/tmp/poteto-examples-m9y_losv/todo-app",
+  "root": "/tmp/poteto-examples-ije6g8m1/todo-app",
   "failing": [],
   "violations": [],
   "allowed": [],
@@ -119,7 +119,7 @@ $ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /tmp/poteto-exampl
 
 [exit 0; expected 0]
 ASSERT PASS: generated lint also passes the fixed HEAD
-$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-m9y_losv/plan/lint-rules.json --root /tmp/poteto-examples-m9y_losv/todo-app --test --json
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-ije6g8m1/plan/lint-rules.json --root /tmp/poteto-examples-ije6g8m1/todo-app --test --json
 {
   "ok": true,
   "tests": 21,
@@ -128,9 +128,9 @@ $ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /tmp/poteto-exampl
 
 [exit 0; expected 0]
 ASSERT PASS: planner retains executable bad and quiet cases from successful whole-file proofs
-$ /workspace/pr-fix/skills/feedback-to-architecture/scripts/plan.py /tmp/poteto-examples-m9y_losv/feedback.json --out-dir /tmp/poteto-examples-m9y_losv/unproved-plan --no-prove
+$ /workspace/pr-fix/skills/feedback-to-architecture/scripts/plan.py /tmp/poteto-examples-ije6g8m1/feedback.json --out-dir /tmp/poteto-examples-ije6g8m1/unproved-plan --no-prove
 {
-  "out_dir": "/tmp/poteto-examples-m9y_losv/unproved-plan",
+  "out_dir": "/tmp/poteto-examples-ije6g8m1/unproved-plan",
   "themes": 2,
   "rules": [
     "no-json-dumps-outside-store"
@@ -141,9 +141,9 @@ $ /workspace/pr-fix/skills/feedback-to-architecture/scripts/plan.py /tmp/poteto-
     "T2": "types"
   },
   "files": [
-    "/tmp/poteto-examples-m9y_losv/unproved-plan/REFACTOR_PLAN.md",
-    "/tmp/poteto-examples-m9y_losv/unproved-plan/lint-rules.json",
-    "/tmp/poteto-examples-m9y_losv/unproved-plan/plan.json"
+    "/tmp/poteto-examples-ije6g8m1/unproved-plan/REFACTOR_PLAN.md",
+    "/tmp/poteto-examples-ije6g8m1/unproved-plan/lint-rules.json",
+    "/tmp/poteto-examples-ije6g8m1/unproved-plan/plan.json"
   ]
 }
 

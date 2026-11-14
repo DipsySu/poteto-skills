@@ -18,6 +18,8 @@ shortest one. Exit 0 = every invariant holds within the bound (and every mutant 
 1 = violation, deadlock, or surviving mutant, 2 = model or usage error (including a call to
 actions(), an invariant, or a mutant that runs past --call-timeout), 3 = stopped at the
 --timeout run limit with nothing failed: not a failure and not a proof.
+Zero disables the corresponding time limit. While enabled, the checker reserves
+SIGALRM; model code must not use alarm/setitimer.
 """
 from __future__ import annotations
 
@@ -50,15 +52,14 @@ class Timeout(BaseException):
 
 
 class Limits:
-    """Run and per-call limits, checked synchronously and by a SIGALRM tick.
+    """Run and per-call limits, checked synchronously and by a one-shot SIGALRM.
 
     Where setitimer is missing (Windows) or off the main thread, warn that the limits are not enforced.
     """
-    TICK = 0.05
-
     def __init__(self, run_seconds, call_seconds):
         self.call_seconds = call_seconds
         self.begun = time.monotonic()
+        self.installed = False
         self.limit_run(run_seconds)
         self.started = None
         self.expired = False
@@ -69,13 +70,32 @@ class Limits:
 
     def limit_run(self, seconds):
         self.run_seconds = seconds
-        self.deadline = self.begun + seconds
+        self.deadline = self.begun + seconds if seconds else float('inf')
+        self.arm()
+
+    def arm(self):
+        """Reserve SIGALRM for the nearest enabled deadline, never for periodic polling."""
+        if not self.installed or signal.getsignal(signal.SIGALRM) != self.tick:
+            return
+        call_deadline = (self.started + self.call_seconds
+                         if self.started is not None and self.call_seconds else float('inf'))
+        deadline = min(self.deadline, call_deadline)
+        delay = max(0.0, deadline - time.monotonic()) if deadline < float('inf') and not self.expired else 0
+        signal.setitimer(signal.ITIMER_REAL, delay)
 
     def __enter__(self):
-        if self.active:
+        if self.active and (self.run_seconds or self.call_seconds):
+            self.entered_at = time.monotonic()
+            self.previous_timer = signal.getitimer(signal.ITIMER_REAL)
             self.previous = signal.signal(signal.SIGALRM, self.tick)
-            signal.setitimer(signal.ITIMER_REAL, self.TICK, self.TICK)
-        else:
+            self.installed = True
+            try:
+                self.arm()
+                self.check_run()  # An already elapsed budget must not disarm the timer and start importing.
+            except BaseException:
+                self.__exit__()
+                raise
+        elif not self.active and (self.run_seconds or self.call_seconds):
             print("bounded_check: WARNING: --timeout and --call-timeout are not enforced; "
                   "SIGALRM/setitimer in the main thread is required. Use an external process deadline.",
                   file=sys.stderr, flush=True)
@@ -83,13 +103,18 @@ class Limits:
 
     def __exit__(self, *exc):
         self.started, self.expired = None, True
-        if self.active:
+        if self.installed and signal.getsignal(signal.SIGALRM) == self.tick:
             signal.setitimer(signal.ITIMER_REAL, 0)
             signal.signal(signal.SIGALRM, self.previous if self.previous is not None else signal.SIG_DFL)
+            delay, interval = self.previous_timer
+            if delay:
+                remaining = max(0.000001, delay - (time.monotonic() - self.entered_at))
+                signal.setitimer(signal.ITIMER_REAL, remaining, interval)
+        self.installed = False
         return False
 
     def tick(self, signum, frame):
-        # Keep interrupting a call until it unwinds; leave timeout reporting alone afterward.
+        # The one-shot timer is rearmed only at a call boundary or when the run budget changes.
         if self.started is not None or not self.expired:
             self.check()
 
@@ -98,7 +123,8 @@ class Limits:
         if not self.active:
             return
         now = time.monotonic()
-        call_deadline = self.started + self.call_seconds if self.started is not None else float("inf")
+        call_deadline = (self.started + self.call_seconds
+                         if self.started is not None and self.call_seconds else float('inf'))
         if now >= self.deadline:
             if call_deadline < self.deadline:
                 raise Timeout("call", self.call_seconds)
@@ -117,6 +143,7 @@ class Limits:
         self.check_run()
         self.started = time.monotonic()
         try:
+            self.arm()
             self.check()
             return fn(*args)
         finally:
@@ -124,11 +151,12 @@ class Limits:
                 self.check()
             finally:
                 self.started = None
+                self.arm()
 
 
 def seconds(value, name: str) -> float:
-    if isinstance(value, bool) or not isinstance(value, (int, float)) or not 0 < value < float("inf"):
-        raise ModelError(f"{name} must be a positive number of seconds")
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not 0 <= value < float("inf"):
+        raise ModelError(f"{name} must be a nonnegative finite number of seconds (0 disables the limit)")
     return float(value)
 
 
@@ -364,9 +392,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--mutants", action="store_true", help="also run every MODEL.mutants entry; each must violate an invariant")
     ap.add_argument("--expect-violation", metavar="NAME", help="succeed only if invariant NAME is violated (able-to-fail proof)")
     ap.add_argument("--timeout", type=float, metavar="S",
-                    help="seconds for the whole run, then exit 3 (default: MODEL.TIMEOUT or 90)")
+                    help="seconds for the whole run, then exit 3 (default: MODEL.TIMEOUT or 90; 0 disables)")
     ap.add_argument("--call-timeout", type=float, default=DEFAULT_CALL_TIMEOUT, metavar="S",
-                    help="seconds for one call to actions(), an invariant, or a mutant, then exit 2 (default: 10)")
+                    help="seconds for one call to actions(), an invariant, or a mutant, then exit 2 (default: 10; 0 disables)")
     ap.add_argument("--json", action="store_true", help="machine-readable output")
     args = ap.parse_args(argv)
 
@@ -377,7 +405,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.timeout is not None:
             seconds(args.timeout, "--timeout")
-        limits = Limits(args.timeout or DEFAULT_TIMEOUT, seconds(args.call_timeout, "--call-timeout"))
+        limits = Limits(DEFAULT_TIMEOUT if args.timeout is None else args.timeout,
+                        seconds(args.call_timeout, "--call-timeout"))
         with limits:
             mod = load_model(args.model)
             invariants = dict(mod.invariants)

@@ -19,7 +19,7 @@
   "stopped": null,
   "detail": null,
   "exhaustive": true,
-  "seconds": 0.0,
+  "seconds": 0.001,
   "incomplete": null,
   "not_run": [],
   "mutants": {

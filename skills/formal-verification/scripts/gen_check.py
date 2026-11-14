@@ -11,9 +11,10 @@ whose hooks and check run past --call-timeout ends its property as timeout; the
 other properties still run. During shrinking, a timeout instead keeps the
 confirmed failure and marks the reduction incomplete; --expect-fail cannot pass.
 Exit 0 pass, 1 property/filter/target failure, 2
-usage, infrastructure error or call timeout, 3 inconclusive: the run limit or Ctrl-C stopped a
+usage or infrastructure error, 3 inconclusive: a call/run limit or Ctrl-C stopped a
 check and nothing failed outright. --expect-fail never accepts infrastructure
-failures or timeouts.
+failures or timeouts. Zero disables the corresponding time limit. While enabled,
+the checker reserves SIGALRM; checked code must not use alarm/setitimer.
 """
 from __future__ import annotations
 
@@ -51,15 +52,14 @@ class Timeout(BaseException):
 
 
 class Limits:
-    """Run and per-call limits, checked synchronously and by a SIGALRM tick.
+    """Run and per-call limits, checked synchronously and by a one-shot SIGALRM.
 
     Where setitimer is missing (Windows) or off the main thread, warn that the limits are not enforced.
     """
-    TICK = 0.05
-
     def __init__(self, run_seconds, call_seconds):
         self.call_seconds = call_seconds
         self.begun = time.monotonic()
+        self.installed = False
         self.limit_run(run_seconds)
         self.started = None
         self.expired = False
@@ -70,13 +70,32 @@ class Limits:
 
     def limit_run(self, seconds):
         self.run_seconds = seconds
-        self.deadline = self.begun + seconds
+        self.deadline = self.begun + seconds if seconds else float('inf')
+        self.arm()
+
+    def arm(self):
+        """Reserve SIGALRM for the nearest enabled deadline, never for periodic polling."""
+        if not self.installed or signal.getsignal(signal.SIGALRM) != self.tick:
+            return
+        call_deadline = (self.started + self.call_seconds
+                         if self.started is not None and self.call_seconds else float('inf'))
+        deadline = min(self.deadline, call_deadline)
+        delay = max(0.0, deadline - time.monotonic()) if deadline < float('inf') and not self.expired else 0
+        signal.setitimer(signal.ITIMER_REAL, delay)
 
     def __enter__(self):
-        if self.active:
+        if self.active and (self.run_seconds or self.call_seconds):
+            self.entered_at = time.monotonic()
+            self.previous_timer = signal.getitimer(signal.ITIMER_REAL)
             self.previous = signal.signal(signal.SIGALRM, self.tick)
-            signal.setitimer(signal.ITIMER_REAL, self.TICK, self.TICK)
-        else:
+            self.installed = True
+            try:
+                self.arm()
+                self.check_run()  # An already elapsed budget must not disarm the timer and start importing.
+            except BaseException:
+                self.__exit__()
+                raise
+        elif not self.active and (self.run_seconds or self.call_seconds):
             print("gen_check: WARNING: --timeout and --call-timeout are not enforced; "
                   "SIGALRM/setitimer in the main thread is required. Use an external process deadline.",
                   file=sys.stderr, flush=True)
@@ -84,13 +103,18 @@ class Limits:
 
     def __exit__(self, *exc):
         self.started, self.expired = None, True
-        if self.active:
+        if self.installed and signal.getsignal(signal.SIGALRM) == self.tick:
             signal.setitimer(signal.ITIMER_REAL, 0)
             signal.signal(signal.SIGALRM, self.previous if self.previous is not None else signal.SIG_DFL)
+            delay, interval = self.previous_timer
+            if delay:
+                remaining = max(0.000001, delay - (time.monotonic() - self.entered_at))
+                signal.setitimer(signal.ITIMER_REAL, remaining, interval)
+        self.installed = False
         return False
 
     def tick(self, signum, frame):
-        # Keep interrupting a call until it unwinds; leave timeout reporting alone afterward.
+        # The one-shot timer is rearmed only at a call boundary or when the run budget changes.
         if self.started is not None or not self.expired:
             self.check()
 
@@ -99,7 +123,8 @@ class Limits:
         if not self.active:
             return
         now = time.monotonic()
-        call_deadline = self.started + self.call_seconds if self.started is not None else float('inf')
+        call_deadline = (self.started + self.call_seconds
+                         if self.started is not None and self.call_seconds else float('inf'))
         if now >= self.deadline:
             if call_deadline < self.deadline:
                 raise Timeout('call', self.call_seconds)
@@ -132,8 +157,8 @@ LIMIT_CODES = {Limits.tick.__code__, Limits.check.__code__, Limits.check_run.__c
 
 
 def seconds(value, name):
-    if isinstance(value, bool) or not isinstance(value, (int, float)) or not 0 < value < float('inf'):
-        raise PropsError(f"{name} must be a positive number of seconds")
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not 0 <= value < float('inf'):
+        raise PropsError(f"{name} must be a nonnegative finite number of seconds (0 disables the limit)")
     return float(value)
 
 
@@ -337,6 +362,7 @@ def attempt(mod, check, value, repo, limits):
     limits.check_run()
     limits.started = time.monotonic()
     try:
+        limits.arm()
         limits.check()
         for name in ('setup', 'reset'):
             hook = getattr(mod, name, None)
@@ -382,6 +408,7 @@ def attempt(mod, check, value, repo, limits):
             limits.check()
         finally:
             limits.started = None
+            limits.arm()
 
 
 def reduce_failure(mod, gen, check, value, detail, repo, limits):
@@ -412,11 +439,13 @@ def reduce_failure(mod, gen, check, value, detail, repo, limits):
     return value, detail, attempts, None, None
 
 
-def run_property(mod, name, gen, check, rng, count, repo, limits):
-    """Return (result, called, stopped); stopped is a run-limit Timeout or KeyboardInterrupt, if one fired."""
-    result = {"result": "pass", "accepted": 0, "generated": 0, "rejected": 0,
-              "counterexample": None, "detail": None, "shrink_attempts": 0}
-    called = set()
+def property_result():
+    return {"result": "pass", "accepted": 0, "generated": 0, "rejected": 0,
+            "counterexample": None, "detail": None, "shrink_attempts": 0}
+
+
+def run_property(mod, name, gen, check, rng, count, repo, limits, result, called):
+    """Update registered result/coverage in place so a signal at return cannot discard findings."""
     stopped = checking = None
     pinned = getattr(mod, 'examples', {}).get(name, [])
     inputs = itertools.chain(((False, value) for value in pinned),
@@ -467,9 +496,9 @@ def main(argv=None):
     ap.add_argument('--examples', type=int, default=100, help='generated inputs per property after pinned examples (default: 100)')
     ap.add_argument('--expect-fail', metavar='NAME', help='exit 0 only for a counterexample to this property')
     ap.add_argument('--timeout', type=float, metavar='S',
-                    help='seconds for the whole run, then exit 3 (default: PROPS.TIMEOUT or 90)')
+                    help='seconds for the whole run, then exit 3 (default: PROPS.TIMEOUT or 90; 0 disables)')
     ap.add_argument('--call-timeout', type=float, default=DEFAULT_CALL_TIMEOUT, metavar='S',
-                    help="seconds for one input's hooks and check; over it the property is timeout (default: 10)")
+                    help="seconds for one input's hooks and check, then exit 3 (default: 10; 0 disables)")
     ap.add_argument('--json', action='store_true', help='machine-readable output')
     args = ap.parse_args(argv)
     report = {"seed": args.seed, "ok": False, "properties": {}, "called": [], "missing_targets": [],
@@ -480,7 +509,8 @@ def main(argv=None):
             raise PropsError("repo must be a directory, PROPS.py a file, and examples nonnegative")
         if args.timeout is not None:
             seconds(args.timeout, '--timeout')
-        limits = Limits(args.timeout or DEFAULT_TIMEOUT, seconds(args.call_timeout, '--call-timeout'))
+        limits = Limits(DEFAULT_TIMEOUT if args.timeout is None else args.timeout,
+                        seconds(args.call_timeout, '--call-timeout'))
         mod, called = None, set()
         try:
             with limits:
@@ -497,9 +527,8 @@ def main(argv=None):
                 for name, (gen, check) in mod.properties.items():
                     limits.check_run()
                     rng = random.Random(f"{args.seed}:{name}")
-                    result, ran, stopped = run_property(mod, name, gen, check, rng, args.examples, repo, limits)
-                    report['properties'][name] = result
-                    called.update(ran)
+                    result = report['properties'][name] = property_result()
+                    _, _, stopped = run_property(mod, name, gen, check, rng, args.examples, repo, limits, result, called)
                     if result.get('incomplete'):
                         detail = f"{name}: {result['incomplete']}"
                         report['incomplete'] = '; '.join(filter(None, (report['incomplete'], detail)))
@@ -524,9 +553,8 @@ def main(argv=None):
             inconclusive = report['incomplete'] is not None or any(r['result'] == 'timeout' for r in results.values())
             definitive = any(r['result'] not in (expected(n), 'timeout') for n, r in results.items())
             report['ok'] = ok
-            # Unexpected confirmed failures retain exit 1; otherwise call/run timeouts exit 2/3.
-            call_timeout = any(r.get('timeout_scope') == 'call' for r in results.values())
-            code = 0 if ok else (2 if call_timeout else 3) if inconclusive and not definitive else 1
+            # Unexpected confirmed failures retain exit 1; otherwise call/run timeouts exit 3.
+            code = 0 if ok else 3 if inconclusive and not definitive else 1
     except (Exception, SystemExit) as error:
         report.update(result='error', error=f"{type(error).__name__}: {error}")
         code = 2
@@ -552,9 +580,8 @@ def main(argv=None):
             print(f"  incomplete: {report['incomplete']}")
         if 'error' in report:
             print(f"  error: {report['error']}")
-        print('PASS' if report['ok'] else 'INCOMPLETE: a time limit is not a failure and not a proof'
-              if code == 3 else 'ERROR: INCOMPLETE check due to call timeout (exit 2)'
-              if code == 2 and 'error' not in report else 'FAIL')
+        print('PASS' if report['ok'] else 'INCONCLUSIVE: INCOMPLETE check; a time limit is not a failure and not a proof'
+              if code == 3 else 'FAIL')
     return code
 
 

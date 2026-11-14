@@ -30,7 +30,8 @@ such as a leftover .claude/worktrees/NAME/ has) and index entries deleted from
 disk are left out, so `patlint.py ... .` sees what a CI clone sees. A file named
 on the command line is linted as given. A git directory argument expanding to no
 files is a usage error (exit 2); name a file explicitly to lint an ignored file.
-Outside git, directories are walked.
+Outside git, directories are walked. A git failure inside a worktree is an error
+(exit 2), never a reason to walk ignored files or adopt them into a baseline.
 
 Ratchet: with --baseline FILE, only (rule, file) counts above the baseline
 fail, so an already-common pattern can't grow. --update-baseline records
@@ -231,12 +232,25 @@ def git(cwd: Path, *args: str, binary: bool = False):
     return res.stdout if binary else res.stdout.decode(errors="replace")
 
 
+def git_fallback(cwd: Path, error):
+    """Allow disk fallback only outside a checkout, never on a broken git context."""
+    directory = cwd.resolve()
+    in_checkout = (any(name in os.environ for name in ("GIT_DIR", "GIT_WORK_TREE"))
+                   or any(os.path.lexists(p / ".git") for p in (directory, *directory.parents)))
+    if not in_checkout and isinstance(error, FileNotFoundError):
+        print(f"patlint: WARNING: git unavailable: {error}; fallback to filesystem traversal", file=sys.stderr)
+        return
+    if not in_checkout and "not a git repository" in str(error).lower():
+        return
+    raise RuntimeError(f"git lookup failed; refusing filesystem fallback: {error}") from error
+
+
 def git_toplevel(cwd: Path) -> Path | None:
     try:
         out = git(cwd, "rev-parse", "--show-toplevel").strip()
         return Path(out) if out else None
     except (RuntimeError, OSError) as error:
-        print(f"patlint: WARNING: git root lookup failed: {error}; fallback to the working directory", file=sys.stderr)
+        git_fallback(cwd, error)
         return None
 
 
@@ -252,11 +266,11 @@ def git_names(cwd: Path, *args: str) -> list[str] | None:
     try:
         res = subprocess.run(["git", "-C", str(cwd), "--literal-pathspecs", *args], capture_output=True)
     except OSError as error:
-        print(f"patlint: WARNING: git file lookup failed: {error}; fallback to filesystem traversal", file=sys.stderr)
+        git_fallback(cwd, error)
         return None
     if res.returncode != 0:
         detail = res.stderr.decode(errors="replace").strip()
-        print(f"patlint: WARNING: git file lookup failed: {detail}; fallback to filesystem traversal", file=sys.stderr)
+        git_fallback(cwd, RuntimeError(detail))
         return None
     return [os.fsdecode(n) for n in res.stdout.split(b"\0") if n]
 
@@ -646,9 +660,13 @@ def main(argv: list[str] | None = None) -> int:
     except ValueError:
         print("patlint: --today must be YYYY-MM-DD", file=sys.stderr)
         return 2
-    root = (args.root or git_toplevel(Path.cwd()) or Path.cwd()).resolve()
-    if args.rev:
-        root = git_toplevel(root) or root
+    try:
+        root = (args.root or git_toplevel(Path.cwd()) or Path.cwd()).resolve()
+        if args.rev:
+            root = git_toplevel(root) or root
+    except (OSError, RuntimeError) as e:
+        print(f"patlint: {e}", file=sys.stderr)
+        return 2
 
     if args.test:
         return print_proof(test_rules(rules, root), args.json)

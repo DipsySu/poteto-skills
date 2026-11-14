@@ -268,8 +268,22 @@ def _target_bindings(target, value=None):
             yield from _target_bindings(element, value.elts[index] if known else None)
 
 
+def _if_branches(node, fn):
+    """Enclosing if arms; an elif test belongs to its outer if's else arm."""
+    branches = {}
+    while node is not fn:
+        parent = getattr(node, "_parent", None)
+        if isinstance(parent, ast.If):
+            if node in parent.body:
+                branches[parent] = "body"
+            elif node in parent.orelse:
+                branches[parent] = "else"
+        node = parent
+    return branches
+
+
 def _assigned_value(node):
-    """Latest preceding binding in this function; unknown rebinding revokes path provenance."""
+    """Latest compatible binding; conditional joins with unknown sources revoke provenance."""
     if not isinstance(node, ast.Name) or (fn := _function(node)) is None:
         return None
     # Comprehension targets shadow enclosing aliases without rebinding them outside the comprehension.
@@ -282,11 +296,16 @@ def _assigned_value(node):
 
     bindings = []
     position = (node.lineno, node.col_offset)
+    branches = _if_branches(node, fn)
 
     def record(at, pairs):
         end = (at.end_lineno, at.end_col_offset)
         if end <= position:
-            bindings.extend((end, value) for name, value in pairs if name == node.id)
+            assigned_in = _if_branches(at, fn)
+            if any(branches.get(branch, arm) != arm for branch, arm in assigned_in.items()):
+                return  # This binding is in a mutually exclusive arm.
+            certain = all(branch in branches for branch in assigned_in)
+            bindings.extend((end, value if certain else None) for name, value in pairs if name == node.id)
 
     for candidate in ast.walk(fn):
         if isinstance(candidate, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):

@@ -1,6 +1,30 @@
 # Curator review fixes
 
-## Current reassessment, 2026-11-14
+## Round 5, 2026-11-14
+
+Base: `8f599d5873ceb53b811db6c62487eb0276cd0a6c`, branch `curator/2026-11-09`. Addresses the six requested fixes from the fourth-round reviews.
+
+- Added six regression groups before production edits: all six failed, while the existing 15 groups passed. Controlled SIGALRM injection reproduces the property-return handoff; a manual clock/fake timer checks deadlines without timing assumptions. Existing assertions remain, with exact exit expectations updated for the requested contract.
+- Property results/coverage are registered before execution; confirmed failures survive the handoff with exit 1. Request-path bindings respect mutually exclusive if/elif/else arms and reject uncertain joins. Git failures inside worktrees exit 2 without changing the baseline; ordinary non-git fallback stays quiet.
+- Property call timeouts now exit 3; bounded model-call timeouts remain exit 2. Both checkers use one-shot nearest-deadline timers, keep synchronous return checks, and restore prior signal state when still owned. Zero disables each limit independently; migration and SIGALRM ownership are documented, including generated project skills.
+- Focused verification: all 21 groups pass (53 assertions). The final six new groups also all fail when replayed against saved base production sources. Reproduce with `python3 scripts/run_examples.py --review-regressions /tmp/poteto-round5-results` using a fresh output directory.
+- Full `bash scripts/verify.sh --run-examples` on an isolated copy: **7 PASS / 2 FAIL, exit 1**. Formal verification passed 93 assertions; correct passed 46; docs, syntax, helper contracts, installation and the fresh app tests/lint passed. Create/maintain hit the sandbox's loopback-bind `PermissionError`; curator hit `/dev/fd/63: Operation not permitted`. Example regeneration/results therefore remain failing; full verification did not pass in that sandbox.
+- Full `bash scripts/verify.sh --run-examples` on Linux, run twice outside the sandbox: **9 PASS / 0 FAIL, exit 0** both times (formal-verification 93, correct 46, maintain 44 assertions). `logs/examples/` holds the output of that Linux run; `--review-regressions` there also passed all 21 groups.
+- Isolated copies and fixture repositories were removed. Detailed output stays in system temporary space; no nested Git repository or temporary fixture directory remains under `logs/`.
+
+## Follow-ups (not fixed in round 5)
+
+- `bounded_check.py`: crossing the deadline after search can mislabel `trace_incomplete`, overwrite `stopped`, and downgrade a completed pass to exit 3.
+- The summary “outside the search; confirmed findings retained” can contradict where/what actually stopped.
+- `scan_repo.py`: `GO_HANDLE_RECEIVERS` still lacks `api` / `engine` / `group`.
+- Request paths using `self.path.split("?")[0]` / `partition("?")` remain unrecognized; maintain-verification-skill's “every route” wording overstates coverage.
+- Remaining patlint WARNING noise, one git subprocess per file, and undocumented empty-directory/submodule behavior changes.
+- Other documentation mismatches: patlint `--help`, “Committing” versus index membership, and module `TIMEOUT` versus the import-time budget.
+- JSON mode does not print seed/bounds to stderr.
+- A run timeout can overwrite gen_check's earlier `incomplete` shrink details.
+- Existing bounded-check init/terminal/describe exceptions are not wrapped as `ModelError`.
+
+## Previous reassessment, 2026-11-14
 
 Base: `14880b7069089191e3a5bd19f7513570cb3ca4fd`, branch `curator/2026-11-09`. This pass addresses the two current findings in `reviews/codex-curator-2026-11-09.md`; no commit or push was performed.
 
