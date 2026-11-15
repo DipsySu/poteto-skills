@@ -516,6 +516,8 @@ class Examples:
             self.review_with_item_provenance()
             self.review_registered_boolean_actions()
             self.review_parser_action_bindings()
+            self.review_parser_helper_defaults()
+            self.review_parser_constructor_arguments()
             self.review_query_path_aliases()
             self.review_go_receiver_workload()
             self.review_route_workload()
@@ -1476,6 +1478,7 @@ class Handler(BaseHTTPRequestHandler):
             self.review_exception_format_timeout()
             self.review_infrastructure_exception_format()
             self.review_acceptance_record_scope()
+            self.review_supplemental_acceptance_scope()
             self.review_bounded_limit_workload()
 
     def clock_check(self, checker, body, *, run=5, call=10, flags=()):
@@ -2974,6 +2977,108 @@ properties = {"copy": (sampled_from([" title "]), check)}
                 failures.append((label, actual, expected))
         self.ensure(not failures, f'argparse action registries follow parser bindings across scopes, groups, constructors and helpers: {failures}')
 
+    def parser_call_variants(self, name, variants):
+        """Cross-check authored fixtures against real argparse and the complete drift CLI."""
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), name)
+        root = self.scratch / name
+        (root / 'app').mkdir(parents=True)
+        (root / 'app/__init__.py').write_text('')
+        skill = root / '.agents/skills/verify-app'
+        (skill / 'features').mkdir(parents=True)
+        (skill / 'features/README.md').write_text('[List](list.md)\n')
+        (skill / 'features/list.md').write_text('# List\n\n## Sub-features\n\n'
+                                               '## How to get to it (user POV)\n\n'
+                                               '## Driving it with control.sh\n`python3 -m app --json list`\n\n## Gotchas\n')
+        finish = ('parser.add_argument("--output", action="store", default=False)\n'
+                  'parser.add_argument("--label", default=False)\n'
+                  'commands = parser.add_subparsers(dest="command", required=True,\n'
+                  '                                 parser_class=argparse.ArgumentParser)\n'
+                  'commands.add_parser("list")\n'
+                  'if __name__ == "__main__":\n'
+                  '    args = parser.parse_args()\n'
+                  '    assert args.json is True and args.command == "list"\n')
+        failures = []
+        for label, body in variants.items():
+            self.log.write(f'parser binding variant: {label}\n')
+            source = 'import argparse\n' + body + finish
+            (root / 'app/__main__.py').write_text(source)
+            self.run(sys.executable, '-m', 'app', '--json', 'list', cwd=root)
+            # A scan must never import/execute the target, even when following default expressions.
+            static_source = 'raise RuntimeError("scanner executed repository code")\n' + source
+            options = scanner.analyze_python('app/__main__.py', static_source)['parser_options']
+            actual = {o['names'][0]: o['takes_value'] for group in options.values() for o in group}
+            if actual != {'--json': False, '--output': True, '--label': True}:
+                failures.append((label, 'token consumption', actual))
+            (root / 'app/__main__.py').write_text(static_source)
+            drift = self.json(self.script('maintain-verification-skill', 'drift_check.py'), skill, '--repo', root,
+                              '--json', expected=(0, 1))
+            if self.last_returncode != 0 or drift['drift'] or drift['commands']['source'] != 1:
+                failures.append((label, 'real --json list must remain mapped', self.last_returncode, drift))
+        return failures
+
+    def review_parser_helper_defaults(self):
+        prefix = ('parser = argparse.ArgumentParser()\n'
+                  'parser.register("action", "boolean", argparse.BooleanOptionalAction)\n')
+        option = 'out.add_argument("--json", action="boolean")\n'
+        variants = {
+            'positional default': prefix + 'def configure(out=parser):\n    ' + option + 'configure()\n',
+            'keyword-only default': prefix + 'def configure(*, out=parser):\n    ' + option + 'configure()\n',
+            'positional-only default after required arg': prefix
+                + 'def configure(required, out=parser, /):\n    ' + option + 'configure(None)\n',
+            'default evaluated before local shadow': prefix + 'def configure(out=parser):\n'
+                + '    parser = argparse.ArgumentParser()\n    ' + option + 'configure()\n',
+            'default captures parser before reassignment': prefix + 'original = parser\n'
+                + 'def configure(out=parser):\n    ' + option
+                + 'parser = argparse.ArgumentParser()\n'
+                + 'parser.register("action", "boolean", argparse._StoreAction)\n'
+                + 'configure()\nparser = original\n',
+            'explicit positional overrides default': prefix
+                + 'def configure(out=None):\n    ' + option + 'configure(parser)\n',
+            'explicit keyword overrides default': prefix
+                + 'def configure(*, out=None):\n    ' + option + 'configure(out=parser)\n',
+            'method positional and keyword-only defaults': prefix
+                + 'class Parser(argparse.ArgumentParser):\n'
+                + '    def configure(self, action=argparse.BooleanOptionalAction, *, out=parser):\n'
+                + '        out.register("action", "boolean", action)\n        ' + option
+                + 'helper = Parser()\nhelper.configure()\n',
+        }
+        failures = self.parser_call_variants('parser-helper-defaults', variants)
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'default_override_scan')
+        # An explicitly supplied but statically unknown argument must not fall back to the default parser.
+        source = prefix + 'def configure(out=parser):\n    ' + option + 'configure(external_parser)\n'
+        options = scanner.analyze_python('cli.py', source)['parser_options']
+        if not all(o['takes_value'] for group in options.values() for o in group):
+            failures.append(('unknown explicit argument incorrectly reused default', options))
+        self.ensure(not failures, f'helper and method defaults retain definition-time parser bindings with explicit overrides: {failures}')
+
+    def review_parser_constructor_arguments(self):
+        variants = {}
+        for label, signature, call in [
+            ('explicit positional', 'self, action', 'argparse.BooleanOptionalAction'),
+            ('explicit keyword', 'self, action', 'action=argparse.BooleanOptionalAction'),
+            ('keyword-only explicit', 'self, *, action', 'action=argparse.BooleanOptionalAction'),
+            ('positional-only self and action', 'self, action, /', 'argparse.BooleanOptionalAction'),
+            ('positional default', 'self, action=argparse.BooleanOptionalAction', ''),
+            ('keyword-only default', 'self, *, action=argparse.BooleanOptionalAction', ''),
+            ('explicit overrides default', 'self, action=argparse._StoreAction', 'argparse.BooleanOptionalAction'),
+        ]:
+            variants[label] = ('class Parser(argparse.ArgumentParser):\n'
+                               f'    def __init__({signature}):\n'
+                               '        super().__init__()\n'
+                               '        self.register("action", "boolean", action)\n'
+                               f'parser = Parser({call})\n'
+                               'parser.add_argument("--json", action="boolean")\n')
+        variants['constructor default captures action before reassignment'] = (
+            'action = argparse.BooleanOptionalAction\n'
+            'class Parser(argparse.ArgumentParser):\n'
+            '    def __init__(self, action=action):\n'
+            '        super().__init__()\n'
+            '        self.register("action", "boolean", action)\n'
+            'action = argparse._StoreAction\n'
+            'parser = Parser()\nparser.add_argument("--json", action="boolean")\n')
+        failures = self.parser_call_variants('parser-constructor-arguments', variants)
+        self.ensure(not failures, f'direct parser constructors share helper binding for explicit arguments and captured defaults: {failures}')
+
     def review_registered_boolean_actions(self):
         scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'registered_action_scan')
         root = self.scratch / 'registered-action-map'
@@ -3468,6 +3573,15 @@ properties = {"copy": (sampled_from([" title "]), check)}
                     'No out-of-sandbox or Linux acceptance was performed for this pass.' not in history,
                     'the historical Linux acceptance and Mac sandbox limitation do not contradict each other')
 
+    def review_supplemental_acceptance_scope(self):
+        history = (ROOT / 'logs/review-fixes/README.md').read_text().partition(
+            '## Authorized supplemental fixes for HEAD 400b062, 2026-11-15\n')[2].split('\n## ', 1)[0]
+        self.ensure('43/43' in history and '9/9 twice' in history and '7 PASS / 2 FAIL' in history
+                    and 'head-400b062-linux/verify-box.log' in history
+                    and 'head-400b062-verification/verify.log' in history
+                    and 'No new Linux acceptance was performed for this supplemental pass.' not in history,
+                    'supplemental acceptance retains Linux and Mac evidence without denying the recorded Linux runs')
+
     def review_regressions(self, output):
         """Run follow-up regressions independently so every pre-fix failure is recorded."""
         output.mkdir(parents=True, exist_ok=True)
@@ -3489,6 +3603,8 @@ properties = {"copy": (sampled_from([" title "]), check)}
         methods += [self.review_infrastructure_exception_format, self.review_with_item_provenance,
                     self.review_parser_action_bindings, self.review_git_case_aliases,
                     self.review_acceptance_record_scope]
+        methods += [self.review_parser_helper_defaults, self.review_parser_constructor_arguments,
+                    self.review_supplemental_acceptance_scope]
         results = {}
         try:
             with (output / 'run.log').open('w') as self.log:

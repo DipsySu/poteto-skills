@@ -1,0 +1,46 @@
+{
+  "head": "91ccbccfc1b353241a17e5973d7321ae6fbd3764",
+  "branch": "curator/2026-11-09",
+  "sha256": {
+    "scripts/run_examples.py": "e316e79ca28517af45e3d6b97ace21113d840ea6694e47777be57e565688b432",
+    "skills/create-verification-skill/scripts/scan_repo.py": "a9e0c439e12ba7789b756b1ba0d619535161601a57b098070b43dcfc8d8c9ea2",
+    "skills/formal-verification/scripts/gen_check.py": "d56d5071cb4d2f17e83e486e293a56e0cb3149d2e561d3c5cac51936f6a9c702",
+    "skills/formal-verification/scripts/bounded_check.py": "ee2d373535f936bb1b8befc3630397496590764bee7e992357bb2dd39d9b1b33",
+    "skills/create-verification-skill/SKILL.md": "9152da60c1a7e0fb15dd5bd5137c82c5bd83ebf45c5e4f2d3fc224b72269df02",
+    "CHANGELOG.md": "4de778c9855161def1f98a3acb329321d5690e525d168d4d2237cf6ba334b0ab",
+    "logs/review-fixes/README.md": "97b7f46d23018950771f2ed8f675cb42ee599b9ee0f73b9db88bd4890d1b6d2c"
+  },
+  "regressions": {
+    "before": {
+      "pass": 43,
+      "fail": 3
+    },
+    "after": {
+      "pass": 46,
+      "fail": 0,
+      "assertions": 79
+    }
+  },
+  "assertion_audit": {
+    "original_ensure_calls": 248,
+    "current_ensure_calls": 251,
+    "original_calls_changed_or_removed": 0,
+    "new_calls": 3
+  },
+  "checker_sources_identical_to_HEAD": {
+    "skills/formal-verification/scripts/gen_check.py": true,
+    "skills/formal-verification/scripts/bounded_check.py": true
+  },
+  "default_limits_seconds": {
+    "run": 90,
+    "call": 10
+  },
+  "syntax": "pass",
+  "logs_contain_nested_git": false,
+  "historical_evidence_diff": [],
+  "new_logs_contain_only_evidence_files": true,
+  "documentation_check": "pass",
+  "git_diff_check": "pass",
+  "acceptance_regressions_after_final_readme": "both pass",
+  "same_runner_before_and_after": true
+}

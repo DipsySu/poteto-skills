@@ -559,8 +559,19 @@ def _registered_argparse_actions(tree):
         else:
             options[node] = actions.copy()
 
-    def invoke(function, args):
-        node, enclosing = function
+    def define(node, env):
+        # Python captures default objects at definition time, before later name rebindings.
+        parameters = [*node.args.posonlyargs, *node.args.args]
+        defaults = {param.arg: value(default, env) for param, default in
+                    zip(parameters[len(parameters) - len(node.args.defaults):], node.args.defaults)}
+        defaults.update({param.arg: value(default, env) for param, default in
+                         zip(node.args.kwonlyargs, node.args.kw_defaults) if default is not None})
+        function = (node, env, defaults)
+        functions.append(function)
+        return function
+
+    def invoke(function, args=(), keywords=None):
+        node, enclosing, defaults = function
         if node in active:
             return None
         called.add(node)
@@ -582,8 +593,11 @@ def _registered_argparse_actions(tree):
                 local.update(alias.asname or alias.name.split('.')[0] for alias in child.names)
             pending.extend(ast.iter_child_nodes(child))
         env.update({name: None for name in local - globals_})
-        parameters = [*node.args.posonlyargs, *node.args.args, *node.args.kwonlyargs]
-        env.update({param.arg: args.get(param.arg) for param in parameters})
+        positional = [*node.args.posonlyargs, *node.args.args]
+        env.update({param.arg: defaults.get(param.arg) for param in [*positional, *node.args.kwonlyargs]})
+        env.update(zip((param.arg for param in positional), args))
+        env.update({param.arg: keywords[param.arg] for param in [*node.args.args, *node.args.kwonlyargs]
+                    if keywords is not None and param.arg in keywords})
         try:
             return statements(node.body, env, enclosing, globals_)
         finally:
@@ -614,27 +628,22 @@ def _registered_argparse_actions(tree):
                 elif node.func.attr == 'add_argument':
                     record(node, receiver.actions)
                 elif node.func.attr in receiver.methods:
-                    method = receiver.methods[node.func.attr]
-                    params = [*method[0].args.posonlyargs, *method[0].args.args]
-                    return invoke(method, dict(zip((p.arg for p in params), [receiver, *args])) | keywords)
+                    return invoke(receiver.methods[node.func.attr], [receiver, *args], keywords)
                 return None
         target = value(node.func, env)
         if target == 'argparse.ArgumentParser':
             return Parser()
         if isinstance(target, tuple) and isinstance(target[0], ast.ClassDef):
-            cls, enclosing = target
+            cls, enclosing, methods = target
             if any(value(base, enclosing) == 'argparse.ArgumentParser' for base in cls.bases):
                 parser = Parser()
-                parser.methods = {child.name: (child, enclosing) for child in cls.body
-                                  if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef))}
-                init = next((child for child in cls.body if isinstance(child, ast.FunctionDef)
-                             and child.name == '__init__'), None)
-                if init and init.args.args:
-                    invoke((init, enclosing), {init.args.args[0].arg: parser})
+                parser.methods = methods
+                init = methods.get('__init__')
+                if init and isinstance(init[0], ast.FunctionDef):
+                    invoke(init, [parser, *args], keywords)
                 return parser
         if isinstance(target, tuple) and isinstance(target[0], (ast.FunctionDef, ast.AsyncFunctionDef)):
-            params = [*target[0].args.posonlyargs, *target[0].args.args]
-            return invoke(target, dict(zip((p.arg for p in params), args)) | keywords)
+            return invoke(target, args, keywords)
         return None
 
     def statements(body, env, global_env=None, global_names=()):
@@ -644,12 +653,12 @@ def _registered_argparse_actions(tree):
                     env[alias.asname or alias.name.split('.')[0]] = ((node.module + '.' + alias.name)
                         if isinstance(node, ast.ImportFrom) and node.module else alias.name)
             elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-                env[node.name] = (node, env)
                 if isinstance(node, ast.ClassDef):
-                    functions.extend((child, env) for child in node.body
-                                     if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)))
+                    methods = {child.name: define(child, env) for child in node.body
+                               if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef))}
+                    env[node.name] = (node, env, methods)
                 else:
-                    functions.append((node, env))
+                    env[node.name] = define(node, env)
             elif isinstance(node, (ast.Assign, ast.AnnAssign)):
                 result = value(node.value, env)
                 for target in node.targets if isinstance(node, ast.Assign) else [node.target]:
@@ -680,7 +689,7 @@ def _registered_argparse_actions(tree):
         if function[0] not in called:
             parsers = [item for item in function[1].values() if isinstance(item, Parser)]
             saved = [(parser, parser.actions.copy()) for parser in parsers]
-            invoke(function, {})
+            invoke(function)
             for parser, actions in saved:
                 parser.actions = actions
     return options
