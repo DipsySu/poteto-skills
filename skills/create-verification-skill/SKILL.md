@@ -15,7 +15,7 @@ Give agents hands and eyes: one committed, scripted way to launch the app, drive
 python3 $SKILL_DIR/scripts/scan_repo.py .        # --json for the full inventory
 ```
 
-Check each answer against the code. Ask the user only what the repo can't tell you. Python request-path aliases respect mutually exclusive `if` and `match/case` branches, exceptional paths and optional bodies; assignments not proven to have executed revoke their source, so filesystem paths are not promoted to HTTP routes. Argparse action aliases registered on the same parser before an option retain the known action's token consumption, including `BooleanOptionalAction` without explicit `nargs=0`.
+Check each answer against the code. Ask the user only what the repo can't tell you. Python request-path aliases respect mutually exclusive `if` and `match/case` branches, exceptional paths and optional bodies; assignments not proven to have executed revoke their source, so filesystem paths are not promoted to HTTP routes. Multiple `with` managers are evaluated left to right; a later context expression establishes a source only where reaching it is proven. Argparse registrations follow statically resolved parser bindings across global references, aliases, argument and mutually exclusive groups, local helper calls and `ArgumentParser` constructors. Known actions retain their token consumption, including `BooleanOptionalAction` without explicit `nargs=0`; unresolved custom names use the same bool-default heuristic as custom action classes. Local shadowing and parser reassignment isolate registries.
 
 - **Surface:** what a user touches (HTTP API, CLI, web UI, desktop app). Pick the primary one and note the rest.
 - **Run:** the repo's own start command, ports, env vars, seed data, auth.

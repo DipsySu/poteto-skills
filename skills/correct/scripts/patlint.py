@@ -258,11 +258,26 @@ def git_toplevel(cwd: Path) -> Path | None:
         return None
 
 
-def rel_to(root: Path, p: Path) -> str:
+def relative_in(root: Path, p: Path) -> Path | None:
+    """Return a contained path relative to ROOT, allowing filesystem case aliases."""
+    root, p = root.resolve(), p.resolve()
     try:
-        return p.resolve().relative_to(root.resolve()).as_posix()
+        return p.relative_to(root)
     except ValueError:
-        return p.as_posix()
+        # resolve() preserves input casing on macOS, while git reports the
+        # filesystem's spelling. A different spelling need not mean outside.
+        for ancestor in (p, *p.parents):
+            try:
+                if ancestor.samefile(root):
+                    return p.relative_to(ancestor)
+            except FileNotFoundError:
+                continue
+    return None
+
+
+def rel_to(root: Path, p: Path) -> str:
+    relative = relative_in(root, p)
+    return relative.as_posix() if relative is not None else p.as_posix()
 
 
 def git_names(cwd: Path, *args: str) -> list[str] | None:
@@ -319,18 +334,39 @@ def walk(paths: list[Path], root: Path, top=...):
     if top is ...:
         top = git_toplevel(root)
     listing = None
+    selected_paths = {}
     if top is not None:
-        pathspecs = [rel_to(top, p) for p in paths if p.resolve().is_relative_to(top)]
+        pathspecs, prefixes, git_dir = [], {}, None
+        for p in paths:
+            relative = relative_in(top, p)
+            if relative is None:
+                continue
+            selected = p.resolve()
+            if selected.exists():
+                directory = selected if selected.is_dir() else selected.parent
+                if directory not in prefixes:
+                    if git_dir is None:
+                        git_dir = git(top, "rev-parse", "--absolute-git-dir").strip()
+                    # Git obtains the on-disk directory spelling after chdir. Pin
+                    # the selected index so a nested checkout cannot replace it.
+                    prefixes[directory] = git(directory, "--git-dir", git_dir, "--work-tree", str(top),
+                                              "rev-parse", "--show-prefix").rstrip("\n")
+                selected = top / prefixes[directory]
+                if p.is_file():
+                    selected /= p.resolve().name
+            selected_paths[p] = selected
+            pathspecs.append(rel_to(top, selected))
         listing = git_file_set(top, pathspecs) if pathspecs else ([], set())
     names, tracked = listing if listing is not None else ([], set())
     seen = set()
     for p in paths:
         if not p.exists():
             raise FileNotFoundError(f"path not found: {p}")
-        outside_git = listing is None or (not p.resolve().is_relative_to(top)
+        outside_git = listing is None or (relative_in(top, p) is None
                                            and not has_git_marker(p if p.is_dir() else p.parent))
         if p.is_file():
-            cand = [(p, outside_git or rel_to(top, p) in tracked)]
+            selected = selected_paths.get(p, p)
+            cand = [(selected, outside_git or rel_to(top, selected) in tracked)]
         else:
             if outside_git:
                 cand = []
@@ -338,8 +374,7 @@ def walk(paths: list[Path], root: Path, top=...):
                     dirnames[:] = sorted(d for d in dirnames if d not in SKIP_DIRS)
                     cand.extend((Path(dirpath) / f, True) for f in sorted(filenames))
             else:
-                directory = p.resolve()
-                cand = [(top / n, n in tracked) for n in names if (top / n).is_relative_to(directory)]
+                cand = [(top / n, n in tracked) for n in names if relative_in(p, top / n) is not None]
                 if not cand:
                     raise RuntimeError(f"no files to lint in directory: {p} (empty, ignored, or excluded by git); "
                                        "name a file explicitly to lint it as given")

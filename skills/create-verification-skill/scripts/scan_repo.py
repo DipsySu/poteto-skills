@@ -25,7 +25,8 @@ Assignments that may not have executed on exceptional paths or after optional su
 Unconfirmed containers/segments retain filesystem-prefix filtering. Go receiver names are restricted to common
 router conventions (r, router, mux, app, engine, group, api, server; http for Handle/HandleFunc). Each CLI option records takes_value: false for argparse's store_true,
 store_false, store_const, append_const, count, help, version, and BooleanOptionalAction, and for click flags.
-Preceding register("action", alias, argparse_action) calls on the same parser preserve those action semantics.
+Static parser bindings retain register("action", alias, action) semantics across global references, aliases,
+argument groups, local helper calls and ArgumentParser constructors. Unknown custom actions use a bool-default heuristic.
 """
 from __future__ import annotations
 
@@ -69,6 +70,7 @@ FS_PREFIX = re.compile(r"^/(tmp|etc|usr|var|dev|proc|bin|sbin|home|opt|root|sys|
 ROUTE_DECOS = {"route", "get", "post", "put", "patch", "delete", "head", "options", "api_route", "websocket"}
 NO_VALUE_ACTIONS = {"store_true", "store_false", "store_const", "append_const", "count", "help", "version",
                     "BooleanOptionalAction"}  # argparse actions that consume no token
+ARGPARSE_ACTIONS = argparse.ArgumentParser(add_help=False)._registries["action"]
 RE_FUNCS = {"match", "fullmatch", "search", "compile"}
 SKIP_CALLS = {"split", "rsplit", "strip", "rstrip", "lstrip", "join", "replace", "send_header", "open", "Path",
               "exists", "isfile", "isdir", "mkdir", "makedirs", "write", "print", "log_message", "format", "encode",
@@ -349,7 +351,17 @@ def _if_branches(node, fn):
                 branches[parent] = "else"
             elif node in parent.finalbody:
                 branches[parent] = "finally"
-        elif isinstance(parent, (ast.For, ast.AsyncFor, ast.While, ast.With, ast.AsyncWith)):
+        elif isinstance(parent, (ast.With, ast.AsyncWith)):
+            # Managers enter left to right. An earlier manager can suppress an error
+            # before a later context expression is evaluated, letting code after the
+            # with run without that expression's assignments. The body proves all items ran.
+            if node in parent.items:
+                index = parent.items.index(node)
+                if index:
+                    branches[parent] = index
+            elif node in parent.body:
+                branches[parent] = len(parent.items)
+        elif isinstance(parent, (ast.For, ast.AsyncFor, ast.While)):
             if node in parent.body:
                 branches[parent] = "body"
             elif node in getattr(parent, "orelse", []):
@@ -447,6 +459,8 @@ def _assigned_value(node):
             elif isinstance(branch, (ast.For, ast.AsyncFor, ast.While)):
                 # A loop's else suite can follow zero iterations or an interrupted body.
                 definite &= current == arm
+            elif isinstance(branch, (ast.With, ast.AsyncWith)):
+                definite &= current is not None and current >= arm
             elif current is not None and (current < arm if isinstance(branch, ast.BoolOp) else current != arm):
                 break  # This binding is in a mutually exclusive arm.
             else:
@@ -523,41 +537,152 @@ def _compares_path(node) -> bool:
 
 
 def _registered_argparse_actions(tree):
-    """Resolve preceding parser.register('action', alias, argparse_action) calls without running repo code."""
-    imports, registrations, options = {}, {}, {}
-    nodes = [node for node in ast.walk(tree) if isinstance(node, (ast.Import, ast.ImportFrom, ast.Call))]
-    if not any(isinstance(node, ast.Call) and _call_name(node) == "register" for node in nodes):
-        return options
-    # Obtain the implementation classes from argparse's own built-in action registry, rather
-    # than assuming a user-chosen registration string is a built-in action/class name.
-    builtin = argparse.ArgumentParser(add_help=False)
-    no_value_classes = {builtin._registry_get("action", name).__name__ for name in NO_VALUE_ACTIONS
-                        if builtin._registry_get("action", name) is not None}
-    no_value_classes.add(argparse.BooleanOptionalAction.__name__)
-    no_value_classes = {"argparse." + name for name in no_value_classes}
-    for node in sorted(nodes, key=lambda n: (n.lineno, n.col_offset)):
-        scope = _function(node)
-        if isinstance(node, ast.Import):
-            for alias in node.names:
-                imports[scope, alias.asname or alias.name] = alias.name
-        elif isinstance(node, ast.ImportFrom) and node.module:
-            for alias in node.names:
-                imports[scope, alias.asname or alias.name] = node.module + "." + alias.name
-        if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
-                and isinstance(node.func.value, ast.Name)):
-            continue
-        key = scope, node.func.value.id
-        if node.func.attr == "register" and len(node.args) >= 3 and _str(node.args[0]) == "action":
-            alias, action = _str(node.args[1]), node.args[2]
-            if not alias:
+    """Follow static parser bindings and their shared action registries, without executing repo code."""
+    if not any(isinstance(node, ast.Call) and _call_name(node) == 'register' for node in ast.walk(tree)):
+        return {}
+    options, functions, called, active = {}, [], set(), set()
+    action_classes = {"argparse." + cls.__name__: name not in NO_VALUE_ACTIONS
+                      for name, cls in ARGPARSE_ACTIONS.items() if cls is not None}
+    action_classes["argparse.BooleanOptionalAction"] = False
+
+    class Parser:
+        def __init__(self):
+            self.actions = {}
+            self.methods = {}
+
+    def record(node, actions):
+        # A helper can be used with several parsers. Only agreed registrations are known.
+        if node in options:
+            old = options[node]
+            options[node] = {key: value for key, value in old.items()
+                             if key in actions and actions[key] == value}
+        else:
+            options[node] = actions.copy()
+
+    def invoke(function, args):
+        node, enclosing = function
+        if node in active:
+            return None
+        called.add(node)
+        active.add(node)
+        env = enclosing.copy()
+        # Python's lexical locals shadow globals even before their first assignment.
+        pending = list(node.body)
+        local, globals_ = set(), set()
+        while pending:
+            child = pending.pop()
+            if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                local.add(child.name)
                 continue
-            base = action.value if isinstance(action, ast.Attribute) else action
-            imported = (imports.get((scope, base.id), imports.get((None, base.id), ""))
-                        if isinstance(base, ast.Name) else "")
-            qualified = imported + "." + action.attr if isinstance(action, ast.Attribute) else imported
-            registrations.setdefault(key, {})[alias] = qualified not in no_value_classes
-        elif node.func.attr == "add_argument":
-            options[node] = registrations.get(key, {}).copy()
+            if isinstance(child, ast.Global):
+                globals_.update(child.names)
+            if isinstance(child, ast.Name) and isinstance(child.ctx, (ast.Store, ast.Del)):
+                local.add(child.id)
+            if isinstance(child, (ast.Import, ast.ImportFrom)):
+                local.update(alias.asname or alias.name.split('.')[0] for alias in child.names)
+            pending.extend(ast.iter_child_nodes(child))
+        env.update({name: None for name in local - globals_})
+        parameters = [*node.args.posonlyargs, *node.args.args, *node.args.kwonlyargs]
+        env.update({param.arg: args.get(param.arg) for param in parameters})
+        try:
+            return statements(node.body, env, enclosing, globals_)
+        finally:
+            active.remove(node)
+
+    def value(node, env):
+        if isinstance(node, ast.Name):
+            return env.get(node.id)
+        if isinstance(node, ast.Attribute):
+            base = value(node.value, env)
+            return base + '.' + node.attr if isinstance(base, str) else None
+        if not isinstance(node, ast.Call):
+            return None
+        args = [value(arg, env) for arg in node.args]
+        keywords = {kw.arg: value(kw.value, env) for kw in node.keywords if kw.arg}
+        if isinstance(node.func, ast.Attribute):
+            receiver = value(node.func.value, env)
+            if isinstance(receiver, Parser):
+                if node.func.attr in {'add_subparsers', 'add_parser'}:
+                    return Parser()  # Each subparser owns its registry; it is not an argument group.
+                if node.func.attr in {'add_argument_group', 'add_mutually_exclusive_group'}:
+                    return receiver  # argparse groups share the parent's registry, in both directions.
+                if node.func.attr == 'register' and len(node.args) >= 3 and _str(node.args[0]) == 'action':
+                    alias = _str(node.args[1])
+                    if alias:
+                        action = args[2]
+                        receiver.actions[alias] = action_classes.get(action) if isinstance(action, str) else None
+                elif node.func.attr == 'add_argument':
+                    record(node, receiver.actions)
+                elif node.func.attr in receiver.methods:
+                    method = receiver.methods[node.func.attr]
+                    params = [*method[0].args.posonlyargs, *method[0].args.args]
+                    return invoke(method, dict(zip((p.arg for p in params), [receiver, *args])) | keywords)
+                return None
+        target = value(node.func, env)
+        if target == 'argparse.ArgumentParser':
+            return Parser()
+        if isinstance(target, tuple) and isinstance(target[0], ast.ClassDef):
+            cls, enclosing = target
+            if any(value(base, enclosing) == 'argparse.ArgumentParser' for base in cls.bases):
+                parser = Parser()
+                parser.methods = {child.name: (child, enclosing) for child in cls.body
+                                  if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef))}
+                init = next((child for child in cls.body if isinstance(child, ast.FunctionDef)
+                             and child.name == '__init__'), None)
+                if init and init.args.args:
+                    invoke((init, enclosing), {init.args.args[0].arg: parser})
+                return parser
+        if isinstance(target, tuple) and isinstance(target[0], (ast.FunctionDef, ast.AsyncFunctionDef)):
+            params = [*target[0].args.posonlyargs, *target[0].args.args]
+            return invoke(target, dict(zip((p.arg for p in params), args)) | keywords)
+        return None
+
+    def statements(body, env, global_env=None, global_names=()):
+        for node in body:
+            if isinstance(node, (ast.Import, ast.ImportFrom)):
+                for alias in node.names:
+                    env[alias.asname or alias.name.split('.')[0]] = ((node.module + '.' + alias.name)
+                        if isinstance(node, ast.ImportFrom) and node.module else alias.name)
+            elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                env[node.name] = (node, env)
+                if isinstance(node, ast.ClassDef):
+                    functions.extend((child, env) for child in node.body
+                                     if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)))
+                else:
+                    functions.append((node, env))
+            elif isinstance(node, (ast.Assign, ast.AnnAssign)):
+                result = value(node.value, env)
+                for target in node.targets if isinstance(node, ast.Assign) else [node.target]:
+                    if isinstance(target, ast.Name):
+                        env[target.id] = result
+                        if target.id in global_names:
+                            global_env[target.id] = result
+            elif isinstance(node, ast.Expr):
+                value(node.value, env)
+            elif isinstance(node, ast.Return):
+                return value(node.value, env)
+            elif isinstance(node, ast.Match):
+                for case in node.cases:
+                    statements(case.body, env, global_env, global_names)
+            elif isinstance(node, (ast.If, ast.For, ast.AsyncFor, ast.While, ast.With, ast.AsyncWith,
+                                   ast.Try, getattr(ast, 'TryStar', ast.Try))):
+                # Preserve syntactic inventory inside compound suites. Main guards also call entry points here.
+                statements(node.body, env, global_env, global_names)
+                for handler in getattr(node, 'handlers', []):
+                    statements(handler.body, env, global_env, global_names)
+                statements(getattr(node, 'orelse', []), env, global_env, global_names)
+                statements(getattr(node, 'finalbody', []), env, global_env, global_names)
+        return None
+
+    statements(tree.body, {})
+    # Uncalled entry points are still inventoried. Do not let their registrations leak to other entry points.
+    for function in functions:
+        if function[0] not in called:
+            parsers = [item for item in function[1].values() if isinstance(item, Parser)]
+            saved = [(parser, parser.actions.copy()) for parser in parsers]
+            invoke(function, {})
+            for parser, actions in saved:
+                parser.actions = actions
     return options
 
 
@@ -577,8 +702,13 @@ def _takes_value(keywords: list[ast.keyword], default, names: list[str], registe
         return True
     if isinstance(action, ast.Constant):
         if registered is not None and action.value in registered:
-            return registered[action.value]
-        return action.value not in NO_VALUE_ACTIONS  # store, append and extend take a value
+            known = registered[action.value]
+            return known if known is not None else not isinstance(default, bool)
+        if action.value in NO_VALUE_ACTIONS:
+            return False
+        if action.value in ARGPARSE_ACTIONS:
+            return True  # Includes None, argparse's default store action.
+        return not isinstance(default, bool)  # An unresolved alias is as opaque as a custom action class.
     if (action.attr if isinstance(action, ast.Attribute) else getattr(action, "id", None)) in NO_VALUE_ACTIONS:
         return False  # argparse.BooleanOptionalAction
     return not isinstance(default, bool)

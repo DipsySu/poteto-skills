@@ -424,7 +424,7 @@ def attempt(mod, check, value, repo, limits):
         finally:
             sys.setprofile(previous)
             if profile_error is not None:
-                raise PropsError(f"profiling failed: {profile_error}")
+                raise PropsError("profiling failed") from profile_error
     finally:
         try:
             limits.check()
@@ -436,9 +436,25 @@ def attempt(mod, check, value, repo, limits):
 def failure_detail(detail, *, formatted=False):
     """A JSON-safe diagnostic is available before interruptible exception formatting."""
     if isinstance(detail, BaseException):
+        if type(detail) is PropsError and detail.__cause__ is not None:
+            cause = detail.__cause__
+            message = str(cause) if formatted else '<exception message not formatted>'
+            return f"PropsError: {detail.args[0]}: {type(cause).__name__}: {message}"
         message = str(detail) if formatted else '<exception message not formatted>'
         return f"{type(detail).__name__}: {message}"
     return detail
+
+
+@contextmanager
+def infrastructure_errors(report, limits):
+    """Record imports/hooks/generators before formatting with the run timer still active."""
+    try:
+        yield
+    except (Exception, SystemExit) as error:
+        with limits.record_result():
+            report.update(result='error', error=failure_detail(error))
+        report['error'] = failure_detail(error, formatted=True)
+        limits.check_run()
 
 
 def reduce_failure(mod, gen, check, value, detail, repo, limits, result):
@@ -562,7 +578,7 @@ def main(argv=None):
                         seconds(args.call_timeout, '--call-timeout'))
         mod, called = None, set()
         try:
-            with limits:
+            with limits, infrastructure_errors(report, limits):
                 mod, targets = load_props(args.props, repo)
                 if args.expect_fail is not None and args.expect_fail not in mod.properties:
                     raise PropsError(f"unknown property: {args.expect_fail}")
@@ -604,6 +620,8 @@ def main(argv=None):
             report['ok'] = ok
             # Unexpected confirmed failures retain exit 1; otherwise call/run timeouts exit 3.
             code = 0 if ok else 3 if inconclusive and not definitive else 1
+        if report.get('result') == 'error':
+            report['ok'], code = False, 2
     except (Exception, SystemExit) as error:
         report.update(result='error', error=f"{type(error).__name__}: {error}")
         code = 2

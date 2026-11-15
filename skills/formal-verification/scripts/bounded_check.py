@@ -44,6 +44,13 @@ class ModelError(Exception):
     pass
 
 
+class ModelImportError(ModelError):
+    """Keep the original exception without formatting it while importing."""
+    def __init__(self, path, original):
+        self.context, self.original = f"importing {path} failed", original
+        super().__init__(f"{self.context}: {type(original).__name__}: <exception message not formatted>")
+
+
 class Timeout(BaseException):
     """A time limit stopped a call or the run (a BaseException, so `except Exception` can't swallow it)."""
 
@@ -239,7 +246,7 @@ def load_model(path: Path):
     try:
         spec.loader.exec_module(mod)
     except Exception as e:  # noqa: BLE001 - report any import-time failure of the model
-        raise ModelError(f"importing {path} failed: {type(e).__name__}: {e}")
+        raise ModelImportError(path, e) from e
     if not callable(getattr(mod, "inits", None)) and not callable(getattr(mod, "init", None)):
         raise ModelError("MODEL.py must define init() (or inits())")
     if not callable(getattr(mod, "actions", None)):
@@ -265,6 +272,24 @@ def exception_detail(error, where, *, formatted=False):
     """Keep error identity without running user __str__ while recording a finding."""
     message = str(error) if formatted else '<exception message not formatted>'
     return f"{where} raised {type(error).__name__}: {message}"
+
+
+@contextmanager
+def model_errors(limits):
+    """An existing model error remains exit 2 if its message exceeds the run budget."""
+    try:
+        yield
+    except ModelError as error:
+        try:
+            with limits.record_result():
+                detail = (error.args[0] if type(error) is ModelImportError
+                          else exception_detail(error, "model"))
+            detail = (f"{error.context}: {type(error.original).__name__}: {error.original}"
+                      if type(error) is ModelImportError else str(error))
+            limits.check_run()
+        except Timeout:
+            pass  # The error was already established; keep its safe diagnostic.
+        raise ModelError(detail) from error
 
 
 def explore(mod, actions_fn, invariants: dict, depth: int, max_states: int, deadlock: bool, limits: Limits,
@@ -508,7 +533,7 @@ def main(argv: list[str] | None = None) -> int:
             seconds(args.timeout, "--timeout")
         limits = Limits(DEFAULT_TIMEOUT if args.timeout is None else args.timeout,
                         seconds(args.call_timeout, "--call-timeout"))
-        with limits:
+        with limits, model_errors(limits):
             mod = load_model(args.model)
             invariants = dict(mod.invariants)
             if args.invariant:

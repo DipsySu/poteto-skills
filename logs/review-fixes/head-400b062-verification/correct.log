@@ -1,0 +1,3858 @@
+scratch: /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/mine_mistakes.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --since 2026-09-01 --feedback /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/review-comments.json /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/chat-feedback.md --json
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app",
+  "since": "2026-09-01",
+  "items": 13,
+  "counts": {
+    "commit": 6,
+    "review": 4,
+    "chat": 3
+  },
+  "min_count": 2,
+  "classes": [
+    {
+      "count": 7,
+      "items": 8,
+      "sources": {
+        "commit": 4,
+        "review": 2,
+        "chat": 2
+      },
+      "signature": [
+        "store.py",
+        "bypassing",
+        "direct",
+        "json",
+        "store",
+        "writes",
+        "Store.add",
+        "json.dumps"
+      ],
+      "signature_keys": [
+        "file:store.py",
+        "bypass",
+        "direct",
+        "json",
+        "stor",
+        "writ",
+        "id:store.add",
+        "id:json.dumps"
+      ],
+      "evidence": [
+        {
+          "id": "review:102",
+          "source": "review",
+          "kind": null,
+          "ref": "review-comments.json#102",
+          "text": "Direct JSON writes bypassing store.py repeat in the HTTP handler. Use Store.add; only store.py owns persistence and locking.",
+          "paths": [
+            "todo/api.py"
+          ],
+          "line": 1,
+          "author": "reviewer",
+          "date": "2026-10-08",
+          "url": null
+        },
+        {
+          "id": "review:101",
+          "source": "review",
+          "kind": null,
+          "ref": "review-comments.json#101",
+          "text": "Direct JSON writes bypassing store.py again: store.path.write_text(json.dumps(rows)) loses concurrent additions. Use Store.add atomic transaction.",
+          "paths": [
+            "todo/__main__.py"
+          ],
+          "line": 1,
+          "author": "reviewer",
+          "date": "2026-10-08",
+          "url": null
+        },
+        {
+          "id": "commit:2fd7988731",
+          "source": "commit",
+          "kind": "fix",
+          "ref": "2fd7988731eb03a000207e269b441daeb22d2a3e",
+          "text": "fix: remove direct JSON writes bypassing store.py; use Store.add atomic transaction",
+          "paths": [
+            "todo/api.py"
+          ],
+          "line": null,
+          "author": "example-dev",
+          "date": "2026-09-18",
+          "url": null,
+          "diff_ids": [
+            "self.reply",
+            "self.server.store.add",
+            "body.get",
+            "self.server.store",
+            "store.list_all()",
+            "rows.append",
+            "store.path.write_text",
+            "json.dumps"
+          ],
+          "diff_added": [
+            "self.reply",
+            "self.server.store.add",
+            "body.get"
+          ],
+          "diff_removed": [
+            "self.server.store",
+            "store.list_all()",
+            "body.get",
+            "rows.append",
+            "store.path.write_text",
+            "json.dumps",
+            "self.reply"
+          ]
+        },
+        {
+          "id": "commit:dbd4400868",
+          "source": "commit",
+          "kind": "fix",
+          "ref": "dbd44008685859312aee6a60154fd0258c1c063b",
+          "text": "fix: persist API additions with direct JSON writes bypassing store.py",
+          "paths": [
+            "todo/api.py"
+          ],
+          "line": null,
+          "author": "example-dev",
+          "date": "2026-09-15",
+          "url": null,
+          "diff_ids": [
+            "self.server.store",
+            "store.list_all()",
+            "body.get",
+            "rows.append",
+            "store.path.write_text",
+            "json.dumps",
+            "self.reply",
+            "self.server.store.add"
+          ],
+          "diff_added": [
+            "self.server.store",
+            "store.list_all()",
+            "body.get",
+            "rows.append",
+            "store.path.write_text",
+            "json.dumps",
+            "self.reply"
+          ],
+          "diff_removed": [
+            "self.reply",
+            "self.server.store.add",
+            "body.get"
+          ]
+        },
+        {
+          "id": "commit:97a3f30001",
+          "source": "commit",
+          "kind": "revert",
+          "ref": "97a3f3000122e373acec453f5102faa03b23cc2b",
+          "text": "Revert \"fix: persist CLI additions with direct JSON writes bypassing store.py\"",
+          "paths": [
+            "todo/__main__.py"
+          ],
+          "line": null,
+          "author": "example-dev",
+          "date": "2026-09-09",
+          "url": null,
+          "diff_ids": [
+            "store.add",
+            "args.title",
+            "store.list_all()",
+            "rows.append",
+            "store.path.write_text",
+            "json.dumps"
+          ],
+          "diff_added": [
+            "store.add",
+            "args.title"
+          ],
+          "diff_removed": [
+            "store.list_all()",
+            "args.title",
+            "rows.append",
+            "store.path.write_text",
+            "json.dumps"
+          ],
+          "reverts": "570c1e91c25878c9550969a1ba4072a0e1790d27"
+        },
+        {
+          "id": "commit:570c1e91c2",
+          "source": "commit",
+          "kind": "reverted",
+          "ref": "570c1e91c25878c9550969a1ba4072a0e1790d27",
+          "text": "fix: persist CLI additions with direct JSON writes bypassing store.py",
+          "paths": [
+            "todo/__main__.py"
+          ],
+          "line": null,
+          "author": "example-dev",
+          "date": "2026-09-07",
+          "url": null,
+          "diff_ids": [
+            "store.list_all()",
+            "args.title",
+            "rows.append",
+            "store.path.write_text",
+            "json.dumps",
+            "store.add"
+          ],
+          "diff_added": [
+            "store.list_all()",
+            "args.title",
+            "rows.append",
+            "store.path.write_text",
+            "json.dumps"
+          ],
+          "diff_removed": [
+            "store.add",
+            "args.title"
+          ],
+          "reverted_by": "97a3f3000122e373acec453f5102faa03b23cc2b"
+        },
+        {
+          "id": "chat:chat-feedback.md:4",
+          "source": "chat",
+          "kind": null,
+          "ref": "chat-feedback.md:4",
+          "text": "Direct JSON writes bypassing store.py lose concurrent updates; centralize persistence and locking.",
+          "paths": [],
+          "line": 4,
+          "author": null,
+          "date": null,
+          "url": null
+        },
+        {
+          "id": "chat:chat-feedback.md:3",
+          "source": "chat",
+          "kind": null,
+          "ref": "chat-feedback.md:3",
+          "text": "Direct JSON writes bypassing store.py happened in the CLI and HTTP handler. Use Store.add atomic transaction and a lint naming that fix.",
+          "paths": [],
+          "line": 3,
+          "author": null,
+          "date": null,
+          "url": null
+        }
+      ],
+      "rules": [
+        {
+          "file": "AGENTS.md",
+          "line": 5,
+          "text": "Persist JSON only through store.py; use Store.add or Store.transition",
+          "enforced_by": "scripts/lint.sh",
+          "status": "enforced"
+        }
+      ],
+      "repeat": false,
+      "id": "C1"
+    },
+    {
+      "count": 5,
+      "items": 5,
+      "sources": {
+        "commit": 2,
+        "review": 2,
+        "chat": 1
+      },
+      "signature": [
+        "done",
+        "status",
+        "transition",
+        "machine",
+        "reject",
+        "state",
+        "store.py",
+        "TRANSITIONS.get"
+      ],
+      "signature_keys": [
+        "done",
+        "status",
+        "transition",
+        "machin",
+        "reject",
+        "stat",
+        "file:store.py",
+        "id:transitions.get"
+      ],
+      "evidence": [
+        {
+          "id": "review:104",
+          "source": "review",
+          "kind": null,
+          "ref": "review-comments.json#104",
+          "text": "Status transition done to done accepted again. Reject repeated completion in the shared state machine.",
+          "paths": [
+            "todo/store.py"
+          ],
+          "line": 1,
+          "author": "reviewer",
+          "date": "2026-10-08",
+          "url": null
+        },
+        {
+          "id": "review:103",
+          "source": "review",
+          "kind": null,
+          "ref": "review-comments.json#103",
+          "text": "Status transition open to archived skips done. Keep the forward-only state machine.",
+          "paths": [
+            "todo/store.py"
+          ],
+          "line": 1,
+          "author": "reviewer",
+          "date": "2026-10-08",
+          "url": null
+        },
+        {
+          "id": "commit:8801d95dfc",
+          "source": "commit",
+          "kind": "fix",
+          "ref": "8801d95dfcf3e05c53dbbff45c8db1ac79cbb3ca",
+          "text": "fix: reject repeated status transition done to done; enforce forward-only state machine",
+          "paths": [
+            "todo/store.py"
+          ],
+          "line": null,
+          "author": "example-dev",
+          "date": "2026-10-06",
+          "url": null,
+          "diff_ids": [
+            "TRANSITIONS.get"
+          ],
+          "diff_added": [
+            "TRANSITIONS.get"
+          ],
+          "diff_removed": [
+            "TRANSITIONS.get"
+          ]
+        },
+        {
+          "id": "commit:86baa1827c",
+          "source": "commit",
+          "kind": "fix",
+          "ref": "86baa1827ce5481621192a63247c249cc5505ef5",
+          "text": "fix: reject status transition open to archived; cannot skip done",
+          "paths": [
+            "todo/store.py"
+          ],
+          "line": null,
+          "author": "example-dev",
+          "date": "2026-09-25",
+          "url": null,
+          "diff_ids": [
+            "TRANSITIONS.get"
+          ],
+          "diff_added": [
+            "TRANSITIONS.get"
+          ],
+          "diff_removed": []
+        },
+        {
+          "id": "chat:chat-feedback.md:5",
+          "source": "chat",
+          "kind": null,
+          "ref": "chat-feedback.md:5",
+          "text": "Status transition bugs returned twice: skipping done and accepting done to done. Reject illegal transitions in one state machine.",
+          "paths": [],
+          "line": 5,
+          "author": null,
+          "date": null,
+          "url": null
+        }
+      ],
+      "rules": [
+        {
+          "file": "AGENTS.md",
+          "line": 5,
+          "text": "Persist JSON only through store.py; use Store.add or Store.transition",
+          "enforced_by": "scripts/lint.sh",
+          "status": "enforced"
+        },
+        {
+          "file": "AGENTS.md",
+          "line": 6,
+          "text": "Status changes follow open -> done -> archived",
+          "enforced_by": "tests/test_todo.py",
+          "status": "enforced"
+        }
+      ],
+      "repeat": false,
+      "id": "C2"
+    }
+  ],
+  "unclassified": [],
+  "rules_read": 3
+}
+
+[exit 0; expected 0]
+ASSERT PASS: direct-JSON class contains both real mistake commit SHAs
+ASSERT PASS: status-transition class contains both fix commits
+$ git -c user.name=t -c user.email=t@t -c commit.gpgsign=false init -q
+
+[exit 0; expected 0]
+$ git -c user.name=t -c user.email=t@t -c commit.gpgsign=false add -A
+
+[exit 0; expected 0]
+$ git -c user.name=t -c user.email=t@t -c commit.gpgsign=false commit -qm 'feat(web): add the data drawer' -m 'Also fix the toggle and the drawer focus.'
+
+[exit 0; expected 0]
+$ git -c user.name=t -c user.email=t@t -c commit.gpgsign=false add -A
+
+[exit 0; expected 0]
+$ git -c user.name=t -c user.email=t@t -c commit.gpgsign=false commit -qm 'feat(web): add the share drawer' -m 'Fixes drawer focus on open.'
+
+[exit 0; expected 0]
+$ git -c user.name=t -c user.email=t@t -c commit.gpgsign=false add -A
+
+[exit 0; expected 0]
+$ git -c user.name=t -c user.email=t@t -c commit.gpgsign=false commit -qm 'feat: layout pass, plus 3 layout-audit fixes'
+
+[exit 0; expected 0]
+$ git -c user.name=t -c user.email=t@t -c commit.gpgsign=false add -A
+
+[exit 0; expected 0]
+$ git -c user.name=t -c user.email=t@t -c commit.gpgsign=false commit -qm 'fix: layout overlap in the changelog renderer again'
+
+[exit 0; expected 0]
+$ git -c user.name=t -c user.email=t@t -c commit.gpgsign=false add -A
+
+[exit 0; expected 0]
+$ git -c user.name=t -c user.email=t@t -c commit.gpgsign=false commit -qm 'test: keep the layout from overlapping again'
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/mine_mistakes.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/mine-fixture --json
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/mine-fixture",
+  "since": null,
+  "items": 2,
+  "counts": {
+    "commit": 2
+  },
+  "min_count": 2,
+  "classes": [
+    {
+      "count": 2,
+      "items": 2,
+      "sources": {
+        "commit": 2
+      },
+      "signature": [
+        "CHANGELOG.md",
+        "layout"
+      ],
+      "signature_keys": [
+        "file:changelog.md",
+        "layout"
+      ],
+      "evidence": [
+        {
+          "id": "commit:c741c07f6d",
+          "source": "commit",
+          "kind": "fix",
+          "ref": "c741c07f6d9dd236bc8b47a0f74ada148ef8ae05",
+          "text": "fix: layout overlap in the changelog renderer again",
+          "paths": [
+            "CHANGELOG.md"
+          ],
+          "line": null,
+          "author": "t",
+          "date": "2026-11-15",
+          "url": null,
+          "diff_ids": [],
+          "diff_added": [],
+          "diff_removed": []
+        },
+        {
+          "id": "commit:7b0045b5a4",
+          "source": "commit",
+          "kind": "fix",
+          "ref": "7b0045b5a4f9031f93f7b21231056ab61ace600e",
+          "text": "feat: layout pass, plus 3 layout-audit fixes",
+          "paths": [
+            "CHANGELOG.md"
+          ],
+          "line": null,
+          "author": "t",
+          "date": "2026-11-15",
+          "url": null,
+          "diff_ids": [],
+          "diff_added": [],
+          "diff_removed": []
+        }
+      ],
+      "rules": [],
+      "repeat": false,
+      "id": "C1"
+    }
+  ],
+  "unclassified": [],
+  "rules_read": 0
+}
+
+[exit 0; expected 0]
+ASSERT PASS: feat commits that mention "fix" only in the body are not counted as fixes
+ASSERT PASS: a typed feat subject that names its fixes still counts
+ASSERT PASS: a test: subject with a weak word ("again") is not a fix
+ASSERT PASS: an orientation bullet sharing a file name does not mark a class as repeat
+$ git init -q
+
+[exit 0; expected 0]
+$ git add todo/new.py
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/references/lint-rules.example.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet-contract --json --baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet-contract/baseline.json --update-baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet-contract
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet-contract",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet-contract/baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/references/lint-rules.example.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet-contract --json --baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet-contract/baseline.json --update-baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet-contract
+{
+  "ok": false,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet-contract",
+  "failing": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet-contract/baseline.json",
+    "over": [
+      {
+        "rule": "no-direct-json-write",
+        "path": "todo/new.py",
+        "count": 1,
+        "baseline": 0
+      }
+    ],
+    "improved": [],
+    "refused": [
+      {
+        "rule": "no-direct-json-write",
+        "path": "todo/new.py",
+        "count": 1,
+        "baseline": 0
+      }
+    ],
+    "deferred": [],
+    "updated": true
+  }
+}
+
+[exit 1; expected 1]
+ASSERT PASS: a tracked hit cannot raise an existing rule baseline, even after the file enters git
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/references/lint-rules.example.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet-contract --json --baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet-contract/first.json --update-baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet-contract
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet-contract",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet-contract/first.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+
+[exit 0; expected 0]
+ASSERT PASS: tracked existing hits may enter a baseline only when the rule is first adopted
+ASSERT PASS: SKILL.md explains first adoption and the ratchet for existing rules
+ASSERT PASS: patlint.py explains first adoption and the ratchet for existing rules
+$ git init -q
+
+[exit 0; expected 0]
+$ git add tracked.py
+
+[exit 0; expected 0]
+{
+  "ok": false,
+  "rules": [
+    "probe",
+    "clean"
+  ],
+  "files_scanned": 2,
+  "untracked": [
+    "new.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-baseline-adoption",
+  "failing": [
+    {
+      "rule": "probe",
+      "path": "new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    },
+    {
+      "rule": "probe",
+      "path": "tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    },
+    {
+      "rule": "probe",
+      "path": "tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-baseline-adoption/baseline.json",
+    "over": [
+      {
+        "rule": "probe",
+        "path": "new.py",
+        "count": 1,
+        "baseline": 0
+      },
+      {
+        "rule": "probe",
+        "path": "tracked.py",
+        "count": 1,
+        "baseline": 0
+      }
+    ],
+    "improved": [],
+    "refused": [],
+    "deferred": [
+      {
+        "rule": "probe",
+        "untracked": [
+          "new.py"
+        ]
+      }
+    ],
+    "updated": true
+  }
+}
+patlint: rule probe not adopted: untracked hits in new.py; track or ignore these files and rerun --update-baseline
+ASSERT PASS: failed first adoption leaves no rule key, preserves other rules and explains how to retry
+$ git add new.py
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-baseline-adoption/rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-baseline-adoption --baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-baseline-adoption/baseline.json --update-baseline --json /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-baseline-adoption
+{
+  "ok": true,
+  "rules": [
+    "probe",
+    "clean"
+  ],
+  "files_scanned": 2,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-baseline-adoption",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    },
+    {
+      "rule": "probe",
+      "path": "tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-baseline-adoption/baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+
+[exit 0; expected 0]
+ASSERT PASS: tracking the hit after a failed first adoption lets the retry adopt all current counts
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-baseline-adoption/rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-baseline-adoption --baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-baseline-adoption/baseline.json --update-baseline --json /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-baseline-adoption
+{
+  "ok": false,
+  "rules": [
+    "probe",
+    "clean"
+  ],
+  "files_scanned": 2,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-baseline-adoption",
+  "failing": [
+    {
+      "rule": "probe",
+      "path": "new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    },
+    {
+      "rule": "probe",
+      "path": "new.py",
+      "line": 2,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    },
+    {
+      "rule": "probe",
+      "path": "new.py",
+      "line": 2,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    },
+    {
+      "rule": "probe",
+      "path": "tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-baseline-adoption/baseline.json",
+    "over": [
+      {
+        "rule": "probe",
+        "path": "new.py",
+        "count": 2,
+        "baseline": 1
+      }
+    ],
+    "improved": [],
+    "refused": [
+      {
+        "rule": "probe",
+        "path": "new.py",
+        "count": 2,
+        "baseline": 1
+      }
+    ],
+    "deferred": [],
+    "updated": true
+  }
+}
+
+[exit 1; expected 1]
+ASSERT PASS: successful retry still ratchets subsequent increases
+ASSERT PASS: git failure retains disk fallback but warns on stderr: git unavailable
+ASSERT PASS: dubious ownership is a git error, never permission to traverse the disk
+$ git init -q
+
+[exit 0; expected 0]
+$ git add tracked.py
+
+[exit 0; expected 0]
+patlint: git lookup failed; refusing filesystem fallback: git rev-parse --show-toplevel: fatal: not a git repository: /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-errors/missing.git
+patlint: git lookup failed; refusing filesystem fallback: git rev-parse --show-toplevel: fatal: not a git repository: /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-errors/missing.git
+patlint: git lookup failed; refusing filesystem fallback: git rev-parse --show-toplevel: fatal: not a git repository: /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-errors/missing.git
+patlint: git lookup failed; refusing filesystem fallback: git rev-parse --show-toplevel: fatal: not a git repository: /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-errors/missing.git
+patlint: git lookup failed; refusing filesystem fallback: git rev-parse --show-toplevel: fatal: not a git repository: /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-errors/missing.git
+patlint: git lookup failed; refusing filesystem fallback: git rev-parse --show-toplevel: fatal: not a git repository: /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-errors/missing.git
+patlint: git lookup failed; refusing filesystem fallback: git rev-parse --show-toplevel: fatal: not a git repository: /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-errors/missing.git
+patlint: git lookup failed; refusing filesystem fallback: git rev-parse --show-toplevel: fatal: not a git repository: /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-errors/missing.git
+ASSERT PASS: git failure inside a worktree exits 2 without adopting any baseline hits: []
+ASSERT PASS: ordinary non-git directories retain quiet filesystem fallback
+locale=zh_CN.UTF-8 provider=real target=review-git-locale explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-locale",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+locale=zh_CN.UTF-8 provider=real target=review-git-locale explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-locale",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+locale=zh_CN.UTF-8 provider=real target=clean.py explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-locale",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+locale=zh_CN.UTF-8 provider=real target=clean.py explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-locale",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+locale=zh_CN.UTF-8 provider=translated target=review-git-locale explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-locale",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+locale=zh_CN.UTF-8 provider=translated target=review-git-locale explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-locale",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+locale=zh_CN.UTF-8 provider=translated target=clean.py explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-locale",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+locale=zh_CN.UTF-8 provider=translated target=clean.py explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-locale",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+locale=zh_CN.UTF-8 checkout exit=2
+patlint: git lookup failed; refusing filesystem fallback: git rev-parse --show-toplevel: 致命错误：不是 Git 仓库（或者任何父目录）：.git
+locale=zh_CN.UTF-8 checkout exit=2
+patlint: git lookup failed; refusing filesystem fallback: git rev-parse --show-toplevel: 致命错误：不是 Git 仓库（或者任何父目录）：.git
+ASSERT PASS: non-English git errors fall back quietly only outside checkouts, preserving baseline failures: []
+$ git init -q
+
+[exit 0; expected 0]
+$ git add .
+
+[exit 0; expected 0]
+$ git -c user.name=Regression -c user.email=regression@example.invalid commit -qm fixture
+
+[exit 0; expected 0]
+$ git worktree add --detach /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked HEAD
+Preparing worktree (detached HEAD 542bab7)
+HEAD is now at 542bab7 fixture
+
+[exit 0; expected 0]
+$ git init -q
+
+[exit 0; expected 0]
+$ git add nested.py
+
+[exit 0; expected 0]
+$ git rev-parse --absolute-git-dir
+/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git
+
+[exit 0; expected 0]
+checkout=review-git-inherited inherited={'GIT_DIR': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git'} target=src/tracked.py explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-inherited inherited={'GIT_DIR': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git'} target=src/tracked.py explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-inherited inherited={'GIT_DIR': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git'} target=src/tracked.py explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-inherited inherited={'GIT_DIR': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git'} target=src explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 2,
+  "untracked": [
+    "src/new.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-inherited inherited={'GIT_DIR': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git'} target=src explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 2,
+  "untracked": [
+    "src/new.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-inherited inherited={'GIT_DIR': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git'} target=src explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 2,
+  "untracked": [
+    "src/new.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-inherited inherited={'GIT_DIR': '.git'} target=src/tracked.py explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-inherited inherited={'GIT_DIR': '.git'} target=src/tracked.py explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-inherited inherited={'GIT_DIR': '.git'} target=src/tracked.py explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-inherited inherited={'GIT_DIR': '.git'} target=src explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 2,
+  "untracked": [
+    "src/new.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-inherited inherited={'GIT_DIR': '.git'} target=src explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 2,
+  "untracked": [
+    "src/new.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-inherited inherited={'GIT_DIR': '.git'} target=src explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 2,
+  "untracked": [
+    "src/new.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-inherited inherited={'GIT_DIR': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git', 'GIT_WORK_TREE': '/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/src/nested'} target=src/tracked.py explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-inherited inherited={'GIT_DIR': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git', 'GIT_WORK_TREE': '/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/src/nested'} target=src/tracked.py explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-inherited inherited={'GIT_DIR': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git', 'GIT_WORK_TREE': '/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/src/nested'} target=src/tracked.py explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-inherited inherited={'GIT_DIR': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git', 'GIT_WORK_TREE': '/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/src/nested'} target=src explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 2,
+  "untracked": [
+    "src/new.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-inherited inherited={'GIT_DIR': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git', 'GIT_WORK_TREE': '/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/src/nested'} target=src explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 2,
+  "untracked": [
+    "src/new.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-inherited inherited={'GIT_DIR': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git', 'GIT_WORK_TREE': '/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/src/nested'} target=src explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 2,
+  "untracked": [
+    "src/new.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+{
+  "ok": false,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [
+    "src/nested/nested.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited",
+  "failing": [
+    {
+      "rule": "probe",
+      "path": "src/nested/nested.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/nested/nested.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/nested-baseline.json",
+    "over": [
+      {
+        "rule": "probe",
+        "path": "src/nested/nested.py",
+        "count": 1,
+        "baseline": 0
+      }
+    ],
+    "improved": [],
+    "refused": [],
+    "deferred": [
+      {
+        "rule": "probe",
+        "untracked": [
+          "src/nested/nested.py"
+        ]
+      }
+    ],
+    "updated": true
+  }
+}
+patlint: rule probe not adopted: untracked hits in src/nested/nested.py; track or ignore these files and rerun --update-baseline
+$ git init -q
+
+[exit 0; expected 0]
+$ git add nested.py
+
+[exit 0; expected 0]
+$ git rev-parse --absolute-git-dir
+/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git/worktrees/review-git-linked
+
+[exit 0; expected 0]
+checkout=review-git-linked inherited={'GIT_DIR': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git/worktrees/review-git-linked'} target=src/tracked.py explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-linked inherited={'GIT_DIR': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git/worktrees/review-git-linked'} target=src/tracked.py explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-linked inherited={'GIT_DIR': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git/worktrees/review-git-linked'} target=src/tracked.py explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-linked inherited={'GIT_DIR': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git/worktrees/review-git-linked'} target=src explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 2,
+  "untracked": [
+    "src/new.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-linked inherited={'GIT_DIR': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git/worktrees/review-git-linked'} target=src explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 2,
+  "untracked": [
+    "src/new.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-linked inherited={'GIT_DIR': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git/worktrees/review-git-linked'} target=src explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 2,
+  "untracked": [
+    "src/new.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-linked inherited={'GIT_DIR': '../review-git-inherited/.git/worktrees/review-git-linked'} target=src/tracked.py explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-linked inherited={'GIT_DIR': '../review-git-inherited/.git/worktrees/review-git-linked'} target=src/tracked.py explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-linked inherited={'GIT_DIR': '../review-git-inherited/.git/worktrees/review-git-linked'} target=src/tracked.py explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-linked inherited={'GIT_DIR': '../review-git-inherited/.git/worktrees/review-git-linked'} target=src explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 2,
+  "untracked": [
+    "src/new.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-linked inherited={'GIT_DIR': '../review-git-inherited/.git/worktrees/review-git-linked'} target=src explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 2,
+  "untracked": [
+    "src/new.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-linked inherited={'GIT_DIR': '../review-git-inherited/.git/worktrees/review-git-linked'} target=src explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 2,
+  "untracked": [
+    "src/new.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-linked inherited={'GIT_DIR': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git/worktrees/review-git-linked', 'GIT_WORK_TREE': '/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked/src/nested'} target=src/tracked.py explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-linked inherited={'GIT_DIR': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git/worktrees/review-git-linked', 'GIT_WORK_TREE': '/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked/src/nested'} target=src/tracked.py explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-linked inherited={'GIT_DIR': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git/worktrees/review-git-linked', 'GIT_WORK_TREE': '/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked/src/nested'} target=src/tracked.py explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-linked inherited={'GIT_DIR': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git/worktrees/review-git-linked', 'GIT_WORK_TREE': '/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked/src/nested'} target=src explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 2,
+  "untracked": [
+    "src/new.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-linked inherited={'GIT_DIR': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git/worktrees/review-git-linked', 'GIT_WORK_TREE': '/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked/src/nested'} target=src explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 2,
+  "untracked": [
+    "src/new.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+checkout=review-git-linked inherited={'GIT_DIR': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited/.git/worktrees/review-git-linked', 'GIT_WORK_TREE': '/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked/src/nested'} target=src explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 2,
+  "untracked": [
+    "src/new.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/inherited-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+{
+  "ok": false,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [
+    "src/nested/nested.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-linked",
+  "failing": [
+    {
+      "rule": "probe",
+      "path": "src/nested/nested.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/nested/nested.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/nested-baseline.json",
+    "over": [
+      {
+        "rule": "probe",
+        "path": "src/nested/nested.py",
+        "count": 1,
+        "baseline": 0
+      }
+    ],
+    "improved": [],
+    "refused": [],
+    "deferred": [
+      {
+        "rule": "probe",
+        "untracked": [
+          "src/nested/nested.py"
+        ]
+      }
+    ],
+    "updated": true
+  }
+}
+patlint: rule probe not adopted: untracked hits in src/nested/nested.py; track or ignore these files and rerun --update-baseline
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-git-inherited",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-inherited-non-git",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-inherited-non-git",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+ASSERT PASS: inherited absolute/relative GIT_DIR and GIT_WORK_TREE cannot change root, tracking, ignores or baseline eligibility in ordinary/linked checkouts: []
+$ git init -q
+
+[exit 0; expected 0]
+$ git add src/tracked.py
+
+[exit 0; expected 0]
+case alias target=/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/REVIEW-gIT-cASE explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-Git-Case",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/case-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+case alias target=/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/REVIEW-gIT-cASE explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/REVIEW-gIT-cASE",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/case-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+case alias target=/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/REVIEW-gIT-cASE/src explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-Git-Case",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/case-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+case alias target=/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/REVIEW-gIT-cASE/src explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/REVIEW-gIT-cASE",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/case-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+case alias target=/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/REVIEW-gIT-cASE/src/tracked.py explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-Git-Case",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/case-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+case alias target=/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/REVIEW-gIT-cASE/src/tracked.py explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/REVIEW-gIT-cASE",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/case-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+case alias target=/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-Git-Case/SRC explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-Git-Case",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/case-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+case alias target=/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-Git-Case/SRC explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/REVIEW-gIT-cASE",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/case-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+case alias target=/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/REVIEW-gIT-cASE/SRC explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-Git-Case",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/case-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+case alias target=/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/REVIEW-gIT-cASE/SRC explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/REVIEW-gIT-cASE",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/case-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+case alias target=/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/REVIEW-gIT-cASE/SRC/tracked.py explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-Git-Case",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/case-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+case alias target=/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/REVIEW-gIT-cASE/SRC/tracked.py explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/REVIEW-gIT-cASE",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "src/tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/case-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+ASSERT PASS: case aliases of a checkout scan directory/file arguments and adopt tracked baseline keys consistently: []
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --record no-direct-json-write --commit 2fd7988731eb03a000207e269b441daeb22d2a3e --json
+{
+  "ok": true,
+  "rule": "no-direct-json-write",
+  "tests": 2,
+  "failures": [],
+  "hits_at_mistake": 1,
+  "hits_at_fixed": 0
+}
+
+[exit 0; expected 0]
+ASSERT PASS: --record keeps the raw removed mistake after whole-file parent/fix proof
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --test --json
+{
+  "ok": true,
+  "tests": 2,
+  "failures": []
+}
+
+[exit 0; expected 0]
+ASSERT PASS: --test passes the retained history cases and explicit Store.add fix
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/references/lint-rules.example.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --test --json
+{
+  "ok": true,
+  "tests": 4,
+  "failures": []
+}
+
+[exit 0; expected 0]
+ASSERT PASS: both documented example rules replay successfully and name existing owner APIs
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --test --json
+{
+  "ok": false,
+  "tests": 2,
+  "failures": [
+    "no-direct-json-write: test 1 (todo/api.py): missing match"
+  ]
+}
+
+[exit 1; expected 1]
+ASSERT PASS: --test detects missing matches when include no longer covers todo/api.py
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --test --json
+{
+  "ok": false,
+  "tests": 2,
+  "failures": [
+    "no-direct-json-write: fix todo/store.py:Store.add: symbol missing"
+  ]
+}
+
+[exit 1; expected 1]
+ASSERT PASS: --test rejects a renamed Store.add when the explicit fix reference stays unchanged
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --test --json
+{
+  "ok": true,
+  "tests": 3,
+  "failures": []
+}
+
+[exit 0; expected 0]
+ASSERT PASS: message and cases mentioning json.dump as the mistake pass with an explicit fix
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --test --json
+{
+  "ok": true,
+  "tests": 3,
+  "failures": []
+}
+
+[exit 0; expected 0]
+ASSERT PASS: absent fix field never resolves names from the message
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --test --json
+{
+  "ok": false,
+  "tests": 1,
+  "failures": [
+    "no-direct-json-write: missing ruleid test case"
+  ]
+}
+
+[exit 1; expected 1]
+ASSERT PASS: --test requires a ruleid case even when all ok cases pass
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --test --json
+{
+  "ok": false,
+  "tests": 3,
+  "failures": [
+    "no-direct-json-write: test 3 (todo/api.py): noisy match"
+  ]
+}
+
+[exit 1; expected 1]
+ASSERT PASS: --test rejects a matching ok case
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --record no-direct-json-write --commit 4242a5ae43587ea1ed392b15775e2e3e3acc2aa4
+patlint: no-direct-json-write: no removed matching line
+patlint: no-direct-json-write: whole-file parent replay must hit
+patlint: FAIL: 0 test case(s)
+
+[exit 1; expected 1]
+ASSERT PASS: --record without a removed match fails without replacing tests
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --record no-direct-json-write --commit 2fd7988731eb03a000207e269b441daeb22d2a3e --json
+{
+  "ok": false,
+  "rule": "no-direct-json-write",
+  "tests": 2,
+  "failures": [
+    "no-direct-json-write: whole-file fixed replay has 1 match(es)"
+  ],
+  "hits_at_mistake": 2,
+  "hits_at_fixed": 1
+}
+
+[exit 1; expected 1]
+ASSERT PASS: --record rejects unchanged fixed-file matches even when added diff lines are quiet
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --record no-direct-json-write --commit 2fd7988731eb03a000207e269b441daeb22d2a3e --json
+{
+  "ok": false,
+  "rule": "no-direct-json-write",
+  "tests": 3,
+  "failures": [
+    "no-direct-json-write: noisy added line in todo/api.py",
+    "no-direct-json-write: whole-file fixed replay has 1 match(es)"
+  ],
+  "hits_at_mistake": 2,
+  "hits_at_fixed": 1
+}
+
+[exit 1; expected 1]
+ASSERT PASS: --record rejects added lines that still match the rule
+$ git worktree add --detach /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/past-direct-write dbd44008685859312aee6a60154fd0258c1c063b
+Preparing worktree (detached HEAD dbd4400)
+HEAD is now at dbd4400 fix: persist API additions with direct JSON writes bypassing store.py
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/past-direct-write --json /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/past-direct-write/todo
+{
+  "ok": false,
+  "rules": [
+    "no-direct-json-write"
+  ],
+  "files_scanned": 3,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/past-direct-write",
+  "failing": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/api.py",
+      "line": 43,
+      "col": 17,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence; avoid json.dump.",
+      "text": "store.path.write_text(json.dumps(rows))"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/api.py",
+      "line": 43,
+      "col": 17,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence; avoid json.dump.",
+      "text": "store.path.write_text(json.dumps(rows))"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+
+[exit 1; expected 1]
+ASSERT PASS: patlint fails on a real past mistake checked out in a worktree
+$ git worktree remove --force /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/past-direct-write
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --json /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/todo
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write"
+  ],
+  "files_scanned": 3,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+
+[exit 0; expected 0]
+ASSERT PASS: same persistence lint passes on HEAD
+$ git worktree add --detach /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/worktrees/past dbd44008685859312aee6a60154fd0258c1c063b
+Preparing worktree (detached HEAD dbd4400)
+HEAD is now at dbd4400 fix: persist API additions with direct JSON writes bypassing store.py
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/references/lint-rules.example.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/worktrees/past --json /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/worktrees/past/todo
+{
+  "ok": false,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 3,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/worktrees/past",
+  "failing": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/api.py",
+      "line": 43,
+      "col": 17,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(json.dumps(rows))"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/api.py",
+      "line": 43,
+      "col": 17,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(json.dumps(rows))"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+
+[exit 1; expected 1]
+ASSERT PASS: a leftover worktree under .claude/worktrees/ holds the real past mistake, caught when linted as its own checkout
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/references/lint-rules.example.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --json /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 3,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+
+[exit 0; expected 0]
+ASSERT PASS: linting the main checkout skips the leftover worktree (a nested checkout CI never sees) and passes
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/references/lint-rules.example.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --json --baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/git-set-baseline.json --update-baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 3,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/git-set-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+
+[exit 0; expected 0]
+ASSERT PASS: --update-baseline writes no key for files inside a leftover worktree
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/references/lint-rules.example.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --json /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 3,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+
+[exit 0; expected 0]
+ASSERT PASS: a hit in a gitignored env/ directory stays quiet
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/references/lint-rules.example.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --json /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/env
+patlint: no files to lint in directory: /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/env (empty, ignored, or excluded by git); name a file explicitly to lint it as given
+
+[exit 2; expected 2]
+ASSERT PASS: an explicitly named ignored directory fails visibly instead of reporting a clean zero-file lint
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/references/lint-rules.example.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --json /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app
+{
+  "ok": false,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 4,
+  "untracked": [
+    "todo/new.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app",
+  "failing": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+
+[exit 1; expected 1]
+ASSERT PASS: a hit in an untracked, unignored todo/new.py still fails and is reported as untracked
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/references/lint-rules.example.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --json --baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/git-set-fresh.json --update-baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app
+{
+  "ok": false,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 4,
+  "untracked": [
+    "todo/new.py"
+  ],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app",
+  "failing": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/git-set-fresh.json",
+    "over": [
+      {
+        "rule": "no-direct-json-write",
+        "path": "todo/new.py",
+        "count": 1,
+        "baseline": 0
+      }
+    ],
+    "improved": [],
+    "refused": [],
+    "deferred": [
+      {
+        "rule": "no-direct-json-write",
+        "untracked": [
+          "todo/new.py"
+        ]
+      }
+    ],
+    "updated": true
+  }
+}
+patlint: rule no-direct-json-write not adopted: untracked hits in todo/new.py; track or ignore these files and rerun --update-baseline
+
+[exit 1; expected 1]
+ASSERT PASS: adopting a rule writes no count for an untracked file, whose hits keep failing
+$ git worktree remove --force /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/worktrees/past
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet --json --baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet/baseline.json --update-baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet/todo/legacy.py
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/legacy.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence; avoid json.dump.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet/baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet --json --baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet/baseline.json /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet/todo/legacy.py
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/legacy.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence; avoid json.dump.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet/baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+
+[exit 0; expected 0]
+ASSERT PASS: ratchet permits an adopted existing violation
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet --json --baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet/baseline.json --update-baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet/todo/legacy.py
+{
+  "ok": false,
+  "rules": [
+    "no-direct-json-write"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet",
+  "failing": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/legacy.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence; avoid json.dump.",
+      "text": "store.path.write_text(payload)"
+    },
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/legacy.py",
+      "line": 2,
+      "col": 1,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence; avoid json.dump.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/legacy.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence; avoid json.dump.",
+      "text": "store.path.write_text(payload)"
+    },
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/legacy.py",
+      "line": 2,
+      "col": 1,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence; avoid json.dump.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet/baseline.json",
+    "over": [
+      {
+        "rule": "no-direct-json-write",
+        "path": "todo/legacy.py",
+        "count": 2,
+        "baseline": 1
+      }
+    ],
+    "improved": [],
+    "refused": [
+      {
+        "rule": "no-direct-json-write",
+        "path": "todo/legacy.py",
+        "count": 2,
+        "baseline": 1
+      }
+    ],
+    "deferred": [],
+    "updated": true
+  }
+}
+
+[exit 1; expected 1]
+ASSERT PASS: ratchet refuses increasing a known violation count
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet --json --baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet/baseline.json --update-baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet/todo/legacy.py
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet/baseline.json",
+    "over": [],
+    "improved": [
+      {
+        "rule": "no-direct-json-write",
+        "path": "todo/legacy.py",
+        "count": 0,
+        "baseline": 1
+      }
+    ],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+
+[exit 0; expected 0]
+ASSERT PASS: zero-count adopted rules remain in the baseline
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet --json --baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet/baseline.json --update-baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet/todo/legacy.py
+{
+  "ok": false,
+  "rules": [
+    "no-direct-json-write"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet",
+  "failing": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/legacy.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence; avoid json.dump.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/legacy.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence; avoid json.dump.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet/baseline.json",
+    "over": [
+      {
+        "rule": "no-direct-json-write",
+        "path": "todo/legacy.py",
+        "count": 1,
+        "baseline": 0
+      }
+    ],
+    "improved": [],
+    "refused": [
+      {
+        "rule": "no-direct-json-write",
+        "path": "todo/legacy.py",
+        "count": 1,
+        "baseline": 0
+      }
+    ],
+    "deferred": [],
+    "updated": true
+  }
+}
+
+[exit 1; expected 1]
+ASSERT PASS: ratchet cannot re-adopt violations after reaching zero
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet --json --baseline /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet/baseline.json --today 2026-10-19 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet/todo/legacy.py
+{
+  "ok": false,
+  "rules": [
+    "no-direct-json-write"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/legacy.py",
+      "line": 2,
+      "col": 1,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence; avoid json.dump.",
+      "text": "store.path.write_text(payload)",
+      "reason": "legacy-import",
+      "expires": "2026-10-18",
+      "approved_by": "reviewer",
+      "exception": "line 1: expired 2026-10-18"
+    }
+  ],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet/baseline.json",
+    "over": [
+      {
+        "rule": "no-direct-json-write",
+        "path": "todo/legacy.py",
+        "count": 1,
+        "baseline": 0
+      }
+    ],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+
+[exit 1; expected 1]
+ASSERT PASS: expired exception fails even in ratchet mode
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/patlint.py --rules /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/logs/examples/artifacts/correct/rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet --json --today 2026-10-19 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet/todo/legacy.py
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet",
+  "failing": [],
+  "violations": [],
+  "allowed": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/legacy.py",
+      "line": 2,
+      "col": 1,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence; avoid json.dump.",
+      "text": "store.path.write_text(payload)",
+      "reason": "legacy-import",
+      "expires": "2026-10-20",
+      "approved_by": "reviewer"
+    }
+  ],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+
+[exit 0; expected 0]
+ASSERT PASS: unexpired exception with reason and approver allows the intended violation
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/rule_table.py check /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/AGENTS.md --json
+{
+  "file": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/AGENTS.md",
+  "tables": 1,
+  "rules": [
+    {
+      "line": 5,
+      "rule": "Persist JSON only through store.py; use Store.add or Store.transition",
+      "enforced_by": "scripts/lint.sh",
+      "status": "enforced",
+      "reason": "names a check that runs"
+    },
+    {
+      "line": 6,
+      "rule": "Status changes follow open -> done -> archived",
+      "enforced_by": "tests/test_todo.py",
+      "status": "enforced",
+      "reason": "names a check that runs"
+    },
+    {
+      "line": 7,
+      "rule": "Keep error messages concise and useful",
+      "enforced_by": "prose in this document",
+      "status": "prose",
+      "reason": "enforced only by prose or human attention"
+    }
+  ],
+  "flagged": 1,
+  "ok": false
+}
+
+[exit 1; expected 1]
+ASSERT PASS: rule table flags exactly the prose-only example rule
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/correct/scripts/rule_table.py check /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet/AGENTS.md --json
+{
+  "file": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/ratchet/AGENTS.md",
+  "tables": 1,
+  "rules": [
+    {
+      "line": 3,
+      "rule": "Lock writes",
+      "enforced_by": "README documents the tests",
+      "status": "prose",
+      "reason": "enforced only by prose or human attention"
+    }
+  ],
+  "flagged": 1,
+  "ok": false
+}
+
+[exit 1; expected 1]
+ASSERT PASS: mentioning tests in README prose does not qualify as enforcement

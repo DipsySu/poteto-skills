@@ -513,7 +513,9 @@ class Examples:
             self.review_match_case_paths()
             self.review_expression_paths()
             self.review_exception_path_provenance()
+            self.review_with_item_provenance()
             self.review_registered_boolean_actions()
+            self.review_parser_action_bindings()
             self.review_query_path_aliases()
             self.review_go_receiver_workload()
             self.review_route_workload()
@@ -905,6 +907,44 @@ class Handler(BaseHTTPRequestHandler):
         self.ensure(result.returncode == 0 and not result.stderr,
                     'ordinary non-git directories retain quiet filesystem fallback')
 
+    def review_git_case_aliases(self):
+        """Filesystem identity, not spelling, selects a checkout and its index."""
+        root = self.scratch / 'review-Git-Case'
+        root.mkdir()
+        alias = root.with_name(root.name.swapcase())
+        if not alias.exists() or not alias.samefile(root):
+            self.log.write('SKIP case-alias probe: scratch filesystem is case-sensitive\n')
+            self.ensure(True, 'case-alias regression skips on a case-sensitive filesystem')
+            return
+        clean_env = {k: v for k, v in self.env.items() if k not in ('GIT_DIR', 'GIT_WORK_TREE')}
+        self.run('git', 'init', '-q', cwd=root, env=clean_env)
+        (root / 'src').mkdir()
+        (root / 'src/tracked.py').write_text('BAD\n')
+        self.run('git', 'add', 'src/tracked.py', cwd=root, env=clean_env)
+        rules = self.save('case-rules.json', {'rules': [
+            {'id': 'probe', 'regex': 'BAD', 'include': ['*.py'], 'message': 'Use good() instead.'}]})
+        failures = []
+        for target in (alias, alias / 'src', alias / 'src/tracked.py',
+                       root / 'SRC', alias / 'SRC', alias / 'SRC/tracked.py'):
+            for explicit_root in ((), ('--root', str(alias))):
+                baseline = self.art / 'case-baseline.json'
+                baseline.unlink(missing_ok=True)
+                command = [str(self.script('correct', 'patlint.py')), '--rules', str(rules), '--json',
+                           *explicit_root, '--baseline', str(baseline), '--update-baseline', str(target)]
+                result = subprocess.run(command, cwd=root, env=clean_env, capture_output=True,
+                                        text=True, timeout=10)
+                self.log.write(f'case alias target={target} explicit_root={bool(explicit_root)} '
+                               f'exit={result.returncode}\n' + result.stdout + result.stderr)
+                report = json.loads(result.stdout) if result.stdout.strip().startswith('{') else {}
+                counts = json.loads(baseline.read_text())['counts'] if baseline.exists() else None
+                if (result.returncode != 0 or result.stderr or report.get('files_scanned') != 1
+                        or report.get('untracked') != [] or counts != {'probe': {'src/tracked.py': 1}}
+                        or [v['path'] for v in report.get('violations', [])] != ['src/tracked.py']):
+                    failures.append((str(target), bool(explicit_root), result.returncode,
+                                     result.stderr, report, counts))
+        self.ensure(not failures,
+                    f'case aliases of a checkout scan directory/file arguments and adopt tracked baseline keys consistently: {failures}')
+
     def review_git_inherited_environment(self):
         root = self.scratch / 'review-git-inherited'
         root.mkdir()
@@ -1199,6 +1239,7 @@ class Handler(BaseHTTPRequestHandler):
             self.review_git_fail_closed()
             self.review_git_locale()
             self.review_git_inherited_environment()
+            self.review_git_case_aliases()
             rules = self.save('rules.json', {'rules':[{'id':'no-direct-json-write','regex':r'\b\w+\.path\.write_text\s*\(',
                 'include':['todo/*.py'], 'exclude':['todo/store.py'],
                 'message':'Use Store.add or Store.transition in todo/store.py for atomic persistence; avoid json.dump.',
@@ -1433,6 +1474,8 @@ class Handler(BaseHTTPRequestHandler):
             self.review_timeout_format_handoff()
             self.review_interruptible_result_format()
             self.review_exception_format_timeout()
+            self.review_infrastructure_exception_format()
+            self.review_acceptance_record_scope()
             self.review_bounded_limit_workload()
 
     def clock_check(self, checker, body, *, run=5, call=10, flags=()):
@@ -2702,6 +2745,56 @@ properties = {"copy": (sampled_from([" title "]), check)}
                 shutil.rmtree(self.scratch)
         return 0 if all(s['status']=='pass' for s in self.summary.values()) else 1
 
+    def review_with_item_provenance(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'with_item_scan')
+        failures = []
+        for route in ('/var/www', '/Users/shared', '/opt/service'):
+            probe = f'if path == {route!r}: pass'
+            negatives = [
+                'path = filesystem\nwith suppress(PermissionError), denied(), nullcontext(path := self.path): pass\n' + probe,
+                'path = self.path\nwith suppress(PermissionError), denied(), nullcontext(path := filesystem): pass\n' + probe,
+                'path = filesystem\nasync with suppress_error(), denied(), context(path := self.path): pass\n' + probe,
+            ]
+            positives = [
+                'path = filesystem\nwith nullcontext(path := self.path): pass\n' + probe,
+                'path = filesystem\nwith suppress(PermissionError), nullcontext(path := self.path):\n    ' + probe,
+                'path = filesystem\nwith suppress(PermissionError), nullcontext(path := self.path), nullcontext(path == ' + repr(route) + '): pass',
+                'path = filesystem\nwith nullcontext(path := self.path), denied(): pass\n' + probe,
+                'path = filesystem\nwith suppress(PermissionError), denied(), nullcontext(path := self.path): pass\npath = self.path\n' + probe,
+            ]
+            for expected, sources in ((set(), negatives), ({('GET', route)}, positives)):
+                for source in sources:
+                    body = 'class Handler:\n    async def do_GET(self):\n' + ''.join(
+                        '        ' + line + '\n' for line in source.splitlines())
+                    info = scanner.analyze_python('server.py', body)
+                    routes = {(r['method'], r['path']) for r in info['routes']}
+                    if routes != expected or info['notes']:
+                        failures.append((source, sorted(routes), info['notes']))
+        root = self.scratch / 'with-item-route-map'
+        root.mkdir()
+        (root / 'server.py').write_text(
+            'from contextlib import suppress, nullcontext\n'
+            'def denied(): raise PermissionError("denied")\n'
+            'class Handler:\n    def do_GET(self):\n'
+            '        path = "/var/www"\n'
+            '        with suppress(PermissionError), denied(), nullcontext(path := self.path): pass\n'
+            '        if path == "/var/www": pass\n'
+            '        if self.path == "/api/items": pass\n'
+            '        return path\n')
+        self.run(sys.executable, '-c', 'from server import Handler; h = Handler(); h.path = "/api/items"; '
+                 'assert h.do_GET() == "/var/www"', cwd=root)
+        skill = root / '.agents/skills/verify-items'
+        (skill / 'features').mkdir(parents=True)
+        (skill / 'features/README.md').write_text('[Items](items.md)\n')
+        (skill / 'features/items.md').write_text('# Items\n\n## Sub-features\nGET /api/items\n\n'
+                                                '## How to get to it (user POV)\n\n'
+                                                '## Driving it with control.sh\n\n## Gotchas\n')
+        drift = self.json(self.script('maintain-verification-skill', 'drift_check.py'), skill, '--repo', root,
+                          '--json', expected=(0, 1))
+        if self.last_returncode != 0 or drift['drift'] or drift['routes']['source'] != 1:
+            failures.append(('unentered context item must not create a route or drift', self.last_returncode, drift))
+        self.ensure(not failures, f'with items establish path provenance only along an evaluated prefix: {failures}')
+
     def review_exception_path_provenance(self):
         scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'exception_path_scan')
         prefix = 'class Handler:\n    def do_GET(self):\n'
@@ -2751,6 +2844,136 @@ properties = {"copy": (sampled_from([" title "]), check)}
             failures.append(('correct feature map must exit 0 with only /api/items', self.last_returncode, drift))
         self.ensure(not failures, f'only proven executed assignments establish path provenance across exceptional and optional control flow: {failures}')
 
+    def review_parser_action_bindings(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'parser_binding_scan')
+        root = self.scratch / 'parser-binding-map'
+        (root / 'app').mkdir(parents=True)
+        (root / 'app/__init__.py').write_text('')
+        skill = root / '.agents/skills/verify-app'
+        (skill / 'features').mkdir(parents=True)
+        (skill / 'features/README.md').write_text('[List](list.md)\n')
+        (skill / 'features/list.md').write_text('# List\n\n## Sub-features\n\n'
+                                               '## How to get to it (user POV)\n\n'
+                                               '## Driving it with control.sh\n`python3 -m app --json list`\n\n## Gotchas\n')
+        registration = 'parser.register("action", "boolean", argparse.BooleanOptionalAction)\n'
+        option = 'parser.add_argument("--json", action="boolean")\n'
+        commands = ('parser.add_argument("--output", action="store", default=False)\n'
+                    'parser.add_argument("--label", default=False)\n'
+                    'commands = parser.add_subparsers(dest="command", required=True)\n'
+                    'commands.add_parser("list")\n')
+        finish = 'if __name__ == "__main__":\n    print(parser.parse_args())\n'
+        prefix = 'import argparse\nparser = argparse.ArgumentParser()\n'
+        variants = {
+            'global parser': prefix + registration + 'def main():\n    ' + option
+                             + 'main()\n' + commands + finish,
+            'argument group': prefix + registration + 'out = parser.add_argument_group("output")\n'
+                              + option.replace('parser.add_argument', 'out.add_argument') + commands + finish,
+            'mutually exclusive group': prefix + 'out = parser.add_mutually_exclusive_group()\n'
+                                       + registration.replace('parser.register', 'out.register')
+                                       + option + commands + finish,
+            'helper argument': 'import argparse\ndef configure(out):\n    '
+                               + option.replace('parser.add_argument', 'out.add_argument')
+                               + 'parser = argparse.ArgumentParser()\n' + registration
+                               + 'configure(parser)\n' + commands + finish,
+            'subclass and helper': ('import argparse\nclass Parser(argparse.ArgumentParser):\n'
+                                   '    def __init__(self, **kwargs):\n        super().__init__(**kwargs)\n'
+                                   '        self.register("action", "boolean", argparse.BooleanOptionalAction)\n'
+                                   'def configure(out):\n    ' + option.replace('parser.add_argument', 'out.add_argument')
+                                   + 'parser = Parser()\nconfigure(parser)\n' + commands + finish),
+            'subclass method helper': ('import argparse\nclass Parser(argparse.ArgumentParser):\n'
+                                      '    def __init__(self, **kwargs):\n        super().__init__(**kwargs)\n'
+                                      '        self.register("action", "boolean", argparse.BooleanOptionalAction)\n'
+                                      '        self.configure()\n'
+                                      '    def configure(self):\n        self.add_argument("--json", action="boolean")\n'
+                                      'parser = Parser()\n' + commands.replace('parser.add_subparsers(',
+                                          'parser.add_subparsers(parser_class=argparse.ArgumentParser, ') + finish),
+            'parser alias': prefix + 'out = parser\n' + registration.replace('parser.register', 'out.register')
+                            + option + commands + finish,
+        }
+        failures = []
+        for label, source in variants.items():
+            (root / 'app/__main__.py').write_text(source)
+            self.run(sys.executable, '-m', 'app', '--json', 'list', cwd=root)
+            options = scanner.analyze_python('app/__main__.py', source)['parser_options']
+            actual = {o['names'][0]: o['takes_value'] for group in options.values() for o in group}
+            if actual != {'--json': False, '--output': True, '--label': True}:
+                failures.append((label, 'known registered action without bool-default fallback', actual))
+            drift = self.json(self.script('maintain-verification-skill', 'drift_check.py'), skill, '--repo', root,
+                              '--json', expected=(0, 1))
+            if self.last_returncode != 0 or drift['drift'] or drift['commands']['source'] != 1:
+                failures.append((label, 'actual --json list must remain mapped', self.last_returncode, drift))
+        # A bool default is only the fallback for opaque actions, never for built-in store.
+        opaque = ('import argparse\nclass Toggle(argparse.Action):\n'
+                  '    def __init__(self, option_strings, dest, **kwargs):\n'
+                  '        super().__init__(option_strings, dest, nargs=0, **kwargs)\n'
+                  '    def __call__(self, parser, namespace, values, option_string=None):\n'
+                  '        setattr(namespace, self.dest, True)\n'
+                  'parser = argparse.ArgumentParser()\n'
+                  'parser.register("action", "toggle", Toggle)\n'
+                  'parser.add_argument("--direct", action=Toggle, default=False)\n'
+                  'parser.add_argument("--alias", action="toggle", default=False)\n'
+                  'parser.add_argument("--unknown", action="external", default=False)\n'
+                  'parser.add_argument("--custom-value", action="external", default="text")\n'
+                  'parser.add_argument("--store", action="store", default=False)\n'
+                  'parser.add_argument("--append", action="append", default=False)\n'
+                  'parser.add_argument("--none", action=None, default=False)\n')
+        (root / 'app/__main__.py').write_text(
+            ''.join(line + '\n' for line in opaque.splitlines() if 'action="external"' not in line)
+            + commands + finish)
+        self.run(sys.executable, '-m', 'app', '--direct', '--alias', 'list', cwd=root)
+        actual = {o['names'][0]: o['takes_value'] for o in scanner.analyze_python('cli.py', opaque)['parser_options']['parser']}
+        if actual != {'--direct': False, '--alias': False, '--unknown': False,
+                      '--custom-value': True, '--store': True, '--append': True, '--none': True}:
+            failures.append(('direct and registered opaque classes use the same fallback', actual))
+        # Preserve the existing inventory of registrations inside ordinary compound suites.
+        for label, suite in {
+            'try': 'try:\n    REGISTER\nexcept ValueError:\n    pass\n',
+            'with': 'from contextlib import nullcontext\nwith nullcontext():\n    REGISTER\n',
+            'for': 'for _ in range(1):\n    REGISTER\n',
+            'match': 'match \"text\":\n    case \"text\":\n        REGISTER\n',
+        }.items():
+            source = (prefix + suite.replace('REGISTER', 'parser.register("action", "text", argparse._StoreAction)')
+                      + 'parser.add_argument("--payload", action="text", default=False)\n' + finish)
+            (root / 'app/__main__.py').write_text(source)
+            self.run(sys.executable, '-m', 'app', '--payload', 'list', cwd=root)
+            option_info = scanner.analyze_python('cli.py', source)['parser_options']['parser'][0]
+            if not option_info['takes_value']:
+                failures.append((label, 'registered store in compound suite must still take a value', option_info))
+        child = (prefix + 'commands = parser.add_subparsers()\nsub = commands.add_parser("list")\n'
+                 + registration.replace('parser.register', 'sub.register')
+                 + option.replace('parser.add_argument', 'sub.add_argument')
+                 + 'parser.add_argument("--root", action="boolean", default="text")\n')
+        options = scanner.analyze_python('cli.py', child)['parser_options']
+        actual = {o['names'][0]: o['takes_value'] for group in options.values() for o in group}
+        if actual != {'--json': False, '--root': True}:
+            failures.append(('subparser has an independent registry', actual))
+        # Lexical name matches must not leak a different parser's registry, even with a bool default.
+        store = 'parser.register("action", "boolean", argparse._StoreAction)\n'
+        checks = {
+            'local shadow': prefix + registration + 'def main():\n    parser = argparse.ArgumentParser()\n'
+                            + '    ' + store + '    ' + option.replace(')', ', default=False)') + 'main()\n',
+            'reassignment': prefix + registration + 'parser = argparse.ArgumentParser()\n' + store
+                            + option.replace(')', ', default=False)'),
+            'old alias after reassignment': prefix + registration + 'out = parser\n'
+                                            + 'parser = argparse.ArgumentParser()\n' + store
+                                            + option.replace(')', ', default=False)')
+                                            + 'out.add_argument("--old", action="boolean")\n',
+            'global reassignment': prefix + registration + 'def reset():\n    global parser\n'
+                                   '    parser = argparse.ArgumentParser()\n    ' + store
+                                   + 'reset()\n' + option.replace(')', ', default=False)'),
+            'lexical shadow before assignment': prefix + registration + 'def main():\n    ' + option
+                                                + '    parser = argparse.ArgumentParser()\n',
+            'local import shadow': prefix + 'def main():\n    argparse = replacement\n'
+                                   '    ' + registration + '    ' + option + 'main()\n',
+        }
+        for label, source in checks.items():
+            options = scanner.analyze_python('cli.py', source)['parser_options']
+            actual = {o['names'][0]: o['takes_value'] for group in options.values() for o in group}
+            expected = {'--json': True, '--old': False} if label == 'old alias after reassignment' else {'--json': True}
+            if actual != expected:
+                failures.append((label, actual, expected))
+        self.ensure(not failures, f'argparse action registries follow parser bindings across scopes, groups, constructors and helpers: {failures}')
+
     def review_registered_boolean_actions(self):
         scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'registered_action_scan')
         root = self.scratch / 'registered-action-map'
@@ -2784,10 +3007,14 @@ properties = {"copy": (sampled_from([" title "]), check)}
             actual = {o['names'][0]: o['takes_value'] for o in options}
             if actual != {'--json': False, '--output': True, '--label': True}:
                 failures.append(('registered boolean and ordinary value options', body, actual))
-        # The same alias on another parser, or registered only later, must not change this option.
+        # An existing value-action registration must not be replaced by another parser's or a later registration.
         for body in (source.replace('parser.register(', 'other.register('),
                      source.replace('parser.register("action", "boolean", argparse.BooleanOptionalAction)\n', '')
                            + 'parser.register("action", "boolean", argparse.BooleanOptionalAction)\n'):
+            body = body.replace('parser = argparse.ArgumentParser()\n',
+                                'parser = argparse.ArgumentParser()\n'
+                                'other = argparse.ArgumentParser()\n'
+                                'parser.register("action", "boolean", argparse._StoreAction)\n')
             option = scanner.analyze_python('app/__main__.py', body)['parser_options']['parser'][0]
             if not option['takes_value']:
                 failures.append(('registration must precede the option on the same parser', body, option))
@@ -2938,6 +3165,77 @@ properties = {"copy": (sampled_from([" title "]), check)}
                     and all(word in changelog for word in ('overhead', 'main', '90 s', 'exit 3', 'mutant', 'exit 2', 'untracked', 'empty')),
                     'Unreleased records net behavior, default-limit overhead and incompatible exits rather than branch review rounds')
 
+
+    def review_infrastructure_exception_format(self):
+        """Import/hook failures stay errors when formatting exceeds the run deadline."""
+        failures = []
+        def fixture(checker, phase, error):
+            if phase == 'import':
+                return error + 'raise SlowInfrastructureError()\n'
+            body = ('from gen_check import Generator\n' + error +
+                    'TARGETS = ["todo/store.py:Store.add"]\n'
+                    'def broken(*args): raise SlowInfrastructureError()\n')
+            if phase == 'profiling':
+                body += ('import gen_check\n'
+                         'class BrokenPath:\n    def __init__(self, *args): pass\n'
+                         '    def resolve(self): raise SlowInfrastructureError()\n'
+                         'def setup(): gen_check.Path = BrokenPath\n')
+            if phase in ('setup', 'reset'):
+                body += phase + ' = broken\n'
+            draw = 'broken' if phase == 'generation' else 'lambda rng: 7'
+            shrink = 'broken' if phase == 'shrink' else 'lambda value: []'
+            check = 'lambda value: False' if phase == 'shrink' else 'lambda value: True'
+            return body + f'properties = {{"probe": (Generator({draw}, {shrink}), {check})}}\n'
+
+        for checker, phases in (('gen_check.py', ('import', 'setup', 'reset', 'generation', 'shrink', 'profiling')),
+                                ('bounded_check.py', ('import',))):
+            for phase in phases:
+                for tick in (True, False):
+                    error = ('import review_clock as clock\n'
+                             'class SlowInfrastructureError(Exception):\n    def __str__(self):\n'
+                             '        clock.events.append([clock.limits.recording, clock.limits.started])\n'
+                             f'        clock.advance(20, tick={tick})\n        return "slow diagnostic"\n')
+                    try:
+                        result = self.clock_check(checker, fixture(checker, phase, error), run=10, call=0,
+                                                  flags=('--json',))
+                    except AssertionError as error:
+                        failures.append((checker, phase, tick, str(error)))
+                        continue
+                    diagnostic = result['stdout'] + result['stderr']
+                    valid = (result['code'] == 2 and 'SlowInfrastructureError' in diagnostic
+                             and result['events'] == [[0, None]])
+                    if checker == 'gen_check.py':
+                        report = json.loads(result['stdout'])
+                        valid = valid and report.get('result') == 'error' and not report['ok']
+                    if not valid:
+                        failures.append((checker, phase, tick, result))
+            # Infinite messages exercise real SIGALRM as well as the manual-clock paths.
+            for phase in (('import', 'setup') if checker == 'gen_check.py' else ('import',)):
+                error = ('class SlowInfrastructureError(Exception):\n    def __str__(self):\n'
+                         '        while True: pass\n')
+                source = self.art / (phase + '_' + checker)
+                source.write_text(fixture(checker, phase, error))
+                args = ('--repo', self.repo, '--examples', '1') if checker == 'gen_check.py' else ()
+                try:
+                    diagnostic = self.run(sys.executable, self.script('formal-verification', checker), source,
+                                          *args, '--timeout', '.05', '--call-timeout', '0', '--json',
+                                          expected=(0, 1, 2, 3), timeout=1.2)
+                except subprocess.TimeoutExpired:
+                    failures.append((checker, phase, 'infinite message exceeded the external 1.2 s guard'))
+                    continue
+                if self.last_returncode != 2 or 'SlowInfrastructureError' not in diagnostic:
+                    failures.append((checker, phase, self.last_returncode, diagnostic))
+        # Deliver a pending alarm exactly after recording the import error's safe detail.
+        body = ('import review_clock as clock\nfrom contextlib import contextmanager\n'
+                'original_record = clock.limits.record_result\n'
+                '@contextmanager\ndef record():\n    with original_record():\n'
+                '        yield\n        clock.advance(20)\n'
+                'clock.limits.record_result = record\n'
+                'class RecordedImportError(Exception): pass\nraise RecordedImportError("known failure")\n')
+        result = self.clock_check('bounded_check.py', body, run=10, call=0, flags=('--json',))
+        if result['code'] != 2 or 'RecordedImportError' not in result['stdout'] + result['stderr']:
+            failures.append(('bounded import record-to-format alarm', result))
+        self.ensure(not failures, f'import and infrastructure errors retain exit 2 and safe diagnostics during interrupted formatting: {failures}')
 
     def review_exception_format_timeout(self):
         """An exception is a confirmed finding before its user-defined message is rendered."""
@@ -3163,6 +3461,13 @@ properties = {"copy": (sampled_from([" title "]), check)}
         self.log.write('bounded deterministic work: ' + json.dumps(measurements) + '\n')
         self.ensure(not failures, f'bounded search coalesces one-shot timers and bypasses all call/record wrappers with both limits disabled: {failures}')
 
+    def review_acceptance_record_scope(self):
+        history = (ROOT / 'logs/review-fixes/README.md').read_text().split(
+            '## Authorized fixes for HEAD 40dae9c, 2026-11-15\n', 1)[1].split('\n## ', 1)[0]
+        self.ensure('9/9 twice' in history and
+                    'No out-of-sandbox or Linux acceptance was performed for this pass.' not in history,
+                    'the historical Linux acceptance and Mac sandbox limitation do not contradict each other')
+
     def review_regressions(self, output):
         """Run follow-up regressions independently so every pre-fix failure is recorded."""
         output.mkdir(parents=True, exist_ok=True)
@@ -3181,6 +3486,9 @@ properties = {"copy": (sampled_from([" title "]), check)}
                     self.review_interruptible_result_format, self.review_bounded_limit_workload]
         methods += [self.review_exception_format_timeout, self.review_exception_path_provenance,
                     self.review_registered_boolean_actions, self.review_git_inherited_environment]
+        methods += [self.review_infrastructure_exception_format, self.review_with_item_provenance,
+                    self.review_parser_action_bindings, self.review_git_case_aliases,
+                    self.review_acceptance_record_scope]
         results = {}
         try:
             with (output / 'run.log').open('w') as self.log:
