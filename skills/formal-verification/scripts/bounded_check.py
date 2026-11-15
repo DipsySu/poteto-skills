@@ -10,7 +10,7 @@ optional:
   describe(state) -> str     how a state prints in a trace
   mutants = {name: fn}       broken variants of actions(); --mutants requires each to break an invariant
   DEPTH, MAX_STATES          defaults for --depth / --max-states
-  TIMEOUT                    default for --timeout (seconds for the whole run)
+  CHECK_TIMEOUT              default for --timeout (seconds for the whole run)
 
 States must be hashable or built from dicts, lists, sets, tuples, namedtuples, or dataclasses.
 The checker explores breadth-first up to --depth steps, so the counterexample it prints is a
@@ -33,6 +33,7 @@ import threading
 import time
 from collections import deque
 from pathlib import Path
+from contextlib import contextmanager
 
 DEFAULT_TIMEOUT = 90.0
 DEFAULT_CALL_TIMEOUT = 10.0
@@ -64,6 +65,8 @@ class Limits:
         self.started = None
         self.expired = False
         self.previous = None
+        self.recording = 0
+        self.pending = None
         self.active = (callable(getattr(signal, "setitimer", None)) and hasattr(signal, "SIGALRM")
                        and hasattr(signal, "ITIMER_REAL")
                        and threading.current_thread() is threading.main_thread())
@@ -113,10 +116,29 @@ class Limits:
         self.installed = False
         return False
 
+    @contextmanager
+    def record_result(self):
+        """Defer alarms only between a validated call's return and recording its result."""
+        self.recording += 1
+        try:
+            yield
+        finally:
+            self.recording -= 1
+            if not self.recording and self.pending is not None:
+                error, self.pending = self.pending, None
+                raise error
+
     def tick(self, signum, frame):
-        # The one-shot timer is rearmed only at a call boundary or when the run budget changes.
-        if self.started is not None or not self.expired:
+        try:
             self.check()
+        except Timeout as error:
+            # A bare except may swallow this alarm. Retry only after expiry, never before.
+            if self.installed and signal.getsignal(signal.SIGALRM) == self.tick:
+                signal.setitimer(signal.ITIMER_REAL, 0.1)
+            if self.recording and self.started is None:
+                self.pending = error
+            else:
+                raise
 
     def check(self):
         """Check both absolute deadlines before clearing the current call's start time."""
@@ -257,24 +279,26 @@ def search(mod, actions_fn, invariants: dict, depth: int, max_states: int, deadl
     parent: dict = {}  # key -> (parent_key, action, depth)
     queue: deque = deque()
 
-    def trace(k, steps) -> None:
+    def trace(k, steps, describe_steps=True) -> None:
         keys = []
         while k is not None:
             keys.append(k)
             k = parent[k][0]
         keys.reverse()
         # Retain raw states before invoking optional presentation code, which may time out.
-        for k in keys:
-            pk, act, d = parent[k]
-            s = states[k]
-            steps.append({"step": d, "action": act, "state": jsonable(s), "describe": None})
-        if callable(describe):
+        if not steps:
+            for k in keys:
+                pk, act, d = parent[k]
+                s = states[k]
+                steps.append({"step": d, "action": act, "state": jsonable(s), "describe": None})
+        if describe_steps and callable(describe):
             for k, step in zip(keys, steps):
                 limits.check_run()
                 step["describe"] = describe(states[k])
                 limits.check_run()
 
-    def bad(k, kind: str, name: str, detail: str | None = None, timeout: bool = False) -> dict:
+    def bad(k, kind: str, name: str, detail: str | None = None, timeout: bool = False,
+            record_only: bool = False) -> dict:
         out["result"] = "error" if kind == "error" else "violation"
         out["detail"] = detail
         out["violation"] = {"kind": kind, "name": name, "detail": detail, "trace": []}
@@ -282,21 +306,27 @@ def search(mod, actions_fn, invariants: dict, depth: int, max_states: int, deadl
             out["violation"]["timeout"] = True
             out["stopped"] = detail
         out["states"] = len(states)
-        trace(k, out["violation"]["trace"])
+        trace(k, out["violation"]["trace"], describe_steps=not record_only)
         return out
 
     def check(k, s):
         for name, fn in invariants.items():
-            try:
-                ok = limits.call(fn, s)
-            except Timeout as e:
-                if e.scope == "run":
-                    raise
-                return bad(k, "error", name, str(e), timeout=True)
-            except Exception as e:  # noqa: BLE001 - an invariant that crashes is a model bug; show where
-                return bad(k, "error", name, f"invariant raised {type(e).__name__}: {e}")
-            if not ok:
-                return bad(k, "invariant", name)
+            found = None
+            with limits.record_result():
+                try:
+                    ok = limits.call(fn, s)
+                except Timeout as e:
+                    if e.scope == "run":
+                        raise
+                    found = bad(k, "error", name, str(e), timeout=True, record_only=True)
+                except Exception as e:  # noqa: BLE001 - an invariant that crashes is a model bug; show where
+                    found = bad(k, "error", name, f"invariant raised {type(e).__name__}: {e}", record_only=True)
+                else:
+                    if not ok:
+                        found = bad(k, "invariant", name, record_only=True)
+            if found is not None:
+                trace(k, out["violation"]["trace"])
+                return found
         return None
 
     starts = initial_states(mod)
@@ -378,7 +408,7 @@ def main(argv: list[str] | None = None) -> int:
                "  bounded_check.py model.py --mutants                 # every broken variant must be caught\n"
                "  bounded_check.py model.py --expect-violation no_lost_todo   # exit 0 only if it fails\n\n"
                "MODEL.py: init() or inits(); actions(state) -> [(name, next_state)]; invariants = {name: fn};\n"
-               "optional terminal(state), describe(state), mutants = {name: actions_fn}, DEPTH, MAX_STATES, TIMEOUT.\n"
+               "optional terminal(state), describe(state), mutants = {name: actions_fn}, DEPTH, MAX_STATES, CHECK_TIMEOUT.\n"
                "exit: 0 holds within the bound, 1 violation/deadlock/surviving mutant, 2 model or usage error\n"
                "(a call to actions(), an invariant, or a mutant past --call-timeout is a model error),\n"
                "3 stopped at the --timeout run limit: not a failure and not a proof",
@@ -392,7 +422,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--mutants", action="store_true", help="also run every MODEL.mutants entry; each must violate an invariant")
     ap.add_argument("--expect-violation", metavar="NAME", help="succeed only if invariant NAME is violated (able-to-fail proof)")
     ap.add_argument("--timeout", type=float, metavar="S",
-                    help="seconds for the whole run, then exit 3 (default: MODEL.TIMEOUT or 90; 0 disables)")
+                    help="seconds for the whole run, then exit 3 (overrides MODEL.CHECK_TIMEOUT; default: 90; "
+                         "imports use CLI or 90; 0 disables; business TIMEOUT is ignored)")
     ap.add_argument("--call-timeout", type=float, default=DEFAULT_CALL_TIMEOUT, metavar="S",
                     help="seconds for one call to actions(), an invariant, or a mutant, then exit 2 (default: 10; 0 disables)")
     ap.add_argument("--json", action="store_true", help="machine-readable output")
@@ -425,7 +456,7 @@ def main(argv: list[str] | None = None) -> int:
             if args.mutants and (not isinstance(muts, dict) or not muts):
                 raise ModelError("--mutants needs MODEL.mutants = {name: broken_actions_fn}")
             if args.timeout is None:
-                limits.limit_run(seconds(getattr(mod, "TIMEOUT", DEFAULT_TIMEOUT), "MODEL.TIMEOUT"))
+                limits.limit_run(seconds(getattr(mod, "CHECK_TIMEOUT", DEFAULT_TIMEOUT), "MODEL.CHECK_TIMEOUT"))
             if not args.json:  # --json output carries the bounds; keep it parseable
                 print(f"bounded_check: {args.model}: depth <= {depth}, max {max_states} states, "
                       f"{limits.run_seconds:g} s run limit, {limits.call_seconds:g} s per call",

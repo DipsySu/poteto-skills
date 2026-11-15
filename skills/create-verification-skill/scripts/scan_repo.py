@@ -34,6 +34,7 @@ import os
 import re
 import subprocess
 import sys
+from bisect import bisect_right
 from collections import Counter
 from pathlib import Path
 
@@ -246,13 +247,13 @@ def _usage(node) -> str | None:
 
 
 def _function(node):
-    while node is not None:
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
-            return node
-        if isinstance(node, ast.ClassDef):
-            return None
-        node = getattr(node, "_parent", None)
-    return None
+    if node is None:
+        return None
+    if not hasattr(node, "_function_scope"):
+        node._function_scope = (node if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda))
+                                else None if isinstance(node, ast.ClassDef)
+                                else _function(getattr(node, "_parent", None)))
+    return node._function_scope
 
 
 def _target_bindings(target, value=None):
@@ -269,43 +270,40 @@ def _target_bindings(target, value=None):
 
 
 def _if_branches(node, fn):
-    """Enclosing if arms; an elif test belongs to its outer if's else arm."""
-    branches = {}
-    while node is not fn:
+    """Cached enclosing if/case arms; an elif test belongs to its outer if's else arm."""
+    if node is fn:
+        return {}
+    if not hasattr(node, "_branch_arms"):
         parent = getattr(node, "_parent", None)
+        branches = _if_branches(parent, fn).copy()
         if isinstance(parent, ast.If):
             if node in parent.body:
                 branches[parent] = "body"
             elif node in parent.orelse:
                 branches[parent] = "else"
-        node = parent
-    return branches
+        elif isinstance(parent, ast.Match) and isinstance(node, ast.match_case):
+            branches[parent] = node
+            if node.guard is not None:
+                branches[node] = "entered"
+        elif isinstance(parent, ast.match_case) and parent.guard is not None and node not in parent.body:
+            # Pattern captures and guard assignments survive a false guard. They may reach later
+            # cases, unlike body assignments, but do not establish a definite source at that join.
+            branches.pop(parent._parent)
+        node._branch_arms = branches
+    return node._branch_arms
 
 
-def _assigned_value(node):
-    """Latest compatible binding; conditional joins with unknown sources revoke provenance."""
-    if not isinstance(node, ast.Name) or (fn := _function(node)) is None:
-        return None
-    # Comprehension targets shadow enclosing aliases without rebinding them outside the comprehension.
-    parent = getattr(node, "_parent", None)
-    while parent is not fn:
-        if isinstance(parent, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
-            if any(name == node.id for gen in parent.generators for name, _ in _target_bindings(gen.target)):
-                return None
-        parent = getattr(parent, "_parent", None)
-
-    bindings = []
-    position = (node.lineno, node.col_offset)
-    branches = _if_branches(node, fn)
+def _binding_index(fn):
+    """Index each function's bindings once, sharing cached scope and branch ancestry."""
+    if hasattr(fn, "_bindings"):
+        return fn._bindings
+    bindings = {}
 
     def record(at, pairs):
         end = (at.end_lineno, at.end_col_offset)
-        if end <= position:
-            assigned_in = _if_branches(at, fn)
-            if any(branches.get(branch, arm) != arm for branch, arm in assigned_in.items()):
-                return  # This binding is in a mutually exclusive arm.
-            certain = all(branch in branches for branch in assigned_in)
-            bindings.extend((end, value if certain else None) for name, value in pairs if name == node.id)
+        assigned_in = _if_branches(at, fn)
+        for name, value in pairs:
+            bindings.setdefault(name, []).append((end, value, assigned_in))
 
     for candidate in ast.walk(fn):
         if isinstance(candidate, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
@@ -341,10 +339,34 @@ def _assigned_value(node):
             record(candidate, [(candidate.name, None)])
         elif isinstance(candidate, ast.MatchMapping) and candidate.rest:
             record(candidate, [(candidate.rest, None)])
-    if not bindings:
+    for values in bindings.values():
+        values.sort(key=lambda binding: binding[0])
+    fn._bindings = bindings
+    return bindings
+
+
+def _assigned_value(node):
+    """Latest compatible binding; conditional joins with unknown sources revoke provenance."""
+    if not isinstance(node, ast.Name) or (fn := _function(node)) is None:
         return None
-    # Repeated names in one unpacking assignment bind left to right.
-    return max(reversed(bindings), key=lambda binding: binding[0])[1]
+    # Comprehension targets shadow enclosing aliases without rebinding them outside the comprehension.
+    parent = getattr(node, "_parent", None)
+    while parent is not fn:
+        if isinstance(parent, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
+            if any(name == node.id for gen in parent.generators for name, _ in _target_bindings(gen.target)):
+                return None
+        parent = getattr(parent, "_parent", None)
+    bindings = _binding_index(fn).get(node.id, [])
+    position = (node.lineno, node.col_offset)
+    branches = _if_branches(node, fn)
+    end = bisect_right(bindings, position, key=lambda binding: binding[0])
+    # Stable ordering also preserves left-to-right binding of repeated names in one unpacking assignment.
+    for index in range(end - 1, -1, -1):
+        _, value, assigned_in = bindings[index]
+        if any(branches.get(branch, arm) != arm for branch, arm in assigned_in.items()):
+            continue  # This binding is in a mutually exclusive arm.
+        return value if all(branch in branches for branch in assigned_in) else None
+    return None
 
 
 def _request_path(node) -> bool:
@@ -646,13 +668,16 @@ def analyze_python(rel: str, text: str) -> dict:
                                 suffixes.append(_str(n2))
                     base = s.rstrip("/")
                     paths = [base + "/<*>" + "/" + x.lstrip("/") for x in suffixes] or [base + "/<*>"]
-                    for m in methods:
-                        for p in paths:
-                            add_route(m, normalize_route(p, declared=_compares_path(node)), node, "startswith", body)
-                    continue
-                declared = _compares_path(node)
+                else:
+                    paths = [s]
+                # Only filesystem-like paths need provenance. Normalize first so anchored regexes
+                # receive the same filtering, then share this work across all methods and suffixes.
+                paths = [normalize_route(p, kind, declared=True) for p in paths]
+                declared = not any(p and FS_PREFIX.match(p) for p in paths) or _compares_path(node)
+                paths = [p for p in paths if p and (declared or not FS_PREFIX.match(p))]
                 for m in methods:
-                    add_route(m, normalize_route(s, kind, declared=declared), node, kind, body)
+                    for p in paths:
+                        add_route(m, p, node, "startswith" if kind == "prefix" else kind, body)
     return info
 
 

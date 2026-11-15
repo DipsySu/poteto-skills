@@ -3,7 +3,7 @@
 
 PROPS.py imports combinators and reject from gen_check, defines
 properties = {name: (generator, check)}, and TARGETS = ["path.py:Class.method"].
-Optional examples = {name: [inputs]}, setup(), reset(), TIMEOUT (seconds for the
+Optional examples = {name: [inputs]}, setup(), reset(), CHECK_TIMEOUT (seconds for the
 run). Hooks run before each input and shrink attempt. Only check(input) is
 profiled; rejected and timed-out inputs do not count toward target coverage. A
 failure is reduced with at most 500 attempts, not guaranteed minimal. An input
@@ -30,6 +30,7 @@ import sys
 import threading
 import time
 from pathlib import Path
+from contextlib import contextmanager
 
 DEFAULT_TIMEOUT = 90.0
 DEFAULT_CALL_TIMEOUT = 10.0
@@ -64,6 +65,8 @@ class Limits:
         self.started = None
         self.expired = False
         self.previous = None
+        self.recording = 0
+        self.pending = None
         self.active = (callable(getattr(signal, 'setitimer', None)) and hasattr(signal, 'SIGALRM')
                        and hasattr(signal, 'ITIMER_REAL')
                        and threading.current_thread() is threading.main_thread())
@@ -113,10 +116,29 @@ class Limits:
         self.installed = False
         return False
 
+    @contextmanager
+    def record_result(self):
+        """Defer alarms only between a validated call's return and recording its result."""
+        self.recording += 1
+        try:
+            yield
+        finally:
+            self.recording -= 1
+            if not self.recording and self.pending is not None:
+                error, self.pending = self.pending, None
+                raise error
+
     def tick(self, signum, frame):
-        # The one-shot timer is rearmed only at a call boundary or when the run budget changes.
-        if self.started is not None or not self.expired:
+        try:
             self.check()
+        except Timeout as error:
+            # A bare except may swallow this alarm. Retry only after expiry, never before.
+            if self.installed and signal.getsignal(signal.SIGALRM) == self.tick:
+                signal.setitimer(signal.ITIMER_REAL, 0.1)
+            if self.recording and self.started is None:
+                self.pending = error
+            else:
+                raise
 
     def check(self):
         """Check both absolute deadlines before clearing the current call's start time."""
@@ -411,7 +433,7 @@ def attempt(mod, check, value, repo, limits):
             limits.arm()
 
 
-def reduce_failure(mod, gen, check, value, detail, repo, limits):
+def reduce_failure(mod, gen, check, value, detail, repo, limits, result):
     """On any timeout or Ctrl-C, retain the best reduction, stop reason and interrupted input."""
     seen = {repr(value)}
     attempts = 0
@@ -426,10 +448,13 @@ def reduce_failure(mod, gen, check, value, detail, repo, limits):
                     continue
                 seen.add(key)
                 checking = (candidate,)
-                status, why, _ = attempt(mod, check, candidate, repo, limits)
-                checking = None
+                with limits.record_result():
+                    status, why, _ = attempt(mod, check, candidate, repo, limits)
+                    checking = None
+                    if status == 'fail':
+                        value, detail = candidate, why
+                        result.update(counterexample=repr(value), detail=detail, shrink_attempts=attempts)
                 if status == 'fail':
-                    value, detail = candidate, why
                     break
             else:
                 break
@@ -454,16 +479,18 @@ def run_property(mod, name, gen, check, rng, count, repo, limits, result, called
         for generated, value in limits.iterate(inputs):
             result['generated'] += int(generated)
             checking = (value,)
-            status, detail, ran = attempt(mod, check, value, repo, limits)
-            checking = None
-            if status == 'reject':
-                result['rejected'] += int(generated)
-                continue
-            result['accepted'] += 1
-            called.update(ran)
+            with limits.record_result():
+                status, detail, ran = attempt(mod, check, value, repo, limits)
+                checking = None
+                if status == 'reject':
+                    result['rejected'] += int(generated)
+                    continue
+                result['accepted'] += 1
+                called.update(ran)
+                if status == 'fail':
+                    result.update(result='fail', counterexample=repr(value), detail=detail)
             if status == 'fail':
-                result.update(result='fail', counterexample=repr(value), detail=detail)
-                value, detail, attempts, stopped, checking = reduce_failure(mod, gen, check, value, detail, repo, limits)
+                value, detail, attempts, stopped, checking = reduce_failure(mod, gen, check, value, detail, repo, limits, result)
                 result.update(result='fail', counterexample=repr(value), detail=detail, shrink_attempts=attempts)
                 if stopped is not None:
                     scope = 'interrupted' if isinstance(stopped, KeyboardInterrupt) else stopped.scope
@@ -496,7 +523,8 @@ def main(argv=None):
     ap.add_argument('--examples', type=int, default=100, help='generated inputs per property after pinned examples (default: 100)')
     ap.add_argument('--expect-fail', metavar='NAME', help='exit 0 only for a counterexample to this property')
     ap.add_argument('--timeout', type=float, metavar='S',
-                    help='seconds for the whole run, then exit 3 (default: PROPS.TIMEOUT or 90; 0 disables)')
+                    help='seconds for the whole run, then exit 3 (overrides PROPS.CHECK_TIMEOUT; default: 90; '
+                         'imports use CLI or 90; 0 disables; business TIMEOUT is ignored)')
     ap.add_argument('--call-timeout', type=float, default=DEFAULT_CALL_TIMEOUT, metavar='S',
                     help="seconds for one input's hooks and check, then exit 3 (default: 10; 0 disables)")
     ap.add_argument('--json', action='store_true', help='machine-readable output')
@@ -518,7 +546,7 @@ def main(argv=None):
                 if args.expect_fail is not None and args.expect_fail not in mod.properties:
                     raise PropsError(f"unknown property: {args.expect_fail}")
                 if args.timeout is None:
-                    limits.limit_run(seconds(getattr(mod, 'TIMEOUT', DEFAULT_TIMEOUT), 'TIMEOUT'))
+                    limits.limit_run(seconds(getattr(mod, 'CHECK_TIMEOUT', DEFAULT_TIMEOUT), 'PROPS.CHECK_TIMEOUT'))
                 report['timeout'] = limits.run_seconds
                 limits.check_run()
                 if not args.json:  # --json output carries the seed; keep it parseable

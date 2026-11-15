@@ -26,6 +26,7 @@
       "dubious ownership is a git error, never permission to traverse the disk",
       "git failure inside a worktree exits 2 without adopting any baseline hits: []",
       "ordinary non-git directories retain quiet filesystem fallback",
+      "non-English git errors fall back quietly only outside checkouts, preserving baseline failures: []",
       "--record keeps the raw removed mistake after whole-file parent/fix proof",
       "--test passes the retained history cases and explicit Store.add fix",
       "both documented example rules replay successfully and name existing owner APIs",
@@ -315,7 +316,10 @@
       "property call timeouts are inconclusive exit 3 in JSON and text, never ERROR: []",
       "checkers arm one-shot nearest deadlines and restore only their owned signal state: []",
       "zero disables each deadline independently while invalid limits remain errors: []",
-      "skill and generated-skill instructions include replay and default-limit migration with opt-outs"
+      "skill and generated-skill instructions include replay and default-limit migration with opt-outs",
+      "SIGALRM after a checked failure returns preserves exit 1, counterexample and coverage: []",
+      "swallowed alarms retry once at short intervals only after expiry and interrupt busy loops: []",
+      "business TIMEOUT is ignored (including None); CHECK_TIMEOUT and CLI budgets remain explicit: []"
     ]
   },
   "maintain-verification-skill": {
@@ -341,6 +345,8 @@
       "same-function request-path aliases and split segments keep real routes; reassignment revokes provenance",
       "rebindings revoke unknown path/segment sources and retain proven request aliases: []",
       "exclusive branches cannot lend path provenance; uncertain joins revoke it: []",
+      "match cases keep exclusive bindings separate and revoke uncertain joins: []",
+      "ordinary and filesystem-like routes retain exact inventory with near-linear AST work: []",
       "Go aliases, fields and returned muxes retain routes and server launches; FS bypass needs a known receiver: []",
       "registered string argparse actions with explicit nargs=0 consume no value",
       "a registered nargs=0 action before list keeps its command mapped and exits 0",

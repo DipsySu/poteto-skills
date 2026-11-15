@@ -237,10 +237,9 @@ def git_fallback(cwd: Path, error):
     directory = cwd.resolve()
     in_checkout = (any(name in os.environ for name in ("GIT_DIR", "GIT_WORK_TREE"))
                    or any(os.path.lexists(p / ".git") for p in (directory, *directory.parents)))
-    if not in_checkout and isinstance(error, FileNotFoundError):
-        print(f"patlint: WARNING: git unavailable: {error}; fallback to filesystem traversal", file=sys.stderr)
-        return
-    if not in_checkout and "not a git repository" in str(error).lower():
+    if not in_checkout:
+        if isinstance(error, FileNotFoundError):
+            print(f"patlint: WARNING: git unavailable: {error}; fallback to filesystem traversal", file=sys.stderr)
         return
     raise RuntimeError(f"git lookup failed; refusing filesystem fallback: {error}") from error
 

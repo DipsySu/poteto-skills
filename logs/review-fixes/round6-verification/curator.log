@@ -1,0 +1,134 @@
+scratch: /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-hbwflg53
+$ /private/tmp/poteto-round6-verify-zx5cgvk4/scripts/check_docs.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-hbwflg53/docs
+PASS docs: helper paths, commands, links, counts and source citations
+
+[exit 0; expected 0]
+ASSERT PASS: clean copied docs pass the standalone documentation checker
+ASSERT PASS: reintroducing README's retired --since recommendation fails its explicit policy
+ASSERT PASS: reintroducing README's retired --since recommendation fails its explicit policy: diagnostics include file and line
+ASSERT PASS: a renamed helper flag fails against its real --help
+ASSERT PASS: a renamed helper flag fails against its real --help: diagnostics include file and line
+ASSERT PASS: a dead heading link fails
+ASSERT PASS: a dead heading link fails: diagnostics include file and line
+ASSERT PASS: inline links with titles still validate their destination
+ASSERT PASS: inline links with titles still validate their destination: diagnostics include file and line
+ASSERT PASS: angle destinations with titles still validate their destination
+ASSERT PASS: angle destinations with titles still validate their destination: diagnostics include file and line
+ASSERT PASS: a stale whole-set skill count fails against the tree
+ASSERT PASS: a stale whole-set skill count fails against the tree: diagnostics include file and line
+ASSERT PASS: an explicit source range must match the entire NOTES inventory
+ASSERT PASS: an explicit source range must match the entire NOTES inventory: diagnostics include file and line
+ASSERT PASS: a valid source alongside an unknown source does not hide the unknown citation
+ASSERT PASS: a valid source alongside an unknown source does not hide the unknown citation: diagnostics include file and line
+ASSERT PASS: mapping citations are validated too
+ASSERT PASS: mapping citations are validated too: diagnostics include file and line
+ASSERT PASS: every skill still needs at least one source citation
+ASSERT PASS: every skill still needs at least one source citation: diagnostics include file and line
+ASSERT PASS: a supported README-only flag absent from skill examples remains allowed
+ASSERT PASS: a typo in the explicit recommendation policy fails too
+ASSERT PASS: a typo in the explicit recommendation policy fails too: diagnostics include file and line
+ASSERT PASS: flags after -- are outside the helper's option contract
+ASSERT PASS: shell separators keep flags associated with their own command
+ASSERT PASS: an option's literal value is not mistaken for a helper flag
+ASSERT PASS: literal command variables are expanded without executing examples
+ASSERT PASS: literal command variables are expanded without executing examples: diagnostics include file and line
+ASSERT PASS: subcommand flags are checked against check help, not add help
+ASSERT PASS: subcommand flags are checked against check help, not add help: diagnostics include file and line
+ASSERT PASS: bare inline helper commands resolve within their owning skill
+ASSERT PASS: bare inline helper commands resolve within their owning skill: diagnostics include file and line
+ASSERT PASS: helper paths expanded from literal directory variables are validated
+ASSERT PASS: helper paths expanded from literal directory variables are validated: diagnostics include file and line
+ASSERT PASS: $SKILL_DIR paths resolve to the owning skill
+ASSERT PASS: $SKILL_DIR paths resolve to the owning skill: diagnostics include file and line
+ASSERT PASS: $S/skill paths resolve to the named skill
+ASSERT PASS: $S/skill paths resolve to the named skill: diagnostics include file and line
+ASSERT PASS: sibling skill paths resolve from the current skill
+ASSERT PASS: sibling skill paths resolve from the current skill: diagnostics include file and line
+ASSERT PASS: explicit skill/scripts paths resolve to that skill
+ASSERT PASS: explicit skill/scripts paths resolve to that skill: diagnostics include file and line
+ASSERT PASS: a helper path naming a nonexistent skill fails
+ASSERT PASS: a helper path naming a nonexistent skill fails: diagnostics include file and line
+ASSERT PASS: bare scripts paths resolve at the collection root
+ASSERT PASS: bare scripts paths resolve at the collection root: diagnostics include file and line
+ASSERT PASS: valid sibling helpers are recognized
+ASSERT PASS: generated harnesses, placeholders and vendored commands are outside collection contracts
+ASSERT PASS: Unicode and duplicate heading anchors, code headings, titled/angle links and references resolve
+ASSERT PASS: undefined explicit reference links fail
+ASSERT PASS: undefined explicit reference links fail: diagnostics include file and line
+ASSERT PASS: remote URLs containing scripts paths are not local file references
+ASSERT PASS: documentation command substitutions are never executed
+ASSERT PASS: shell snippets have no side effects
+ASSERT PASS: adding S24 to NOTES allows a skill citing only S24 without editing checker code
+ASSERT PASS: adding a source also invalidates any stale explicit whole-set range
+ASSERT PASS: adding a source also invalidates any stale explicit whole-set range: diagnostics include file and line
+ASSERT PASS: all scratch mutations restore to clean documentation
+$ git init -q --initial-branch=main --template= /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-hbwflg53/cache/cursor-plugins
+
+[exit 0; expected 0]
+$ git -C /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-hbwflg53/cache/cursor-plugins add -A
+
+[exit 0; expected 0]
+$ git -C /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-hbwflg53/cache/cursor-plugins -c user.name=example-dev -c user.email=dev@example.local -c commit.gpgsign=false commit -qm 'offline upstream fixture'
+
+[exit 0; expected 0]
+$ /private/tmp/poteto-round6-verify-zx5cgvk4/skills/curator/scripts/upstream_diff.sh --repo /private/tmp/poteto-round6-verify-zx5cgvk4 --offline --json
+{
+  "upstream": {
+    "url": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-hbwflg53/cache/cursor-plugins",
+    "branch": "main",
+    "head": "c6d5006413a2814e866260bf616707938e0eb816",
+    "head_date": "2026-11-15T01:49:03Z",
+    "version": null,
+    "fetch": "skipped",
+    "clone": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-hbwflg53/cache/cursor-plugins"
+  },
+  "snapshot": {
+    "dir": "/private/tmp/poteto-round6-verify-zx5cgvk4/research/upstream",
+    "pinned_sha": "6b78e9f4e46c75d1697d837e51f07c2692e60b24",
+    "files_same": 17,
+    "commits_since": []
+  },
+  "changed": [
+    {
+      "file": "correct/SKILL.md",
+      "upstream_path": "pstack/skills/correct/SKILL.md",
+      "url": "https://github.com/cursor/plugins/blob/main/pstack/skills/correct/SKILL.md"
+    }
+  ],
+  "missing_upstream": [],
+  "new_skills": [
+    {
+      "name": "local-new",
+      "url": "https://github.com/cursor/plugins/tree/main/pstack/skills/local-new"
+    }
+  ],
+  "removed_skills": [],
+  "untracked_skills": [
+    "local-new"
+  ],
+  "first_run": true,
+  "changes": 2
+}
+
+[exit 0; expected 0]
+ASSERT PASS: offline diff detects a changed upstream skill against the snapshot
+ASSERT PASS: first offline diff reports a new skill absent from the snapshot
+ASSERT PASS: fake upstream maps every snapshotted source path correctly
+$ git -C /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-hbwflg53/cache/cursor-plugins add -A
+
+[exit 0; expected 0]
+$ git -C /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-hbwflg53/cache/cursor-plugins -c user.name=example-dev -c user.email=dev@example.local -c commit.gpgsign=false commit -qm 'add a skill between curator runs'
+
+[exit 0; expected 0]
+$ /private/tmp/poteto-round6-verify-zx5cgvk4/skills/curator/scripts/curate.sh --propose --offline --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-hbwflg53/collection --date 2026-10-19
+/private/tmp/poteto-round6-verify-zx5cgvk4/skills/curator/scripts/curate.sh: line 57: /dev/fd/63: Operation not permitted
+
+[exit 1; expected 0]
+Traceback (most recent call last):
+  File "/private/tmp/poteto-round6-verify-zx5cgvk4/scripts/run_examples.py", line 94, in case
+    yield
+  File "/private/tmp/poteto-round6-verify-zx5cgvk4/scripts/run_examples.py", line 2573, in curator
+    self.run(self.script(self.name,'curate.sh'),'--propose','--offline','--repo',collection,'--date','2026-10-19',env=env)
+  File "/private/tmp/poteto-round6-verify-zx5cgvk4/scripts/run_examples.py", line 61, in run
+    raise AssertionError(f"{shlex.join(args)}: exit {result.returncode}, expected {expected}; see {self.name}.log")
+AssertionError: /private/tmp/poteto-round6-verify-zx5cgvk4/skills/curator/scripts/curate.sh --propose --offline --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-hbwflg53/collection --date 2026-10-19: exit 1, expected 0; see curator.log

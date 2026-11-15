@@ -1,5 +1,38 @@
 # Curator review fixes
 
+## Round 6, 2026-11-15
+
+Base and unchanged HEAD: `f6e20f19858c039fab63bd4319717d0170c824c7`, branch `curator/2026-11-09`. Scope is the six requested findings from the gpt-6-astra / opus reviews of that HEAD. No commit or push was performed.
+
+Before any production edit, the existing 21 regression groups passed and the six new groups failed: [initial summary](round6-before/summary.json), [source hashes](round6-before/source-state.json). The final, strengthened six groups were then replayed against byte-identical saved HEAD production files: **all six fail** in [base replay](round6-base-replay/summary.json) / [log](round6-base-replay/run.log). This final replay is the authoritative failure evidence: the initial bounded signal-injection fixture referenced a closure local absent in HEAD; the fixture was corrected and the original failure (exit 3, lost violation) was independently reproduced. The replay also includes both shrink handoff windows and the added guarded-case coverage.
+
+After the fixes, `python3 scripts/run_examples.py --review-regressions /tmp/poteto-round6-after-final` passed **27 groups / 59 assertions**: [summary](round6-after/summary.json), [log](round6-after/run.log), [final source hashes](round6-after/source-state.json). Use a fresh output directory when repeating the command. All six groups also run in their respective full example paths. An AST comparison confirms all **224 existing `ensure` assertions are unchanged**; six new assertions were added. Only the two module-budget fixtures changed `TIMEOUT` to `CHECK_TIMEOUT`, and the existing dubious-ownership fixture now has a checkout marker to represent its fail-closed scenario.
+
+| Requested fix / regression | Root cause, reproduction and result |
+|---|---|
+| 1 / `review_confirmed_signal_boundary` | Real SIGALRM injection after a failing check returned but before recording changed both checkers from exit 1 to 3 and lost the violation; gen also lost accepted coverage. Short result-recording regions now defer alarms until the counterexample, coverage and raw trace are stored. Four injection stages cover the initial gen/bounded return and shrink candidate/whole-shrink return; a confirmed reduced `7` cannot revert to `42`. Pre-registered result containers remain in place; user calls and trace descriptions stay interruptible. |
+| 2 / `review_match_case_paths` | A disk alias acquired request provenance from another case, creating `GET /var/www/<*>`. Case bodies now have exclusive branch contexts; uncertain joins revoke aliases. Failed guards can leave pattern/guard bindings behind, so those are treated conservatively without losing same-case positive aliases. Existing if/elif/else, unpacking and route positives remain covered. |
+| 3 / `review_git_locale` | English error-string matching made the supplied `/private/etc/hosts` command exit 0 in `C` but exit 2 in `zh_CN.UTF-8`. Checkout markers/environment now decide fallback independently of diagnostic language. Real Chinese locale plus a deterministic translated-git stub cover files/directories/root inference; outside-git errors stay quiet and worktree errors still exit 2 without modifying baselines. The existing missing-git warning is retained. |
+| 4 / `review_swallowed_alarm` | A swallowed one-shot alarm left no signal armed. `tick` now schedules a 0.1 s one-shot retry before raising after expiry; call cleanup resets it. Manual clocks verify successive swallowed alarms, earliest deadline, no pre-deadline polling and timer reset in both checkers. Real bare-except loops stop around 0.4 s instead of completing their 3 s busy period, with a loose supplemental upper bound; timing is not the primary assertion. |
+| 5 / `review_route_workload` | Every route redundantly resolved provenance, repeatedly walking its whole function. Function binding/scope/branch indexes are cached, only filesystem-prefix candidates require provenance, and normalized paths are shared across methods. For N=20/60/120, both ordinary and filesystem-like route inventories must remain exact and AST work at sixfold N must stay below eightfold growth. |
+| 6 / `review_budget_namespace` | Generic business `TIMEOUT` was silently interpreted as seconds (`0.3` interrupted a passing run; `None` caused exit 2). Both checkers now use only `CHECK_TIMEOUT`; manual-clock cases prove business values `0.3`, `3`, and `None` are ignored, while module limits, CLI precedence and zero opt-outs work. Existing import-budget/equality tests retain their assertions. Help, SKILL.md, generated-skill instructions, CHANGELOG and MAPPING describe migration and the initial CLI/default import budget. |
+
+Performance evidence ([measurements](round6-after/performance.json); seconds are observational, not test gates):
+
+| Routes N | HEAD wall time | Fixed wall time |
+|---|---:|---:|
+| 100 | 0.142635 s | 0.008416 s |
+| 300 | 1.270054 s | 0.023403 s |
+| 600 | 5.068269 s | 0.047314 s |
+
+At N=20→120, AST child-edge visits fell from **4,715→111,715 (23.69×)** to **1,735→9,835 (5.67×)** for ordinary paths and **1,884→10,684 (5.67×)** for filesystem-like paths. An independent scanner executed-line counter also measured near-linear growth at N=100→600 (5.94× ordinary / 5.94× filesystem-like), guarding against merely moving quadratic work out of AST traversal.
+
+Full verification ran once on an isolated copy using `bash scripts/verify.sh --run-examples`: **7 PASS / 2 FAIL, exit 1**. [Gate output](round6-verification/verify.log), [example summary](round6-verification/summary.json) and [run/source record](round6-verification/run.json) retain the results. Formal verification passed 96 assertions and correct passed 47; the scanner regressions passed before maintain's launch attempt. Script contracts, syntax, docs/mapping, install isolation and the fresh example app tests/lint passed. Create/maintain were blocked by `PermissionError: [Errno 1] Operation not permitted` in loopback port allocation; curator was blocked by `/dev/fd/63: Operation not permitted`. Example regeneration and the example-results gate therefore remain failing; the full suite has **not** passed in this sandbox. No assertions or environment checks were skipped to hide these failures.
+
+Full `bash scripts/verify.sh --run-examples` on Linux, run twice outside the sandbox: **9 PASS / 0 FAIL, exit 0** both times (formal-verification 96, correct 47, maintain 46 assertions). Gate output is in [verify-box.log](round6-linux/verify-box.log) and [verify-box2.log](round6-linux/verify-box2.log). `logs/examples/` holds the second Linux run. An independent Linux `python3 scripts/run_examples.py --review-regressions` also passed **all 27 groups / 59 assertions**: [summary](round6-linux/regressions-summary.json), [log](round6-linux/regressions-run.log).
+
+The isolated verification copy and runner scratch repositories were removed; retained output directories contain evidence files only. No nested `.git` or temporary fixture directory remains under `logs/`. Low-priority findings were not fixed; the cumulative Follow-ups below retain the old entries and add the missing opus #5–11 items.
+
 ## Round 5, 2026-11-14
 
 Base: `8f599d5873ceb53b811db6c62487eb0276cd0a6c`, branch `curator/2026-11-09`. Addresses the six requested fixes from the fourth-round reviews.
@@ -12,17 +45,24 @@ Base: `8f599d5873ceb53b811db6c62487eb0276cd0a6c`, branch `curator/2026-11-09`. A
 - Full `bash scripts/verify.sh --run-examples` on Linux, run twice outside the sandbox: **9 PASS / 0 FAIL, exit 0** both times (formal-verification 93, correct 46, maintain 44 assertions). `logs/examples/` holds the output of that Linux run; `--review-regressions` there also passed all 21 groups.
 - Isolated copies and fixture repositories were removed. Detailed output stays in system temporary space; no nested Git repository or temporary fixture directory remains under `logs/`.
 
-## Follow-ups (not fixed in round 5)
+## Follow-ups (retained through round 6)
 
 - `bounded_check.py`: crossing the deadline after search can mislabel `trace_incomplete`, overwrite `stopped`, and downgrade a completed pass to exit 3.
 - The summary “outside the search; confirmed findings retained” can contradict where/what actually stopped.
 - `scan_repo.py`: `GO_HANDLE_RECEIVERS` still lacks `api` / `engine` / `group`.
 - Request paths using `self.path.split("?")[0]` / `partition("?")` remain unrecognized; maintain-verification-skill's “every route” wording overstates coverage.
+- Opus #9 also notes tuple-membership route checks remain unrecognized.
 - Remaining patlint WARNING noise, one git subprocess per file, and undocumented empty-directory/submodule behavior changes.
 - Other documentation mismatches: patlint `--help`, “Committing” versus index membership, and module `TIMEOUT` versus the import-time budget.
 - JSON mode does not print seed/bounds to stderr.
 - A run timeout can overwrite gen_check's earlier `incomplete` shrink details.
 - Existing bounded-check init/terminal/describe exceptions are not wrapped as `ModelError`.
+- Opus #5: bounded model-call timeout exits 2 but also populates `incomplete` and prints “INCOMPLETE”; separate model errors from run-budget incompleteness in a later change.
+- Opus #6: completed property work can be reported as stopping inside the last property; completion bookkeeping and append-only incomplete details remain deferred.
+- Opus #8: explicit files still start separate git processes; a copied checkout with `.git` but no git executable exits 2. Empty/ignored directory and submodule behavior remains as recorded above.
+- Opus #9: `scan_repo.py`'s Handle/HandleFunc receiver docstring still lists `engine/group/api` beyond the implemented receiver set. The prior module `TIMEOUT`/import-budget mismatch above is addressed only as part of the required round-6 `CHECK_TIMEOUT` migration; the other documentation follow-ups remain open.
+- Opus #10: generated project skills still require the one-time seed migration note; deciding whether new skills should omit historical migration prose is deferred.
+- Opus #11: `review_docs` still depends on this review README and exact CHANGELOG wording, and `review_fixture_limits` inspects the runner's own source literals. Whether review logs belong in main and how to decouple those tests remains deferred.
 
 ## Previous reassessment, 2026-11-14
 

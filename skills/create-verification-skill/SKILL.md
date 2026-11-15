@@ -15,7 +15,7 @@ Give agents hands and eyes: one committed, scripted way to launch the app, drive
 python3 $SKILL_DIR/scripts/scan_repo.py .        # --json for the full inventory
 ```
 
-Check each answer against the code. Ask the user only what the repo can't tell you.
+Check each answer against the code. Ask the user only what the repo can't tell you. Python request-path aliases respect mutually exclusive `if` and `match/case` branches; uncertain joins revoke their source, so filesystem paths are not promoted to HTTP routes.
 
 - **Surface:** what a user touches (HTTP API, CLI, web UI, desktop app). Pick the primary one and note the rest.
 - **Run:** the repo's own start command, ports, env vars, seed data, auth.

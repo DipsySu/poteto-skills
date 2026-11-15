@@ -510,6 +510,8 @@ class Examples:
             self.review_phantom_routes()
             self.review_path_rebindings()
             self.review_path_branches()
+            self.review_match_case_paths()
+            self.review_route_workload()
             self.review_go_receivers()
             self.maintain_zero_nargs()
             self.maintain_exit_contract()
@@ -667,6 +669,84 @@ class Handler(BaseHTTPRequestHandler):
                     == {'/var/routes/<*>', '/tmp/cache', '/dev'},
                     'same-function request-path aliases and split segments keep real routes; reassignment revokes provenance')
 
+    def review_match_case_paths(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'case_path_scan')
+        prefix = 'class Handler:\n    def do_GET(self):\n'
+        probe = 'if path.startswith("/var/www/"): pass'
+        negatives = [
+            'path = filesystem\nmatch mode:\n    case "url":\n        path = self.path\n'
+            '    case "disk":\n        ' + probe,
+            'path = filesystem\nmatch mode:\n    case "url" if allowed:\n        path = self.path\n'
+            '    case _:\n        ' + probe,
+            'path = filesystem\nmatch mode:\n    case "url":\n        path = self.path\n' + probe,
+            'path = self.path\nmatch mode:\n    case "disk":\n        path = filesystem\n' + probe,
+            'path = filesystem\nmatch mode:\n    case "url":\n        if allowed:\n'
+            '            path = self.path\n        ' + probe,
+            'path = filesystem\nmatch mode:\n    case "url":\n        path = self.path\n'
+            '    case "disk":\n        match detail:\n            case _:\n                ' + probe,
+            'path = self.path\nmatch filesystem:\n    case path if False: pass\n'
+            '    case _:\n        ' + probe,
+            'path = self.path\nmatch mode:\n    case "disk" if (path := filesystem) and False: pass\n'
+            '    case _:\n        ' + probe,
+            'path = filesystem\nmatch mode:\n    case "url" if (path := self.path) and False: pass\n'
+            '    case _:\n        ' + probe,
+        ]
+        positives = [
+            'match mode:\n    case "url":\n        path = self.path\n        ' + probe,
+            'path = self.path\nmatch mode:\n    case "disk":\n        path = filesystem\n'
+            '    case "url":\n        ' + probe,
+            'path = self.path\nmatch mode:\n    case {"disk": path}: pass\n'
+            '    case "url":\n        ' + probe,
+            'match mode:\n    case "disk":\n        path = filesystem\npath = self.path\n' + probe,
+            'match mode:\n    case "url" if (path := self.path):\n        ' + probe,
+            'path = self.path\nmatch mode:\n    case "disk" if allowed:\n        path = filesystem\n'
+            '    case _:\n        ' + probe,
+        ]
+        failures = []
+        for expected, sources in ((set(), negatives), ({('GET', '/var/www/<*>')}, positives)):
+            for source in sources:
+                body = prefix + ''.join('        ' + line + '\n' for line in source.splitlines())
+                info = scanner.analyze_python('server.py', body)
+                routes = {(r['method'], r['path']) for r in info['routes']}
+                if routes != expected or info['notes']:
+                    failures.append((source, sorted(routes), info['notes']))
+        self.ensure(not failures, f'match cases keep exclusive bindings separate and revoke uncertain joins: {failures}')
+
+    def review_route_workload(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'route_work_scan')
+        original_children, original_compares = scanner.ast.iter_child_nodes, scanner._compares_path
+        samples = []
+        failures = []
+        for path_prefix in ('/r', '/var/r'):
+            for count in (20, 60, 120):
+                metrics = {'prefix': path_prefix, 'n': count, 'ast_edges': 0, 'compares_path': 0}
+
+                def children(node):
+                    for child in original_children(node):
+                        metrics['ast_edges'] += 1
+                        yield child
+
+                def compares(node):
+                    metrics['compares_path'] += 1
+                    return original_compares(node)
+
+                source = 'class Handler:\n    def do_GET(self):\n        path = self.path\n'
+                source += ''.join(f'        if path == "{path_prefix}{i}": pass\n' for i in range(count))
+                started = time.monotonic()
+                with patch.object(scanner.ast, 'iter_child_nodes', children), patch.object(scanner, '_compares_path', compares):
+                    info = scanner.analyze_python('server.py', source)
+                metrics['seconds'] = round(time.monotonic() - started, 6)
+                samples.append(metrics)
+                expected = {('GET', f'{path_prefix}{i}') for i in range(count)}
+                if {(r['method'], r['path']) for r in info['routes']} != expected or info['notes']:
+                    failures.append(('routes', metrics))
+        self.log.write('ROUTE WORKLOAD ' + json.dumps(samples) + '\n')
+        self.log.flush()
+        for first, last in ((samples[0], samples[2]), (samples[3], samples[5])):
+            if last['ast_edges'] > 8 * first['ast_edges']:
+                failures.append(('sixfold route growth exceeds near-linear AST work', first, last))
+        self.ensure(not failures, f'ordinary and filesystem-like routes retain exact inventory with near-linear AST work: {failures}')
+
     def review_path_rebindings(self):
         scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'rebind_scan')
         prefix = 'from http.server import BaseHTTPRequestHandler\nclass Handler(BaseHTTPRequestHandler):\n'
@@ -816,6 +896,58 @@ class Handler(BaseHTTPRequestHandler):
         self.ensure(result.returncode == 0 and not result.stderr,
                     'ordinary non-git directories retain quiet filesystem fallback')
 
+    def review_git_locale(self):
+        root = self.scratch / 'review-git-locale'
+        root.mkdir()
+        (root / 'clean.py').write_text('GOOD\n')
+        rules = self.save('locale-rules.json', {'rules': [
+            {'id': 'probe', 'regex': 'BAD', 'include': ['*.py'], 'message': 'Use good() instead.'}]})
+        fake_bin = self.scratch / 'review-translated-git'
+        fake_bin.mkdir()
+        fake_git = fake_bin / 'git'
+        fake_git.write_text('#!/bin/sh\nprintf "%s\\n" "致命错误：不是 Git 仓库（或者任何父目录）：.git" >&2\nexit 128\n')
+        fake_git.chmod(0o755)
+        env = {k: v for k, v in self.env.items() if k not in ('GIT_DIR', 'GIT_WORK_TREE')}
+        env['LC_ALL'] = 'zh_CN.UTF-8'
+        translated_env = dict(env, PATH=str(fake_bin) + os.pathsep + env['PATH'])
+        failures = []
+        # Real git reproduces localized installations; the stub keeps the test
+        # effective on machines whose git lacks a Chinese message catalog.
+        for provider, command_env in (('real', env), ('translated', translated_env)):
+            for target in (root, root / 'clean.py'):
+                for explicit_root in ((), ('--root', str(root))):
+                    command = [str(self.script('correct', 'patlint.py')), '--rules', str(rules),
+                               '--json', *explicit_root, str(target)]
+                    result = subprocess.run(command, cwd=root, env=command_env,
+                                            capture_output=True, text=True, timeout=10)
+                    self.log.write(f'locale=zh_CN.UTF-8 provider={provider} target={target.name} '
+                                   f'explicit_root={bool(explicit_root)} exit={result.returncode}\n'
+                                   + result.stdout + result.stderr)
+                    report = json.loads(result.stdout) if result.returncode == 0 else {}
+                    if result.returncode != 0 or result.stderr or report.get('files_scanned') != 1:
+                        failures.append((provider, target.name, bool(explicit_root),
+                                         result.returncode, result.stderr, report))
+        # The same translated failure in a checkout must never authorize a
+        # filesystem scan or a baseline update, including linked-worktree markers.
+        checkout = self.scratch / 'review-locale-worktree'
+        checkout.mkdir()
+        (checkout / '.git').write_text('gitdir: missing.git\n')
+        (checkout / 'hit.py').write_text('BAD\n')
+        baseline = checkout / 'baseline.json'
+        original = '{"counts": {}}\n'
+        baseline.write_text(original)
+        for target in (checkout, checkout / 'hit.py'):
+            command = [str(self.script('correct', 'patlint.py')), '--rules', str(rules),
+                       '--root', str(checkout), '--baseline', str(baseline), '--update-baseline', str(target)]
+            result = subprocess.run(command, cwd=checkout, env=translated_env,
+                                    capture_output=True, text=True, timeout=10)
+            self.log.write(f'locale=zh_CN.UTF-8 checkout exit={result.returncode}\n' + result.stdout + result.stderr)
+            if (result.returncode != 2 or 'refusing filesystem fallback' not in result.stderr
+                    or baseline.read_text() != original):
+                failures.append(('checkout', target.name, result.returncode, result.stderr, baseline.read_text()))
+        self.ensure(not failures,
+                    f'non-English git errors fall back quietly only outside checkouts, preserving baseline failures: {failures}')
+
     def review_git_warning(self):
         import contextlib
         import io
@@ -825,6 +957,10 @@ class Handler(BaseHTTPRequestHandler):
         (root / 'hit.py').write_text('BAD\n')
         for error in (FileNotFoundError('git unavailable'),
                       subprocess.CompletedProcess(['git'], 128, b'', b'fatal: dubious ownership')):
+            if isinstance(error, subprocess.CompletedProcess):
+                # Dubious ownership describes a checkout; outside one all git
+                # failures now fall back without depending on translated text.
+                (root / '.git').mkdir()
             err = io.StringIO()
             kwargs = {'side_effect': error} if isinstance(error, Exception) else {'return_value': error}
             with patch.object(lint.subprocess, 'run', **kwargs), contextlib.redirect_stderr(err):
@@ -973,6 +1109,7 @@ class Handler(BaseHTTPRequestHandler):
             self.review_baseline_retry()
             self.review_git_warning()
             self.review_git_fail_closed()
+            self.review_git_locale()
             rules = self.save('rules.json', {'rules':[{'id':'no-direct-json-write','regex':r'\b\w+\.path\.write_text\s*\(',
                 'include':['todo/*.py'], 'exclude':['todo/store.py'],
                 'message':'Use Store.add or Store.transition in todo/store.py for atomic persistence; avoid json.dump.',
@@ -1200,6 +1337,9 @@ class Handler(BaseHTTPRequestHandler):
             self.review_call_timeout_exit()
             self.review_oneshot_timers()
             self.review_disabled_limits()
+            self.review_confirmed_signal_boundary()
+            self.review_swallowed_alarm()
+            self.review_budget_namespace()
 
     def clock_check(self, checker, body, *, run=5, call=10, flags=()):
         """CLI semantics with a manually advanced clock: no scheduler or disk-speed assumptions."""
@@ -1296,6 +1436,174 @@ raise SystemExit(mod.main(argv))
                 failures.append(text)
         self.ensure(not failures, f'property call timeouts are inconclusive exit 3 in JSON and text, never ERROR: {failures}')
 
+    def review_confirmed_signal_boundary(self):
+        target = self.repo / 'confirmed_target.py'
+        target.write_text('def checked(x): return False\n')
+        driver = self.art / 'confirmed_signal_driver.py'
+        driver.write_text('''import importlib.util, json, signal, sys
+checker, fixture, phase, *argv = sys.argv[1:]
+name = "gen_check" if "gen_check" in checker else "bounded_check"
+spec = importlib.util.spec_from_file_location(name, checker)
+mod = importlib.util.module_from_spec(spec)
+sys.modules[name] = mod
+spec.loader.exec_module(mod)
+fired = False
+def inject(frame, event, arg):
+    global fired
+    data = frame.f_locals
+    returned = ((name == "gen_check" and phase == "initial" and frame.f_code.co_name == "run_property"
+                 and data.get("status") == "fail" and data["result"]["result"] != "fail")
+                or (name == "gen_check" and phase == "shrink" and frame.f_code.co_name == "reduce_failure"
+                    and data.get("status") == "fail" and data.get("candidate") == 7)
+                or (name == "gen_check" and phase == "shrink_handoff" and frame.f_code.co_name == "run_property"
+                    and data.get("value") == 7 and "attempts" in data)
+                or (name == "bounded_check" and frame.f_code.co_name == "check"
+                    and data.get("ok") is False))
+    if event == "line" and returned and not fired:
+        fired = True
+        limits = data["limits"]
+        limits.deadline = limits.begun - 1
+        signal.raise_signal(signal.SIGALRM)
+    return inject
+sys.settrace(inject)
+try:
+    code = mod.main([fixture, *argv])
+finally:
+    sys.settrace(None)
+assert fired, "return-to-record signal injection did not run"
+raise SystemExit(code)
+''')
+        failures = []
+        try:
+            for checker, phase in (('gen_check.py', 'initial'), ('gen_check.py', 'shrink'),
+                                   ('gen_check.py', 'shrink_handoff'),
+                                   ('bounded_check.py', 'initial')):
+                fixture = self.art / ('confirmed_' + checker)
+                if checker == 'gen_check.py':
+                    fixture.write_text('from gen_check import Generator\nfrom confirmed_target import checked\n'
+                                       'TARGETS = ["confirmed_target.py:checked"]\n'
+                                       'properties = {"broken": (Generator(lambda rng: 42, lambda x: [7] if x == 42 else []), checked)}\n')
+                    flags = ('--repo', self.repo, '--examples', '1')
+                else:
+                    fixture.write_text('def init(): return 42\ndef actions(s): return []\n'
+                                       'invariants = {"broken": lambda s: False}\n')
+                    flags = ()
+                report = self.json(sys.executable, driver, self.script('formal-verification', checker), fixture, phase,
+                                   *flags, '--json', expected=(1, 3))
+                if checker == 'gen_check.py':
+                    found = report['properties']['broken']
+                    valid = (found['result'] == 'fail' and found['counterexample'] == ('7' if phase.startswith('shrink') else '42')
+                             and found['detail'] == 'returned False' and found['accepted'] == 1
+                             and report['called'] == ['confirmed_target.py:checked'] and not report['missing_targets'])
+                else:
+                    found = report['violation']
+                    valid = (report['result'] == 'violation' and found is not None
+                             and found['kind'] == 'invariant' and found['name'] == 'broken'
+                             and found['trace'] and found['trace'][0]['state'] == 42)
+                if self.last_returncode != 1 or not valid:
+                    failures.append((checker, phase, self.last_returncode, report))
+            self.ensure(not failures, f'SIGALRM after a checked failure returns preserves exit 1, counterexample and coverage: {failures}')
+        finally:
+            target.unlink()
+
+    def review_swallowed_alarm(self):
+        from types import SimpleNamespace
+        failures = []
+        for checker in ('gen_check.py', 'bounded_check.py'):
+            mod = load_module(self.script('formal-verification', checker), 'retry_' + checker[:-3])
+            for scope, run, call in (('call', 15, 5), ('run', 5, 15)):
+                now, due, repeat = 0.0, 0.0, 0.0
+                handler = signal.SIG_DFL
+                timers = []
+
+                def set_handler(sig, value):
+                    nonlocal handler
+                    old, handler = handler, value
+                    return old
+
+                def set_timer(which, delay, interval=0.0):
+                    nonlocal due, repeat
+                    old = (max(0, due - now), repeat)
+                    due, repeat = now + delay if delay else 0.0, interval
+                    timers.append((now, delay, interval))
+                    return old
+
+                def deliver():
+                    nonlocal due
+                    if due and now >= due:
+                        due = 0.0  # The OS consumes a one-shot before delivering SIGALRM.
+                        handler(signal.SIGALRM, None)
+
+                alarm = SimpleNamespace(SIGALRM=signal.SIGALRM, ITIMER_REAL=signal.ITIMER_REAL,
+                                        SIG_DFL=signal.SIG_DFL, signal=set_handler,
+                                        getsignal=lambda sig: handler, getitimer=lambda which: (0.0, 0.0),
+                                        setitimer=set_timer)
+                with patch.object(mod, 'signal', alarm), patch.object(mod, 'time', SimpleNamespace(monotonic=lambda: now)):
+                    with mod.Limits(run, call) as limits:
+                        limits.started = 0.0
+                        limits.arm()
+                        initial = list(timers)
+                        now = 5.0
+                        try:
+                            deliver()
+                        except BaseException:
+                            pass  # The checked function swallowed the first alarm.
+                        if not due or not 0 < due - now <= 0.5 or repeat:
+                            failures.append((checker, scope, 'no short one-shot retry', timers))
+                        now += 0.5
+                        try:
+                            deliver()
+                        except mod.Timeout as error:
+                            if error.scope != scope:
+                                failures.append((checker, scope, 'changed timeout scope', error.scope))
+                        else:
+                            failures.append((checker, scope, 'swallowed alarm disabled the deadline'))
+                        # Swallowing a retry must schedule another one, not just a single rescue alarm.
+                        if not due or not 0 < due - now <= 0.5 or repeat:
+                            failures.append((checker, scope, 'second swallowed alarm lost retry', timers))
+                        now += 0.5
+                        try:
+                            deliver()
+                        except mod.Timeout as error:
+                            if error.scope != scope:
+                                failures.append((checker, scope, 'third alarm changed timeout scope', error.scope))
+                        else:
+                            failures.append((checker, scope, 'repeated swallowing disabled the deadline'))
+                        if any(interval for _, _, interval in timers) or any(delay < 5 for _, delay, _ in initial):
+                            failures.append((checker, scope, 'polling before deadline', timers))
+                        limits.started = None
+                        limits.arm()
+                        if (scope == 'call' and due != 15) or (scope == 'run' and due):
+                            failures.append((checker, scope, 'call exit did not reset retry', due))
+        # A real busy loop catches its first alarm; the retry must interrupt before natural completion.
+        for checker in ('gen_check.py', 'bounded_check.py'):
+            fixture = self.art / ('swallowed_' + checker)
+            body = ('import time\n'
+                    'def busy(x):\n'
+                    '    end = time.monotonic() + 3\n'
+                    '    try:\n'
+                    '        while time.monotonic() < end: pass\n'
+                    '    except:\n'
+                    '        pass\n'
+                    '    while time.monotonic() < end: pass\n'
+                    '    raise AssertionError("busy loop ran to completion")\n')
+            if checker == 'gen_check.py':
+                body += ('from gen_check import sampled_from\nTARGETS = ["todo/store.py:Store.add"]\n'
+                         'properties = {"busy": (sampled_from([0]), busy)}\n')
+                flags, expected = ('--repo', self.repo, '--examples', '1'), 3
+            else:
+                body += 'def init(): return 0\ndef actions(s): return []\ninvariants = {"busy": busy}\n'
+                flags, expected = (), 2
+            fixture.write_text(body)
+            started = time.monotonic()
+            report = self.json(self.script('formal-verification', checker), fixture, *flags,
+                               '--call-timeout', '0.3', '--timeout', '1.5', '--json', expected=expected, timeout=8)
+            elapsed = time.monotonic() - started
+            self.log.write(f'{checker} swallowed-alarm busy loop: {elapsed:.3f} s (natural duration 3 s)\n')
+            if elapsed >= 2.5 or 'busy loop ran to completion' in json.dumps(report):
+                failures.append((checker, 'busy loop reached its natural end', elapsed, report))
+        self.ensure(not failures, f'swallowed alarms retry once at short intervals only after expiry and interrupt busy loops: {failures}')
+
     def review_oneshot_timers(self):
         from types import SimpleNamespace
         failures = []
@@ -1375,7 +1683,7 @@ raise SystemExit(mod.main(argv))
             for checker in ('gen_check.py', 'bounded_check.py'):
                 for run, call, end, code in ((0, 0, 1000, 0), (0, 1, 2, 3 if checker == 'gen_check.py' else 2),
                                              (1, 0, 2, 3), (None, 0, 1000, 0)):
-                    body = ('import review_clock as clock\nTIMEOUT = 0\n'
+                    body = ('import review_clock as clock\nCHECK_TIMEOUT = 0\n'
                             'def check(x):\n    clock.advance(' + str(end) + ')\n    return True\n')
                     if checker == 'gen_check.py':
                         body += ('from gen_check import sampled_from\nfrom disabled_target import checked\n'
@@ -1533,6 +1841,45 @@ raise SystemExit(mod.main(argv))
         finally:
             target.unlink()
 
+    def review_budget_namespace(self):
+        """Business TIMEOUT values never configure the runner; CHECK_TIMEOUT is explicit."""
+        target = self.repo / 'namespace_target.py'
+        target.write_text('def checked(value): return True\n')
+        failures = []
+        cases = [
+            ('business fraction', 'TIMEOUT = 0.3', 1, None, 0, 90),
+            ('business None', 'TIMEOUT = None', 1, None, 0, 90),
+            ('business ticks', 'TIMEOUT = 3', 4, None, 0, 90),
+            ('explicit module', 'TIMEOUT = None\nCHECK_TIMEOUT = 0.3', 1, None, 3, 0.3),
+            ('module disabled', 'TIMEOUT = 0.3\nCHECK_TIMEOUT = 0', 100, None, 0, 0),
+            ('CLI override', 'TIMEOUT = None\nCHECK_TIMEOUT = 0.3', 1, 2, 0, 2),
+            ('CLI disabled', 'TIMEOUT = None\nCHECK_TIMEOUT = 0.3', 100, 0, 0, 0),
+        ]
+        try:
+            for checker in ('bounded_check.py', 'gen_check.py'):
+                for label, constants, elapsed, override, code, budget in cases:
+                    body = ('import review_clock as clock\n' + constants + '\n'
+                            f'clock.advance({elapsed}, tick=False)\n'
+                            'def check(x):\n    clock.events.append("checked")\n    return True\n')
+                    if checker == 'gen_check.py':
+                        body += ('from gen_check import sampled_from\nfrom namespace_target import checked\n'
+                                 'TARGETS = ["namespace_target.py:checked"]\n'
+                                 'def covered(x):\n    check(x)\n    return checked(x)\n'
+                                 'properties = {"ok": (sampled_from([0]), covered)}\n')
+                    else:
+                        body += 'def init(): return 0\ndef actions(s): return []\ninvariants = {"ok": check}\n'
+                    result = self.clock_check(checker, body, run=override, call=0, flags=('--json',))
+                    report = json.loads(result['stdout']) if result['stdout'].strip() else {}
+                    self.log.write(json.dumps({'checker': checker, 'case': label, **result}) + '\n')
+                    if (result['code'] != code or report.get('ok') != (code == 0)
+                            or report.get('timeout') != budget
+                            or result['events'] != (['checked'] if code == 0 else [])):
+                        failures.append((checker, label, result))
+            self.ensure(not failures,
+                        f'business TIMEOUT is ignored (including None); CHECK_TIMEOUT and CLI budgets remain explicit: {failures}')
+        finally:
+            target.unlink()
+
     def review_import_budget(self):
         target = self.repo / 'review_budget_target.py'
         target.write_text('def checked(value): return True\n')
@@ -1541,7 +1888,7 @@ raise SystemExit(mod.main(argv))
             for checker in ('bounded_check.py', 'gen_check.py'):
                 for elapsed, override, code in ((0.9, None, 0), (1, None, 3), (1.1, None, 3),
                                                 (1.1, 2, 0), (2.1, 2, 3)):
-                    body = ('import review_clock as clock\nTIMEOUT = 1\n'
+                    body = ('import review_clock as clock\nCHECK_TIMEOUT = 1\n'
                             f'clock.advance({elapsed}, tick=False)\n')
                     body += ('from review_budget_target import checked\n' if checker == 'gen_check.py' else
                              'def checked(value): return True\n')
@@ -2271,6 +2618,9 @@ properties = {"copy": (sampled_from([" title "]), check)}
         methods += [self.review_synchronous_deadlines, self.review_path_rebindings]
         methods += [self.review_property_handoff, self.review_path_branches, self.review_git_fail_closed,
                     self.review_call_timeout_exit, self.review_oneshot_timers, self.review_disabled_limits]
+        methods += [self.review_confirmed_signal_boundary, self.review_match_case_paths,
+                    self.review_git_locale, self.review_swallowed_alarm,
+                    self.review_route_workload, self.review_budget_namespace]
         results = {}
         try:
             with (output / 'run.log').open('w') as self.log:
