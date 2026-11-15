@@ -6,14 +6,14 @@
     "done-cli"
   ],
   "read_only": true,
-  "started": "2026-11-15T01:54:47Z",
+  "started": "2026-11-15T02:42:56Z",
   "argv": [
     "/usr/bin/python3",
     "-m",
     "todo",
     "list",
     "--data",
-    "/tmp/poteto-examples-4bw5xll_/verify-state-initial/initial/data"
+    "/tmp/poteto-examples-45v208z6/verify-state-initial/initial/data"
   ],
   "exit_code": 0,
   "stdout": "[{\"id\": 1, \"status\": \"done\", \"title\": \"verify HTTP\"}, {\"id\": 2, \"status\": \"done\", \"title\": \"verify CLI\"}]\n",
@@ -28,5 +28,5 @@
   ],
   "execution_ok": true,
   "ok": true,
-  "elapsed_ms": 44.9
+  "elapsed_ms": 56.1
 }

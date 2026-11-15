@@ -511,6 +511,9 @@ class Examples:
             self.review_path_rebindings()
             self.review_path_branches()
             self.review_match_case_paths()
+            self.review_expression_paths()
+            self.review_query_path_aliases()
+            self.review_go_receiver_workload()
             self.review_route_workload()
             self.review_go_receivers()
             self.maintain_zero_nargs()
@@ -1333,6 +1336,7 @@ class Handler(BaseHTTPRequestHandler):
             self.review_sigint()
             self.review_fixture_limits()
             self.review_docs()
+            self.review_net_change_docs()
             self.review_property_handoff()
             self.review_call_timeout_exit()
             self.review_oneshot_timers()
@@ -1340,6 +1344,9 @@ class Handler(BaseHTTPRequestHandler):
             self.review_confirmed_signal_boundary()
             self.review_swallowed_alarm()
             self.review_budget_namespace()
+            self.review_timeout_format_handoff()
+            self.review_interruptible_result_format()
+            self.review_bounded_limit_workload()
 
     def clock_check(self, checker, body, *, run=5, call=10, flags=()):
         """CLI semantics with a manually advanced clock: no scheduler or disk-speed assumptions."""
@@ -2096,8 +2103,8 @@ raise SystemExit(code)
     def review_docs(self):
         text = (ROOT / 'CHANGELOG.md').read_text()
         self.ensure('same `--seed`' in text and '90 s' in text and '10 s' in text
-                    and 'TIMEOUT' in text and 'revalidate' in text and 'pinned' in text,
-                    'changelog documents changed seed sequences, default limits and replay/timeout migration')
+                    and 'CHECK_TIMEOUT' in text and 'revalidate' in text and 'pinned' in text,
+                    'changelog documents changed seed sequences, added limits and replay migration')
         readme = (ROOT / 'logs/review-fixes/README.md').read_text()
         self.ensure('recheck-before' in readme and 'recheck-after' in readme
                     and 'No commit or push was made in the working branch.' not in readme,
@@ -2608,6 +2615,301 @@ properties = {"copy": (sampled_from([" title "]), check)}
                 shutil.rmtree(self.scratch)
         return 0 if all(s['status']=='pass' for s in self.summary.values()) else 1
 
+    def review_expression_paths(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'expression_path_scan')
+        prefix = 'class Handler:\n    def do_GET(self):\n'
+        probe = 'if path.startswith("/var/www/"): pass'
+        negatives = [
+            'path = self.translate_path(self.path)\nif api_mode and (path := self.path): return\n' + probe,
+            'path = filesystem\napi_mode or (path := self.path)\n' + probe,
+            'path = filesystem\n(path := self.path) if api_mode else None\n' + probe,
+            'path = filesystem\nNone if api_mode else (path := self.path)\n' + probe,
+            'path = self.path\napi_mode and (path := filesystem)\n' + probe,
+            'path = self.path\napi_mode or (path := filesystem)\n' + probe,
+            'path = self.path\n(path := filesystem) if api_mode else None\n' + probe,
+            'path = self.path\nNone if api_mode else (path := filesystem)\n' + probe,
+            '(path := self.path) if api_mode else path.startswith("/var/www/")',
+            'api_mode and ((path := self.path) if alternate else None)\n' + probe,
+            'path = filesystem\n(path := filesystem) if (path := self.path) else None\n' + probe,
+            'path = filesystem\nNone if (path := self.path) else (path := filesystem)\n' + probe,
+        ]
+        positives = [
+            '(path := self.path) and api_mode\n' + probe,
+            '(path := self.path) or api_mode\n' + probe,
+            'None if (path := self.path) else None\n' + probe,
+            'api_mode and (path := self.path) and path.startswith("/var/www/")',
+            'api_mode or (path := self.path) or path.startswith("/var/www/")',
+            '((path := self.path) and path.startswith("/var/www/")) if api_mode else None',
+            'None if api_mode else ((path := self.path) and path.startswith("/var/www/"))',
+            'api_mode and (path := filesystem)\npath = self.path\n' + probe,
+            'path = filesystem\nif api_mode and (path := self.path):\n    ' + probe,
+            'path = filesystem\nif api_mode or (path := self.path): pass\nelse:\n    ' + probe,
+            'path = filesystem\nif not (api_mode or (path := self.path)):\n    ' + probe,
+            'path = filesystem\npath.startswith("/var/www/") if (path := self.path) else None',
+            'path = filesystem\npath.startswith("/var/www/") if api_mode and (path := self.path) else None',
+            'path = filesystem\nNone if api_mode or (path := self.path) else path.startswith("/var/www/")',
+            'path = self.path\n(path := filesystem) if path.startswith("/var/www/") else None',
+            'path = filesystem\nmatch mode:\n    case "url" if api_mode and (path := self.path):\n        ' + probe,
+        ]
+        failures = []
+        for expected, sources in ((set(), negatives), ({('GET', '/var/www/<*>')}, positives)):
+            for source in sources:
+                body = prefix + ''.join('        ' + line + '\n' for line in source.splitlines())
+                info = scanner.analyze_python('server.py', body)
+                routes = {(r['method'], r['path']) for r in info['routes']}
+                if routes != expected or info['notes']:
+                    failures.append((source, sorted(routes), info['notes']))
+        self.ensure(not failures, f'short-circuit and conditional assignments revoke uncertain joins but preserve evaluated aliases: {failures}')
+
+    def review_query_path_aliases(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'query_path_scan')
+        prefix = 'class Handler:\n    def do_GET(self):\n'
+        positives = [
+            "path = self.path.split('?')[0]",
+            "path = self.path.split('?', 1)[0]",
+            "path = self.path.partition('?')[0]",
+            "path, query = self.path.split('?', 1)",
+            "path, query = self.path.split('?')",
+            "path, sep, query = self.path.partition('?')",
+            "[path, sep, query] = self.path.partition('?')",
+            "raw = self.path\npath, sep, query = raw.partition('?')",
+            "path = request.path_info.split('?', 1)[0]",
+            "path = self.path.partition('#')[0]",
+            "path = self.path.split('?')[0]\nparts = path.strip('/').split('/')",
+        ]
+        negatives = [
+            "path = self.translate_path(self.path).split('?')[0]",
+            "path, sep, query = self.translate_path(self.path).partition('?')",
+            "path = self.path.partition('?')[2]",
+            "path = self.path.split('?', 1)[1]",
+            "path = self.path.split('/')[0]",
+            "path = self.path.split(separator)[0]",
+            "path = self.path.rsplit('?', 1)[0]",
+            "query, sep, path = self.path.partition('?')",
+        ]
+        failures = []
+        for expected, sources in (({('GET', '/home'), ('GET', '/Users')}, positives), (set(), negatives)):
+            for source in sources:
+                body = prefix + ''.join('        ' + line + '\n' for line in source.splitlines())
+                body += '        if path == "/home": pass\n        if path == "/Users": pass\n'
+                info = scanner.analyze_python('server.py', body)
+                routes = {(r['method'], r['path']) for r in info['routes']}
+                if routes != expected or info['notes']:
+                    failures.append((source, sorted(routes), info['notes']))
+        self.ensure(not failures, f'query and fragment stripping retain request-path aliases, including unpacking, without blessing disk paths or query elements: {failures}')
+
+    def review_go_receiver_workload(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'go_receiver_work_scan')
+        original_search = scanner.re.search
+        samples, failures = [], []
+        for count in (100, 200, 400, 800):
+            source = 'package main\nfunc main() {\n' + ''.join(
+                f'router.GET("/home/{i}", handler)\n' for i in range(count)) + '}\n'
+            metrics = {'n': count, 'receiver_searches': 0, 'searched_characters': 0}
+
+            def search(pattern, text, *args, **kwargs):
+                if pattern == r'\b(\w+)\s*$':
+                    metrics['receiver_searches'] += 1
+                    metrics['searched_characters'] += len(text)
+                return original_search(pattern, text, *args, **kwargs)
+
+            started = time.monotonic()
+            with patch.object(scanner.re, 'search', search):
+                retained = [match.group(2) for match in scanner.GO_ROUTER.finditer(source)
+                            if scanner.go_route_receiver(source, match.start(), scanner.GO_ROUTER_RECEIVERS)]
+            metrics['seconds'] = round(time.monotonic() - started, 6)
+            samples.append(metrics)
+            if retained != [f'/home/{i}' for i in range(count)]:
+                failures.append(('route inventory', count, len(retained)))
+            if metrics['searched_characters'] > count * 512:
+                failures.append(('unbounded receiver work', metrics))
+        # Long unrelated prefixes must not turn field or identifier suffixes into trusted receivers.
+        for source, expected in [('router.GET', True), ('s.router.GET', False),
+                                 ('x' * 300 + 'router.GET', False),
+                                 ('s.' + ' ' * 300 + 'router.GET', False),
+                                 ('x' * 300 + '\nrouter.GET', True)]:
+            actual = scanner.go_route_receiver(source, source.rindex('.'), scanner.GO_ROUTER_RECEIVERS)
+            if actual != expected:
+                failures.append(('receiver boundary', source[-40:], expected, actual))
+        self.log.write('GO RECEIVER WORKLOAD ' + json.dumps(samples) + '\n')
+        self.log.flush()
+        if samples[-1]['searched_characters'] > samples[0]['searched_characters'] * 10:
+            failures.append(('eightfold routes exceed near-linear receiver work', samples))
+        self.ensure(not failures, f'Go receiver lookup uses bounded work per route and preserves conventional receivers: {failures}')
+
+    def review_net_change_docs(self):
+        """The public budget API is new; branch-only names are not a main migration."""
+        public = {
+            'CHANGELOG.md': (ROOT / 'CHANGELOG.md').read_text().split('## [0.1.0]', 1)[0],
+            'MAPPING.md': (ROOT / 'MAPPING.md').read_text(),
+            'formal SKILL.md': (ROOT / 'skills/formal-verification/SKILL.md').read_text().split('## Sources', 1)[0],
+        }
+        for checker in ('gen_check.py', 'bounded_check.py'):
+            public[checker + ' --help'] = self.run(sys.executable, self.script('formal-verification', checker), '--help')
+        failures = [name for name, text in public.items()
+                    if not all(api in text for api in ('--timeout', '--call-timeout', 'CHECK_TIMEOUT'))
+                    or re.search(r'\bTIMEOUT\b', text)]
+        self.ensure(not failures,
+                    f'public docs/help describe CHECK_TIMEOUT and the added limits without a nonexistent TIMEOUT migration: {failures}')
+        changelog = public['CHANGELOG.md']
+        self.ensure(not re.search(r'(?im)^- (?:Round \d|(?:Final )?[Rr]e-review|Follow-up review|Curator review fixes)', changelog)
+                    and all(word in changelog for word in ('overhead', 'main', '90 s', 'exit 3', 'mutant', 'exit 2', 'untracked', 'empty')),
+                    'Unreleased records net behavior, default-limit overhead and incompatible exits rather than branch review rounds')
+
+
+    def review_timeout_format_handoff(self):
+        body = ('import review_clock as clock\nfrom gen_check import Generator\n'
+                'TARGETS = ["todo/store.py:Store.add"]\n'
+                'class Value:\n    def __repr__(self):\n        clock.advance(20)\n        return "value"\n'
+                'def check(x): clock.advance(2)\n'
+                'properties = {"slow": (Generator(lambda rng: Value(), lambda x: []), check)}\n')
+        failures = []
+        for flags in ((), ('--expect-fail', 'slow')):
+            result = self.clock_check('gen_check.py', body, run=10, call=1, flags=(*flags, '--json'))
+            report = json.loads(result['stdout'])
+            found = report['properties']['slow']
+            if result['code'] != 3 or found['result'] != 'timeout' or found['accepted'] != 0 or report['ok']:
+                failures.append(result)
+        self.ensure(not failures, f'a run timeout while rendering a call timeout remains inconclusive with no accepted input: {failures}')
+
+    def review_interruptible_result_format(self):
+        target = self.repo / 'format_target.py'
+        target.write_text('def checked(value): return False\n')
+        failures = []
+        # A manual signal verifies that no user representation runs with alarms deferred.
+        for checker in ('gen_check.py', 'bounded_check.py'):
+            body = ('import review_clock as clock\n'
+                    'class Value:\n    def __repr__(self):\n'
+                    '        clock.events.append(clock.limits.recording)\n'
+                    '        clock.advance(20)\n        return "value"\n')
+            if checker == 'gen_check.py':
+                body += ('from gen_check import Generator\nfrom format_target import checked\n'
+                         'TARGETS = ["format_target.py:checked"]\n'
+                         'properties = {"broken": (Generator(lambda rng: Value(), lambda x: []), checked)}\n')
+            else:
+                body += 'def init(): return Value()\ndef actions(s): return []\ninvariants = {"broken": lambda s: False}\n'
+            result = self.clock_check(checker, body, run=10, call=0, flags=('--json',))
+            if result['code'] != 1 or result['events'] != [0]:
+                failures.append((checker, 'formatting ran with deferred alarms', result))
+        try:
+            for checker in ('gen_check.py', 'bounded_check.py'):
+                fixture = self.art / ('format_' + checker)
+                body = ('class Value:\n    def __repr__(self):\n        while True: pass\n')
+                if checker == 'gen_check.py':
+                    body += ('from gen_check import Generator\nfrom format_target import checked\n'
+                             'TARGETS = ["format_target.py:checked"]\n'
+                             'properties = {"broken": (Generator(lambda rng: Value(), lambda x: []), checked)}\n')
+                    flags = ('--repo', self.repo, '--examples', '1')
+                else:
+                    body += 'def init(): return Value()\ndef actions(s): return []\ninvariants = {"broken": lambda s: False}\n'
+                    flags = ()
+                fixture.write_text(body)
+                try:
+                    report = self.json(sys.executable, self.script('formal-verification', checker), fixture, *flags,
+                                       '--timeout', '0.5', '--call-timeout', '0', '--json', expected=1, timeout=8)
+                except subprocess.TimeoutExpired:
+                    failures.append((checker, 'result formatting ignored the internal timeout'))
+                    continue
+                if checker == 'gen_check.py':
+                    found = report['properties']['broken']
+                    valid = (found['result'] == 'fail' and found['accepted'] == 1 and found.get('output_incomplete')
+                             and report['called'] == ['format_target.py:checked'] and not report['missing_targets'])
+                else:
+                    found = report['violation']
+                    valid = (report['result'] == 'violation' and found and found['name'] == 'broken'
+                             and found.get('trace_incomplete'))
+                if not valid or not report['incomplete']:
+                    failures.append((checker, report))
+            self.ensure(not failures, f'unbounded user repr during result formatting remains interruptible and retains confirmed failures: {failures}')
+        finally:
+            target.unlink()
+
+    def review_bounded_limit_workload(self):
+        from types import SimpleNamespace
+        checker = load_module(self.script('formal-verification', 'bounded_check.py'), 'workload_bounded')
+        failures, measurements = [], []
+        for size in (100, 1000):
+            for enabled in (False, True):
+                now = 0.0
+                handler = signal.SIG_DFL
+                counters = dict(timers=0, wrappers=0, records=0, invariants=0, actions=0)
+                def set_handler(sig, value):
+                    nonlocal handler
+                    old, handler = handler, value
+                    return old
+                def set_timer(*args):
+                    counters['timers'] += 1
+                    return (0.0, 0.0)
+                alarm = SimpleNamespace(SIGALRM=signal.SIGALRM, ITIMER_REAL=signal.ITIMER_REAL, SIG_DFL=signal.SIG_DFL,
+                                        signal=set_handler, getsignal=lambda sig: handler,
+                                        getitimer=lambda which: (0.0, 0.0), setitimer=set_timer)
+                class CountedLimits(checker.Limits):
+                    def call(self, *args, **kwargs):
+                        counters['wrappers'] += 1
+                        return super().call(*args, **kwargs)
+                    def record_result(self):
+                        counters['records'] += 1
+                        return super().record_result()
+                def inv(state):
+                    counters['invariants'] += 1
+                    return True
+                def actions(state):
+                    counters['actions'] += 1
+                    return [('next', state + 1)] if state + 1 < size else []
+                model = SimpleNamespace(init=lambda: 0, actions=actions)
+                with patch.object(checker, 'signal', alarm), patch.object(checker, 'time', SimpleNamespace(monotonic=lambda: now)):
+                    with CountedLimits(90 if enabled else 0, 10 if enabled else 0) as limits:
+                        report = checker.explore(model, actions, dict(a=inv, b=inv, c=inv), size + 1, size + 1, False, limits)
+                measurements.append(dict(size=size, enabled=enabled, **counters))
+                valid = (report['result'] == 'pass' and report['states'] == size
+                         and counters['invariants'] == 3 * size and counters['actions'] == size)
+                if enabled:
+                    valid = valid and counters['timers'] <= 4 and counters['records'] == 0
+                else:
+                    valid = valid and counters['timers'] == counters['wrappers'] == counters['records'] == 0
+                if not valid:
+                    failures.append(measurements[-1])
+        # Reusing an earlier alarm must neither expire a newer call early nor lose its deadline.
+        for run, expected_scope, expected_due in ((40, 'call', 15), (12, 'run', 12)):
+            now, due = 0.0, 0.0
+            handler = signal.SIG_DFL
+            def set_handler(sig, value):
+                nonlocal handler
+                old, handler = handler, value
+                return old
+            def set_timer(which, delay, repeat=0.0):
+                nonlocal due
+                due = now + delay if delay else 0.0
+                if repeat:
+                    failures.append(('periodic timer', repeat))
+                return (0.0, 0.0)
+            alarm = SimpleNamespace(SIGALRM=signal.SIGALRM, ITIMER_REAL=signal.ITIMER_REAL, SIG_DFL=signal.SIG_DFL,
+                                    signal=set_handler, getsignal=lambda sig: handler,
+                                    getitimer=lambda which: (0.0, 0.0), setitimer=set_timer)
+            with patch.object(checker, 'signal', alarm), patch.object(checker, 'time', SimpleNamespace(monotonic=lambda: now)):
+                with checker.Limits(run, 10) as limits:
+                    kwargs = {'coalesce': True} if 'coalesce' in checker.Limits.call.__code__.co_varnames else {}
+                    limits.call(lambda: True, **kwargs)
+                    now = 5
+                    def delayed():
+                        nonlocal now
+                        now = 10
+                        limits.tick(None, None)  # An earlier call's alarm is now obsolete.
+                        if due != expected_due:
+                            failures.append(('early alarm was not rearmed', run, due, expected_due))
+                        now = expected_due
+                        limits.tick(None, None)
+                        failures.append(('actual deadline was lost', run))
+                    try:
+                        limits.call(delayed, **kwargs)
+                    except checker.Timeout as error:
+                        if error.scope != expected_scope:
+                            failures.append(('wrong deadline scope', run, error.scope))
+                    else:
+                        failures.append(('overdue call returned', run))
+        self.log.write('bounded deterministic work: ' + json.dumps(measurements) + '\n')
+        self.ensure(not failures, f'bounded search coalesces one-shot timers and bypasses all call/record wrappers with both limits disabled: {failures}')
+
     def review_regressions(self, output):
         """Run follow-up regressions independently so every pre-fix failure is recorded."""
         output.mkdir(parents=True, exist_ok=True)
@@ -2621,6 +2923,9 @@ properties = {"copy": (sampled_from([" title "]), check)}
         methods += [self.review_confirmed_signal_boundary, self.review_match_case_paths,
                     self.review_git_locale, self.review_swallowed_alarm,
                     self.review_route_workload, self.review_budget_namespace]
+        methods += [self.review_expression_paths, self.review_query_path_aliases, self.review_go_receiver_workload]
+        methods += [self.review_net_change_docs, self.review_timeout_format_handoff,
+                    self.review_interruptible_result_format, self.review_bounded_limit_workload]
         results = {}
         try:
             with (output / 'run.log').open('w') as self.log:

@@ -453,7 +453,7 @@ def reduce_failure(mod, gen, check, value, detail, repo, limits, result):
                     checking = None
                     if status == 'fail':
                         value, detail = candidate, why
-                        result.update(counterexample=repr(value), detail=detail, shrink_attempts=attempts)
+                        result.update(counterexample=key, detail=detail, shrink_attempts=attempts)
                 if status == 'fail':
                     break
             else:
@@ -465,7 +465,7 @@ def reduce_failure(mod, gen, check, value, detail, repo, limits, result):
 
 
 def property_result():
-    return {"result": "pass", "accepted": 0, "generated": 0, "rejected": 0,
+    return {"result": "pending", "accepted": 0, "generated": 0, "rejected": 0,
             "counterexample": None, "detail": None, "shrink_attempts": 0}
 
 
@@ -479,6 +479,8 @@ def run_property(mod, name, gen, check, rng, count, repo, limits, result, called
         for generated, value in limits.iterate(inputs):
             result['generated'] += int(generated)
             checking = (value,)
+            # A bounded fallback is ready before entering the return-to-record region.
+            fallback = repr(value) if type(value) in (type(None), bool, int, float, str) else '<unformatted input>'
             with limits.record_result():
                 status, detail, ran = attempt(mod, check, value, repo, limits)
                 checking = None
@@ -488,10 +490,13 @@ def run_property(mod, name, gen, check, rng, count, repo, limits, result, called
                 result['accepted'] += 1
                 called.update(ran)
                 if status == 'fail':
-                    result.update(result='fail', counterexample=repr(value), detail=detail)
+                    result.update(result='fail', counterexample=fallback, detail=detail,
+                                  output_incomplete='counterexample formatting not completed')
             if status == 'fail':
+                result['counterexample'] = repr(value)
+                result.pop('output_incomplete', None)
                 value, detail, attempts, stopped, checking = reduce_failure(mod, gen, check, value, detail, repo, limits, result)
-                result.update(result='fail', counterexample=repr(value), detail=detail, shrink_attempts=attempts)
+                result.update(result='fail', detail=detail, shrink_attempts=attempts)
                 if stopped is not None:
                     scope = 'interrupted' if isinstance(stopped, KeyboardInterrupt) else stopped.scope
                     result.update(timeout_scope=scope, timeout_phase='shrink',
@@ -506,9 +511,12 @@ def run_property(mod, name, gen, check, rng, count, repo, limits, result, called
         stopped = error if isinstance(error, KeyboardInterrupt) or error.scope == 'run' else None
         # An interrupted check is inconclusive; interruption after a confirmed failure cannot erase it.
         if result['result'] != 'fail':
-            result.update(result='timeout', input=repr(checking[0]) if checking else None,
+            result.update(result='timeout', input=None,
                           timeout_scope='interrupted' if isinstance(error, KeyboardInterrupt) else error.scope,
                           detail='interrupted' if isinstance(error, KeyboardInterrupt) else str(error))
+            result['input'] = repr(checking[0]) if checking else None
+    if result['result'] == 'pending':
+        result['result'] = 'pass'
     # Too many rejections is a warning about a property that otherwise passed; it never hides a result.
     if result['result'] == 'pass' and result['rejected'] * 2 > result['generated']:
         result['result'] = 'filter_too_much'
@@ -524,7 +532,7 @@ def main(argv=None):
     ap.add_argument('--expect-fail', metavar='NAME', help='exit 0 only for a counterexample to this property')
     ap.add_argument('--timeout', type=float, metavar='S',
                     help='seconds for the whole run, then exit 3 (overrides PROPS.CHECK_TIMEOUT; default: 90; '
-                         'imports use CLI or 90; 0 disables; business TIMEOUT is ignored)')
+                         'imports use CLI or 90; 0 disables)')
     ap.add_argument('--call-timeout', type=float, default=DEFAULT_CALL_TIMEOUT, metavar='S',
                     help="seconds for one input's hooks and check, then exit 3 (default: 10; 0 disables)")
     ap.add_argument('--json', action='store_true', help='machine-readable output')
@@ -579,7 +587,7 @@ def main(argv=None):
             ok = (report['incomplete'] is None and len(results) == len(mod.properties)
                   and not report['missing_targets'] and all(r['result'] == expected(n) for n, r in results.items()))
             inconclusive = report['incomplete'] is not None or any(r['result'] == 'timeout' for r in results.values())
-            definitive = any(r['result'] not in (expected(n), 'timeout') for n, r in results.items())
+            definitive = any(r['result'] not in (expected(n), 'timeout', 'pending') for n, r in results.items())
             report['ok'] = ok
             # Unexpected confirmed failures retain exit 1; otherwise call/run timeouts exit 3.
             code = 0 if ok else 3 if inconclusive and not definitive else 1

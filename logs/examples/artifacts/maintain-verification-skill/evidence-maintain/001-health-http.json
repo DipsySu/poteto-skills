@@ -4,14 +4,14 @@
   "write": null,
   "read_back": [],
   "read_only": true,
-  "started": "2026-11-15T01:54:53Z",
+  "started": "2026-11-15T02:43:03Z",
   "method": "GET",
-  "url": "http://127.0.0.1:43813/health",
+  "url": "http://127.0.0.1:38299/health",
   "request_body": null,
   "status": 200,
   "response_headers": {
     "Server": "BaseHTTP/0.6 Python/3.13.5",
-    "Date": "Sun, 15 Nov 2026 01:54:53 GMT",
+    "Date": "Sun, 15 Nov 2026 02:43:03 GMT",
     "Content-Type": "application/json",
     "Content-Length": "12"
   },

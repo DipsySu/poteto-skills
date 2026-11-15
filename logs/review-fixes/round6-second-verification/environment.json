@@ -1,0 +1,14 @@
+{
+  "create-verification-skill": {
+    "source_log": "create-verification-skill.log",
+    "excerpt": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n    import socket; s=socket.socket(); s.bind((\"127.0.0.1\", 0)); print(s.getsockname()[1]); s.close()\n                                      ~~~~~~^^^^^^^^^^^^^^^^^^\nPermissionError: [Errno 1] Operation not permitted\n"
+  },
+  "maintain-verification-skill": {
+    "source_log": "maintain-verification-skill.log",
+    "excerpt": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n    import socket; s=socket.socket(); s.bind((\"127.0.0.1\", 0)); print(s.getsockname()[1]); s.close()\n                                      ~~~~~~^^^^^^^^^^^^^^^^^^\nPermissionError: [Errno 1] Operation not permitted\n"
+  },
+  "curator": {
+    "source_log": "curator.log",
+    "excerpt": "$ git -C /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-_8wu93je/cache/cursor-plugins -c user.name=example-dev -c user.email=dev@example.local -c commit.gpgsign=false commit -qm 'add a skill between curator runs'\n\n[exit 0; expected 0]\n$ /private/tmp/poteto-round6-second-ik6hoo6z/verification-copy/skills/curator/scripts/curate.sh --propose --offline --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-_8wu93je/collection --date 2026-10-19\n/private/tmp/poteto-round6-second-ik6hoo6z/verification-copy/skills/curator/scripts/curate.sh: line 57: /dev/fd/63: Operation not permitted\n"
+  }
+}

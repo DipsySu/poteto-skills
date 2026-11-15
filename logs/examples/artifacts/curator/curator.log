@@ -1,5 +1,5 @@
-[curate 01:55:36] mode=propose offline=1 no_fetch=0 repo=/tmp/poteto-examples-4bw5xll_/collection cache=/tmp/poteto-examples-4bw5xll_/cache
-[curate 01:55:36] upstream: 2 change(s), 1 changed file(s), head b8e0327c00da
-[curate 01:55:36] wrote /tmp/poteto-examples-4bw5xll_/collection/proposals/2026-10-19.md (offline, from the upstream diff)
-check_proposals: PASS: 2 proposal(s), 0 above prose, 2 prose/review (/tmp/poteto-examples-4bw5xll_/collection/proposals/2026-10-19.md)
-[curate 01:55:36] done
+[curate 02:43:48] mode=propose offline=1 no_fetch=0 repo=/tmp/poteto-examples-45v208z6/collection cache=/tmp/poteto-examples-45v208z6/cache
+[curate 02:43:48] upstream: 2 change(s), 1 changed file(s), head cc2f774f6667
+[curate 02:43:48] wrote /tmp/poteto-examples-45v208z6/collection/proposals/2026-10-19.md (offline, from the upstream diff)
+check_proposals: PASS: 2 proposal(s), 0 above prose, 2 prose/review (/tmp/poteto-examples-45v208z6/collection/proposals/2026-10-19.md)
+[curate 02:43:48] done

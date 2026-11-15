@@ -265,12 +265,43 @@ def _target_bindings(target, value=None):
     elif isinstance(target, (ast.Tuple, ast.List)):
         known = (isinstance(value, (ast.Tuple, ast.List)) and len(target.elts) == len(value.elts)
                  and not any(isinstance(e, ast.Starred) for e in (*target.elts, *value.elts)))
+        path_source = _query_path_source(value)
         for index, element in enumerate(target.elts):
-            yield from _target_bindings(element, value.elts[index] if known else None)
+            source = value.elts[index] if known else path_source if index == 0 else None
+            yield from _target_bindings(element, source)
+
+
+def _condition_branches(node, truth):
+    """A true and / false or proves that every operand ran; other outcomes prove no prefix."""
+    if isinstance(node, ast.NamedExpr):
+        return _condition_branches(node.value, truth)
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
+        return _condition_branches(node.operand, not truth)
+    if isinstance(node, ast.BoolOp) and isinstance(node.op, ast.And if truth else ast.Or):
+        branches = {node: len(node.values) - 1}
+        for value in node.values:
+            branches.update(_condition_branches(value, truth))
+        return branches
+    return {}
+
+
+def _binding_position(node, end=False):
+    """Source order, except conditional-expression tests execute before either source arm."""
+    if not hasattr(node, "_expression_context"):
+        parent = getattr(node, "_parent", None)
+        if parent is not None:
+            _binding_position(parent)
+        context = parent._expression_context if parent is not None else ()
+        if isinstance(parent, ast.IfExp):
+            arm = (parent.test, parent.body, parent.orelse).index(node)
+            context += (parent.lineno, parent.col_offset, arm)
+        node._expression_context = context
+    return node._expression_context + ((node.end_lineno, node.end_col_offset) if end
+                                       else (getattr(node, "lineno", 0), getattr(node, "col_offset", 0)))
 
 
 def _if_branches(node, fn):
-    """Cached enclosing if/case arms; an elif test belongs to its outer if's else arm."""
+    """Cached conditional arms and evaluated short-circuit prefixes."""
     if node is fn:
         return {}
     if not hasattr(node, "_branch_arms"):
@@ -279,16 +310,34 @@ def _if_branches(node, fn):
         if isinstance(parent, ast.If):
             if node in parent.body:
                 branches[parent] = "body"
+                branches.update(_condition_branches(parent.test, True))
             elif node in parent.orelse:
                 branches[parent] = "else"
+                branches.update(_condition_branches(parent.test, False))
+        elif isinstance(parent, ast.IfExp):
+            if node is parent.body:
+                branches[parent] = "body"
+                branches.update(_condition_branches(parent.test, True))
+            elif node is parent.orelse:
+                branches[parent] = "else"
+                branches.update(_condition_branches(parent.test, False))
+        elif isinstance(parent, ast.BoolOp):
+            if not hasattr(parent, "_operand_positions"):
+                parent._operand_positions = {value: i for i, value in enumerate(parent.values)}
+            index = parent._operand_positions[node]
+            if index:
+                branches[parent] = index  # Reaching operand N proves operands 0..N were evaluated.
         elif isinstance(parent, ast.Match) and isinstance(node, ast.match_case):
             branches[parent] = node
             if node.guard is not None:
                 branches[node] = "entered"
-        elif isinstance(parent, ast.match_case) and parent.guard is not None and node not in parent.body:
+        elif isinstance(parent, ast.match_case) and parent.guard is not None:
             # Pattern captures and guard assignments survive a false guard. They may reach later
             # cases, unlike body assignments, but do not establish a definite source at that join.
-            branches.pop(parent._parent)
+            if node in parent.body:
+                branches.update(_condition_branches(parent.guard, True))
+            else:
+                branches.pop(parent._parent)
         node._branch_arms = branches
     return node._branch_arms
 
@@ -300,7 +349,7 @@ def _binding_index(fn):
     bindings = {}
 
     def record(at, pairs):
-        end = (at.end_lineno, at.end_col_offset)
+        end = _binding_position(at, end=True)
         assigned_in = _if_branches(at, fn)
         for name, value in pairs:
             bindings.setdefault(name, []).append((end, value, assigned_in))
@@ -357,15 +406,25 @@ def _assigned_value(node):
                 return None
         parent = getattr(parent, "_parent", None)
     bindings = _binding_index(fn).get(node.id, [])
-    position = (node.lineno, node.col_offset)
+    position = _binding_position(node)
     branches = _if_branches(node, fn)
     end = bisect_right(bindings, position, key=lambda binding: binding[0])
     # Stable ordering also preserves left-to-right binding of repeated names in one unpacking assignment.
     for index in range(end - 1, -1, -1):
         _, value, assigned_in = bindings[index]
-        if any(branches.get(branch, arm) != arm for branch, arm in assigned_in.items()):
+        if any((branches.get(branch, arm) < arm if isinstance(branch, ast.BoolOp)
+                else branches.get(branch, arm) != arm) for branch, arm in assigned_in.items()):
             continue  # This binding is in a mutually exclusive arm.
         return value if all(branch in branches for branch in assigned_in) else None
+    return None
+
+
+def _query_path_source(node):
+    """The first split/partition element keeps the URL path when removing query or fragment text."""
+    if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+            and node.func.attr in {"split", "partition"} and node.args
+            and _str(node.args[0]) in {"?", "#"}):
+        return node.func.value
     return None
 
 
@@ -375,6 +434,8 @@ def _request_path(node) -> bool:
         return _request_path(_assigned_value(node))
     if isinstance(node, ast.NamedExpr):
         return _request_path(node.value)
+    if isinstance(node, ast.Subscript) and _literal(node.slice) == 0:
+        return _request_path(_query_path_source(node.value))
     if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
             and node.func.attr in {"strip", "rstrip", "lstrip"}):
         return _request_path(node.func.value)
@@ -722,9 +783,12 @@ MAKE_TARGET = re.compile(r"^([A-Za-z0-9][\w.-]*)\s*:(?!=)", re.M)
 
 def go_route_receiver(text: str, dot: int, known: set[str]) -> bool:
     """Conventional receivers may bypass FS filtering; ordinary paths need no receiver whitelist."""
-    receiver = re.search(r'\b(\w+)\s*$', text[:dot])
+    start = max(0, dot - 256)
+    before = text[start:dot]
+    receiver = re.search(r'\b(\w+)\s*$', before)
+    prefix = before[:receiver.start()].rstrip() if receiver else ""
     return bool(receiver and receiver.group(1) in known
-                and not text[:receiver.start()].rstrip().endswith('.'))
+                and (prefix or start == 0) and not prefix.endswith('.'))
 
 
 # ---------------------------------------------------------------- features

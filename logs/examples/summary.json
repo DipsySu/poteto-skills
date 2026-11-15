@@ -309,8 +309,10 @@
       "SIGINT during shrinking preserves the best counterexample, accepted target calls and failure exit 1",
       "an interrupted shrink keeps its failure but cannot complete an --expect-fail proof",
       "disk-using timeout fixtures use second-scale limits instead of subsecond scheduling assumptions",
-      "changelog documents changed seed sequences, default limits and replay/timeout migration",
+      "changelog documents changed seed sequences, added limits and replay migration",
       "review evidence distinguishes this follow-up from the already committed first review fixes",
+      "public docs/help describe CHECK_TIMEOUT and the added limits without a nonexistent TIMEOUT migration: []",
+      "Unreleased records net behavior, default-limit overhead and incompatible exits rather than branch review rounds",
       "SIGALRM at property return retains the confirmed counterexample and coverage (exit 1)",
       "SIGALRM at property return retains the confirmed counterexample and coverage (exit 3)",
       "property call timeouts are inconclusive exit 3 in JSON and text, never ERROR: []",
@@ -319,7 +321,10 @@
       "skill and generated-skill instructions include replay and default-limit migration with opt-outs",
       "SIGALRM after a checked failure returns preserves exit 1, counterexample and coverage: []",
       "swallowed alarms retry once at short intervals only after expiry and interrupt busy loops: []",
-      "business TIMEOUT is ignored (including None); CHECK_TIMEOUT and CLI budgets remain explicit: []"
+      "business TIMEOUT is ignored (including None); CHECK_TIMEOUT and CLI budgets remain explicit: []",
+      "a run timeout while rendering a call timeout remains inconclusive with no accepted input: []",
+      "unbounded user repr during result formatting remains interruptible and retains confirmed failures: []",
+      "bounded search coalesces one-shot timers and bypasses all call/record wrappers with both limits disabled: []"
     ]
   },
   "maintain-verification-skill": {
@@ -346,6 +351,9 @@
       "rebindings revoke unknown path/segment sources and retain proven request aliases: []",
       "exclusive branches cannot lend path provenance; uncertain joins revoke it: []",
       "match cases keep exclusive bindings separate and revoke uncertain joins: []",
+      "short-circuit and conditional assignments revoke uncertain joins but preserve evaluated aliases: []",
+      "query and fragment stripping retain request-path aliases, including unpacking, without blessing disk paths or query elements: []",
+      "Go receiver lookup uses bounded work per route and preserves conventional receivers: []",
       "ordinary and filesystem-like routes retain exact inventory with near-linear AST work: []",
       "Go aliases, fields and returned muxes retain routes and server launches; FS bypass needs a known receiver: []",
       "registered string argparse actions with explicit nargs=0 consume no value",

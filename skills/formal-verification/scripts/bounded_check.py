@@ -37,6 +37,7 @@ from contextlib import contextmanager
 
 DEFAULT_TIMEOUT = 90.0
 DEFAULT_CALL_TIMEOUT = 10.0
+INFINITY = float("inf")
 
 
 class ModelError(Exception):
@@ -61,6 +62,7 @@ class Limits:
         self.call_seconds = call_seconds
         self.begun = time.monotonic()
         self.installed = False
+        self.armed_deadline = None
         self.limit_run(run_seconds)
         self.started = None
         self.expired = False
@@ -73,18 +75,26 @@ class Limits:
 
     def limit_run(self, seconds):
         self.run_seconds = seconds
-        self.deadline = self.begun + seconds if seconds else float('inf')
+        self.deadline = self.begun + seconds if seconds else INFINITY
         self.arm()
 
-    def arm(self):
+    def arm(self, keep_earlier=False):
         """Reserve SIGALRM for the nearest enabled deadline, never for periodic polling."""
-        if not self.installed or signal.getsignal(signal.SIGALRM) != self.tick:
+        if not self.installed:
             return
         call_deadline = (self.started + self.call_seconds
-                         if self.started is not None and self.call_seconds else float('inf'))
+                         if self.started is not None and self.call_seconds else INFINITY)
         deadline = min(self.deadline, call_deadline)
-        delay = max(0.0, deadline - time.monotonic()) if deadline < float('inf') and not self.expired else 0
+        # Search calls may retain an earlier one-shot alarm. It will check the current
+        # absolute deadlines and rearm if it arrives early; never postpone a deadline.
+        if (keep_earlier and not self.expired and self.armed_deadline is not None
+                and self.armed_deadline <= deadline):
+            return
+        if signal.getsignal(signal.SIGALRM) != self.tick:
+            return
+        delay = max(0.0, deadline - time.monotonic()) if deadline < INFINITY and not self.expired else 0
         signal.setitimer(signal.ITIMER_REAL, delay)
+        self.armed_deadline = deadline if delay else None
 
     def __enter__(self):
         if self.active and (self.run_seconds or self.call_seconds):
@@ -129,8 +139,10 @@ class Limits:
                 raise error
 
     def tick(self, signum, frame):
+        self.armed_deadline = None  # The OS consumed this one-shot alarm.
         try:
             self.check()
+            self.arm()
         except Timeout as error:
             # A bare except may swallow this alarm. Retry only after expiry, never before.
             if self.installed and signal.getsignal(signal.SIGALRM) == self.tick:
@@ -146,7 +158,7 @@ class Limits:
             return
         now = time.monotonic()
         call_deadline = (self.started + self.call_seconds
-                         if self.started is not None and self.call_seconds else float('inf'))
+                         if self.started is not None and self.call_seconds else INFINITY)
         if now >= self.deadline:
             if call_deadline < self.deadline:
                 raise Timeout("call", self.call_seconds)
@@ -161,19 +173,19 @@ class Limits:
             self.expired = True
             raise Timeout("run", self.run_seconds)
 
-    def call(self, fn, *args):
-        self.check_run()
+    def call(self, fn, *args, coalesce=False, truth=False):
         self.started = time.monotonic()
         try:
-            self.arm()
+            self.arm(keep_earlier=coalesce)
             self.check()
-            return fn(*args)
+            result = fn(*args)
+            return bool(result) if truth else result
         finally:
             try:
                 self.check()
             finally:
                 self.started = None
-                self.arm()
+                self.arm(keep_earlier=coalesce)
 
 
 def seconds(value, name: str) -> float:
@@ -276,65 +288,94 @@ def search(mod, actions_fn, invariants: dict, depth: int, max_states: int, deadl
            states: dict, out: dict) -> dict:
     describe = getattr(mod, "describe", None)
     terminal = getattr(mod, "terminal", None)
+    limited = limits.active and bool(limits.run_seconds or limits.call_seconds)
     parent: dict = {}  # key -> (parent_key, action, depth)
     queue: deque = deque()
 
-    def trace(k, steps, describe_steps=True) -> None:
+    def trace(k, steps) -> None:
         keys = []
         while k is not None:
             keys.append(k)
             k = parent[k][0]
         keys.reverse()
-        # Retain raw states before invoking optional presentation code, which may time out.
-        if not steps:
-            for k in keys:
-                pk, act, d = parent[k]
-                s = states[k]
-                steps.append({"step": d, "action": act, "state": jsonable(s), "describe": None})
-        if describe_steps and callable(describe):
+        # Publish JSON-safe placeholders first. User serializers remain interruptible.
+        steps.clear()
+        for k in keys:
+            pk, act, d = parent[k]
+            s = states[k]
+            scalar = type(s) in (type(None), bool, int, float, str)
+            steps.append({"step": d, "action": act, "state": s if scalar else None,
+                          "describe": None, **({} if scalar else {"state_incomplete": True})})
+        for k, step in zip(keys, steps):
+            step["state"] = jsonable(states[k])
+            step.pop("state_incomplete", None)
+        if callable(describe):
             for k, step in zip(keys, steps):
                 limits.check_run()
                 step["describe"] = describe(states[k])
                 limits.check_run()
 
     def bad(k, kind: str, name: str, detail: str | None = None, timeout: bool = False,
-            record_only: bool = False) -> dict:
+            record_only: bool = False, fallback=None) -> dict:
         out["result"] = "error" if kind == "error" else "violation"
         out["detail"] = detail
-        out["violation"] = {"kind": kind, "name": name, "detail": detail, "trace": []}
+        out["violation"] = {"kind": kind, "name": name, "detail": detail,
+                            "trace": [fallback] if fallback is not None else []}
         if timeout:  # a call over --call-timeout: a model error, with the trace to the state it hung on
             out["violation"]["timeout"] = True
             out["stopped"] = detail
         out["states"] = len(states)
-        trace(k, out["violation"]["trace"], describe_steps=not record_only)
+        if not record_only:
+            trace(k, out["violation"]["trace"])
         return out
 
     def check(k, s):
+        fallback = None
         for name, fn in invariants.items():
             found = None
-            with limits.record_result():
+            if limited:
+                # Only built-in state metadata is recorded while alarms are deferred.
+                # Preparing the fallback here also keeps custom key/hash work interruptible.
+                if fallback is None:
+                    pk, act, d = parent[k]
+                    scalar = type(s) in (type(None), bool, int, float, str)
+                    fallback = {"step": d, "action": act, "state": s if scalar else None, "describe": None,
+                                **({} if scalar else {"state_incomplete": True})}
+                limits.recording += 1
+            try:
                 try:
-                    ok = limits.call(fn, s)
+                    ok = limits.call(fn, s, coalesce=True, truth=True) if limited else bool(fn(s))
                 except Timeout as e:
                     if e.scope == "run":
                         raise
-                    found = bad(k, "error", name, str(e), timeout=True, record_only=True)
+                    found = bad(k, "error", name, str(e), timeout=True, record_only=True, fallback=fallback)
                 except Exception as e:  # noqa: BLE001 - an invariant that crashes is a model bug; show where
-                    found = bad(k, "error", name, f"invariant raised {type(e).__name__}: {e}", record_only=True)
+                    # Store the error identity before invoking any user-defined exception formatting.
+                    found = bad(k, "error", name, record_only=True, fallback=fallback)
+                    error = e
                 else:
                     if not ok:
-                        found = bad(k, "invariant", name, record_only=True)
+                        found = bad(k, "invariant", name, record_only=True, fallback=fallback)
+            finally:
+                if limited:
+                    limits.recording -= 1
+                    if not limits.recording and limits.pending is not None:
+                        pending, limits.pending = limits.pending, None
+                        raise pending
             if found is not None:
+                if found["result"] == "error" and found["detail"] is None:
+                    detail = f"invariant raised {type(error).__name__}: {error}"
+                    found["detail"] = found["violation"]["detail"] = detail
                 trace(k, out["violation"]["trace"])
                 return found
         return None
 
     starts = initial_states(mod)
-    limits.check_run()
+    if limited: limits.check_run()
     if not starts:
         raise ModelError("model has no initial states")
     for s in starts:
-        limits.check_run()
+        if limited: limits.check_run()
         k = freeze(s)
         if k in states:
             continue
@@ -344,7 +385,7 @@ def search(mod, actions_fn, invariants: dict, depth: int, max_states: int, deadl
             return r
         queue.append(k)
     while queue:
-        limits.check_run()
+        if limited: limits.check_run()
         k = queue.popleft()
         s = states[k]
         d = parent[k][2]
@@ -352,7 +393,7 @@ def search(mod, actions_fn, invariants: dict, depth: int, max_states: int, deadl
             out["hit_depth_bound"] = True
             continue
         try:
-            succ = limits.call(lambda: list(actions_fn(s)))
+            succ = limits.call(lambda: list(actions_fn(s)), coalesce=True) if limited else list(actions_fn(s))
         except Timeout as e:
             if e.scope == "run":
                 raise
@@ -360,13 +401,13 @@ def search(mod, actions_fn, invariants: dict, depth: int, max_states: int, deadl
         except Exception as e:  # noqa: BLE001
             return bad(k, "error", "actions", f"actions() raised {type(e).__name__}: {e}")
         if not succ and deadlock:
-            limits.check_run()
+            if limited: limits.check_run()
             is_terminal = callable(terminal) and terminal(s)
-            limits.check_run()
+            if limited: limits.check_run()
             if not is_terminal:
                 return bad(k, "deadlock", "deadlock", "no action is enabled and terminal(state) is not true")
         for item in succ:
-            limits.check_run()
+            if limited: limits.check_run()
             if not (isinstance(item, tuple) and len(item) == 2):
                 return bad(k, "error", "actions", f"actions() must yield (name, next_state) pairs, got {item!r:.80}")
             name, ns = item
@@ -423,7 +464,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--expect-violation", metavar="NAME", help="succeed only if invariant NAME is violated (able-to-fail proof)")
     ap.add_argument("--timeout", type=float, metavar="S",
                     help="seconds for the whole run, then exit 3 (overrides MODEL.CHECK_TIMEOUT; default: 90; "
-                         "imports use CLI or 90; 0 disables; business TIMEOUT is ignored)")
+                         "imports use CLI or 90; 0 disables)")
     ap.add_argument("--call-timeout", type=float, default=DEFAULT_CALL_TIMEOUT, metavar="S",
                     help="seconds for one call to actions(), an invariant, or a mutant, then exit 2 (default: 10; 0 disables)")
     ap.add_argument("--json", action="store_true", help="machine-readable output")
