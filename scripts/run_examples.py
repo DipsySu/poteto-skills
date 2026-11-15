@@ -512,6 +512,8 @@ class Examples:
             self.review_path_branches()
             self.review_match_case_paths()
             self.review_expression_paths()
+            self.review_exception_path_provenance()
+            self.review_registered_boolean_actions()
             self.review_query_path_aliases()
             self.review_go_receiver_workload()
             self.review_route_workload()
@@ -877,6 +879,10 @@ class Handler(BaseHTTPRequestHandler):
         original = '{"counts": {}}\n'
         baseline.write_text(original)
         env = dict(self.env, GIT_DIR=str(root / 'missing.git'))
+        # Inherited GIT_DIR no longer selects the checkout. Break the actual
+        # checkout marker so this still exercises a genuine git lookup failure.
+        (root / '.git').rename(root / 'saved.git')
+        (root / '.git').write_text('gitdir: missing.git\n')
         failures = []
         for target in (root, root / 'tracked.py'):
             for explicit_root in ((), ('--root', str(root))):
@@ -898,6 +904,85 @@ class Handler(BaseHTTPRequestHandler):
                                 cwd=outside, env=self.env, capture_output=True, text=True, timeout=10)
         self.ensure(result.returncode == 0 and not result.stderr,
                     'ordinary non-git directories retain quiet filesystem fallback')
+
+    def review_git_inherited_environment(self):
+        root = self.scratch / 'review-git-inherited'
+        root.mkdir()
+        clean_env = {k: v for k, v in self.env.items() if k not in ('GIT_DIR', 'GIT_WORK_TREE')}
+        self.run('git', 'init', '-q', cwd=root, env=clean_env)
+        (root / 'src').mkdir()
+        (root / 'src/tracked.py').write_text('BAD\n')
+        (root / '.gitignore').write_text('ignored.py\n')
+        self.run('git', 'add', '.', cwd=root, env=clean_env)
+        self.run('git', '-c', 'user.name=Regression', '-c', 'user.email=regression@example.invalid',
+                 'commit', '-qm', 'fixture', cwd=root, env=clean_env)
+        linked = self.scratch / 'review-git-linked'
+        self.run('git', 'worktree', 'add', '--detach', str(linked), 'HEAD', cwd=root, env=clean_env)
+        rules = self.save('inherited-rules.json', {'rules': [
+            {'id': 'probe', 'regex': 'BAD', 'include': ['*.py'], 'message': 'Use good() instead.'}]})
+        failures = []
+        for checkout in (root, linked):
+            (checkout / 'src/ignored.py').write_text('BAD\n')
+            (checkout / 'src/new.py').write_text('GOOD\n')
+            nested = checkout / 'src/nested'
+            nested.mkdir()
+            self.run('git', 'init', '-q', cwd=nested, env=clean_env)
+            (nested / 'nested.py').write_text('BAD\n')
+            self.run('git', 'add', 'nested.py', cwd=nested, env=clean_env)
+            git_dir = self.run('git', 'rev-parse', '--absolute-git-dir', cwd=checkout, env=clean_env).strip()
+            variants = [dict(GIT_DIR=git_dir), dict(GIT_DIR=os.path.relpath(git_dir, checkout.resolve())),
+                        dict(GIT_DIR=git_dir, GIT_WORK_TREE=str(nested))]
+            for inherited in variants:
+                env = dict(clean_env, **inherited)
+                for target in ('src/tracked.py', 'src'):
+                    for explicit_root in ((), ('--root', str(checkout)), ('--root', '.')):
+                        baseline = self.art / 'inherited-baseline.json'
+                        baseline.unlink(missing_ok=True)
+                        command = [str(self.script('correct', 'patlint.py')), '--rules', str(rules),
+                                   '--json', *explicit_root, '--baseline', str(baseline), '--update-baseline', target]
+                        result = subprocess.run(command, cwd=checkout, env=env, capture_output=True,
+                                                text=True, timeout=10)
+                        self.log.write(f'checkout={checkout.name} inherited={inherited} target={target} '
+                                       f'explicit_root={bool(explicit_root)} exit={result.returncode}\n'
+                                       + result.stdout + result.stderr)
+                        report = json.loads(result.stdout) if result.stdout.strip().startswith('{') else {}
+                        counts = json.loads(baseline.read_text())['counts'] if baseline.exists() else None
+                        expected_untracked = ['src/new.py'] if target == 'src' else []
+                        if (result.returncode != 0 or result.stderr or report.get('untracked') != expected_untracked
+                                or report.get('files_scanned') != (2 if target == 'src' else 1)
+                                or counts != {'probe': {'src/tracked.py': 1}}
+                                or report.get('root') != str(checkout.resolve())):
+                            failures.append((checkout.name, inherited, target, bool(explicit_root),
+                                             result.returncode, result.stderr, report, counts))
+            # An explicit nested file is linted as given, but its own index must
+            # not make it eligible for this checkout's ratchet baseline.
+            baseline = self.art / 'nested-baseline.json'
+            baseline.unlink(missing_ok=True)
+            result = subprocess.run([str(self.script('correct', 'patlint.py')), '--rules', str(rules),
+                                     '--root', str(checkout), '--baseline', str(baseline), '--update-baseline',
+                                     '--json', str(nested / 'nested.py')], cwd=checkout,
+                                    env=dict(clean_env, GIT_DIR=git_dir), capture_output=True, text=True, timeout=10)
+            self.log.write(result.stdout + result.stderr)
+            report = json.loads(result.stdout) if result.stdout.strip().startswith('{') else {}
+            if (result.returncode != 1 or report.get('untracked') != ['src/nested/nested.py']
+                    or not baseline.exists() or json.loads(baseline.read_text())['counts'] != {}):
+                failures.append(('nested index adopted', checkout.name, result.returncode, report))
+        outside = self.scratch / 'review-inherited-non-git'
+        outside.mkdir()
+        (outside / 'clean.py').write_text('GOOD\n')
+        for cwd in (root, outside):
+            for target in (outside, outside / 'clean.py'):
+                result = subprocess.run([str(self.script('correct', 'patlint.py')), '--rules', str(rules),
+                                         '--json', str(target)], cwd=cwd,
+                                        env=dict(clean_env, GIT_DIR=str(root / '.git'), GIT_WORK_TREE=str(root)),
+                                        capture_output=True, text=True, timeout=10)
+                self.log.write(result.stdout + result.stderr)
+                report = json.loads(result.stdout) if result.stdout.strip().startswith('{') else {}
+                if (result.returncode != 0 or result.stderr or report.get('files_scanned') != 1
+                        or report.get('untracked') != []):
+                    failures.append(('non-git fallback', cwd.name, target.name, result.returncode, result.stderr, report))
+        self.ensure(not failures,
+                    f'inherited absolute/relative GIT_DIR and GIT_WORK_TREE cannot change root, tracking, ignores or baseline eligibility in ordinary/linked checkouts: {failures}')
 
     def review_git_locale(self):
         root = self.scratch / 'review-git-locale'
@@ -1113,6 +1198,7 @@ class Handler(BaseHTTPRequestHandler):
             self.review_git_warning()
             self.review_git_fail_closed()
             self.review_git_locale()
+            self.review_git_inherited_environment()
             rules = self.save('rules.json', {'rules':[{'id':'no-direct-json-write','regex':r'\b\w+\.path\.write_text\s*\(',
                 'include':['todo/*.py'], 'exclude':['todo/store.py'],
                 'message':'Use Store.add or Store.transition in todo/store.py for atomic persistence; avoid json.dump.',
@@ -1346,6 +1432,7 @@ class Handler(BaseHTTPRequestHandler):
             self.review_budget_namespace()
             self.review_timeout_format_handoff()
             self.review_interruptible_result_format()
+            self.review_exception_format_timeout()
             self.review_bounded_limit_workload()
 
     def clock_check(self, checker, body, *, run=5, call=10, flags=()):
@@ -2615,6 +2702,101 @@ properties = {"copy": (sampled_from([" title "]), check)}
                 shutil.rmtree(self.scratch)
         return 0 if all(s['status']=='pass' for s in self.summary.values()) else 1
 
+    def review_exception_path_provenance(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'exception_path_scan')
+        prefix = 'class Handler:\n    def do_GET(self):\n'
+        probe = 'if path == "/var/www": pass'
+        negatives = [
+            'path = filesystem\ntry:\n    denied()\n    path = self.path\nexcept PermissionError:\n    ' + probe,
+            'path = self.path\ntry:\n    path = filesystem\n    denied()\nexcept PermissionError:\n    ' + probe,
+            'path = filesystem\ntry:\n    denied()\n    path = self.path\nexcept PermissionError: pass\n' + probe,
+            'path = filesystem\ntry:\n    denied()\n    path = self.path\nfinally:\n    ' + probe,
+            'path = filesystem\nfor item in []:\n    path = self.path\n' + probe,
+            'path = filesystem\nwhile ready:\n    path = self.path\n' + probe,
+            'path = filesystem\nwith suppress(PermissionError):\n    denied()\n    path = self.path\n' + probe,
+            'path = filesystem\n[(path := self.path) for item in []]\n' + probe,
+        ]
+        positives = [
+            'try:\n    path = self.path\n    ' + probe + '\nexcept PermissionError: pass',
+            'try:\n    denied()\nexcept PermissionError:\n    path = self.path\n    ' + probe,
+            'try:\n    path = self.path\nexcept PermissionError: pass\nelse:\n    ' + probe,
+            'try:\n    denied()\nfinally:\n    path = self.path\n' + probe,
+            'for item in values:\n    path = self.path\n    ' + probe,
+        ]
+        failures = []
+        for expected, sources in ((set(), negatives), ({('GET', '/var/www')}, positives)):
+            for source in sources:
+                body = prefix + ''.join('        ' + line + '\n' for line in source.splitlines())
+                info = scanner.analyze_python('server.py', body)
+                routes = {(r['method'], r['path']) for r in info['routes']}
+                if routes != expected or info['notes']:
+                    failures.append((source, sorted(routes), info['notes']))
+        root = self.scratch / 'exception-route-map'
+        root.mkdir()
+        source = ('def denied(): raise PermissionError("denied")\n' + prefix
+                  + '        path = "/var/www"\n        try:\n            denied()\n            path = self.path\n'
+                  + '        except PermissionError:\n            if path == "/var/www": pass\n'
+                  + '        if self.path == "/api/items": pass\n')
+        (root / 'server.py').write_text(source)
+        skill = root / '.agents/skills/verify-items'
+        (skill / 'features').mkdir(parents=True)
+        (skill / 'features/README.md').write_text('[Items](items.md)\n')
+        (skill / 'features/items.md').write_text('# Items\n\n## Sub-features\nGET /api/items\n\n'
+                                                '## How to get to it (user POV)\n\n'
+                                                '## Driving it with control.sh\n\n## Gotchas\n')
+        self.run(sys.executable, '-c', 'from server import Handler; h = Handler(); h.path = "/api/items"; h.do_GET()', cwd=root)
+        drift = self.json(self.script('maintain-verification-skill', 'drift_check.py'), skill, '--repo', root,
+                          '--json', expected=(0, 1))
+        if self.last_returncode != 0 or drift['drift'] or drift['routes']['source'] != 1:
+            failures.append(('correct feature map must exit 0 with only /api/items', self.last_returncode, drift))
+        self.ensure(not failures, f'only proven executed assignments establish path provenance across exceptional and optional control flow: {failures}')
+
+    def review_registered_boolean_actions(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'registered_action_scan')
+        root = self.scratch / 'registered-action-map'
+        (root / 'app').mkdir(parents=True)
+        (root / 'app/__init__.py').write_text('')
+        source = ('import argparse\nparser = argparse.ArgumentParser()\n'
+                  'parser.register("action", "boolean", argparse.BooleanOptionalAction)\n'
+                  'parser.add_argument("--json", action="boolean", default=False)\n'
+                  'parser.add_argument("--output", action="store", default=False)\n'
+                  'parser.add_argument("--label", default=False)\n'
+                  'commands = parser.add_subparsers(dest="command", required=True)\n'
+                  'commands.add_parser("list")\n'
+                  'if __name__ == "__main__":\n    print(parser.parse_args())\n')
+        (root / 'app/__main__.py').write_text(source)
+        skill = root / '.agents/skills/verify-app'
+        (skill / 'features').mkdir(parents=True)
+        (skill / 'features/README.md').write_text('[List](list.md)\n')
+        (skill / 'features/list.md').write_text('# List\n\n## Sub-features\n\n'
+                                               '## How to get to it (user POV)\n\n'
+                                               '## Driving it with control.sh\n`python3 -m app --json list`\n\n## Gotchas\n')
+        self.run(sys.executable, '-m', 'app', '--json', 'list', cwd=root)
+        failures = []
+        variants = [source,
+                    source.replace('import argparse', 'import argparse as ap').replace('argparse.', 'ap.'),
+                    source.replace('import argparse', 'import argparse\nfrom argparse import BooleanOptionalAction as Toggle')
+                          .replace('argparse.BooleanOptionalAction', 'Toggle'),
+                    source.replace('"boolean"', '"toggle"').replace(', default=False)\nparser.add_argument("--output"',
+                                                                      ')\nparser.add_argument("--output"')]
+        for body in variants:
+            options = scanner.analyze_python('app/__main__.py', body)['parser_options']['parser']
+            actual = {o['names'][0]: o['takes_value'] for o in options}
+            if actual != {'--json': False, '--output': True, '--label': True}:
+                failures.append(('registered boolean and ordinary value options', body, actual))
+        # The same alias on another parser, or registered only later, must not change this option.
+        for body in (source.replace('parser.register(', 'other.register('),
+                     source.replace('parser.register("action", "boolean", argparse.BooleanOptionalAction)\n', '')
+                           + 'parser.register("action", "boolean", argparse.BooleanOptionalAction)\n'):
+            option = scanner.analyze_python('app/__main__.py', body)['parser_options']['parser'][0]
+            if not option['takes_value']:
+                failures.append(('registration must precede the option on the same parser', body, option))
+        drift = self.json(self.script('maintain-verification-skill', 'drift_check.py'), skill, '--repo', root,
+                          '--json', expected=(0, 1))
+        if self.last_returncode != 0 or drift['drift'] or drift['commands']['source'] != 1:
+            failures.append(('registered boolean leaves list mapped and exits 0', self.last_returncode, drift))
+        self.ensure(not failures, f'registered no-value argparse actions retain their token consumption and clean feature maps: {failures}')
+
     def review_expression_paths(self):
         scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'expression_path_scan')
         prefix = 'class Handler:\n    def do_GET(self):\n'
@@ -2756,6 +2938,77 @@ properties = {"copy": (sampled_from([" title "]), check)}
                     and all(word in changelog for word in ('overhead', 'main', '90 s', 'exit 3', 'mutant', 'exit 2', 'untracked', 'empty')),
                     'Unreleased records net behavior, default-limit overhead and incompatible exits rather than branch review rounds')
 
+
+    def review_exception_format_timeout(self):
+        """An exception is a confirmed finding before its user-defined message is rendered."""
+        target = self.repo / 'exception_format_target.py'
+        target.write_text('def checked(value): return False\n')
+        failures = []
+        error = ('class SlowError(Exception):\n    def __str__(self):\n'
+                 '        clock.events.append([clock.limits.recording, clock.limits.started])\n'
+                 '        clock.advance(20)\n        return "slow message"\n')
+        try:
+            for phase in ('initial', 'shrink'):
+                body = ('import review_clock as clock\nfrom gen_check import Generator\n'
+                        'from exception_format_target import checked\n' + error +
+                        'TARGETS = ["exception_format_target.py:checked"]\n'
+                        'def check(value):\n    checked(value)\n'
+                        '    if value == 42: return False\n    raise SlowError()\n'
+                        'properties = {"broken": (Generator(lambda rng: ' + ('42' if phase == 'shrink' else '7') +
+                        ', lambda value: [7] if value == 42 else []), check)}\n')
+                result = self.clock_check('gen_check.py', body, run=10, call=0, flags=('--json',))
+                report = json.loads(result['stdout'])
+                found = report['properties']['broken']
+                if not (result['code'] == 1 and result['events'] == [[0, None]]
+                        and found['result'] == 'fail' and found['counterexample'] == '7'
+                        and found['accepted'] == 1 and 'SlowError' in (found['detail'] or '')
+                        and found.get('output_incomplete') and report['incomplete']
+                        and report['called'] == ['exception_format_target.py:checked'] and not report['missing_targets']):
+                    failures.append(('property', phase, result))
+            for phase in ('invariant', 'actions', 'mutant'):
+                body = ('import review_clock as clock\n' + error +
+                        'def init(): return 7\ndef broken(s): raise SlowError()\n' +
+                        ('def actions(s): return []\ninvariants = {"broken": broken}\n' if phase == 'invariant' else
+                         'actions = broken\ninvariants = {"ok": lambda s: True}\n' if phase == 'actions' else
+                         'def actions(s): return []\ninvariants = {"ok": lambda s: True}\n'
+                         'mutants = {"crashed": broken, "later": lambda s: []}\n'))
+                flags = ('--mutants', '--json') if phase == 'mutant' else ('--json',)
+                result = self.clock_check('bounded_check.py', body, run=10, call=0, flags=flags)
+                report = json.loads(result['stdout'])
+                found = report['mutants']['crashed'] if phase == 'mutant' else report
+                trace = found.get('trace') if phase == 'mutant' else (found['violation'] or {}).get('trace')
+                if not (result['code'] == 2 and result['events'] == [[0, None]] and found['result'] == 'error'
+                        and 'SlowError' in (found['detail'] or '') and found['states'] == 1
+                        and trace and trace[0]['state'] == 7 and report['incomplete']
+                        and (phase != 'mutant' or report['not_run'] == ['later'])):
+                    failures.append(('model', phase, result))
+            # Real SIGALRM proves that an infinite __str__ cannot block the checker indefinitely.
+            for checker in ('gen_check.py', 'bounded_check.py'):
+                fixture = self.art / ('exception_' + checker)
+                body = 'class SlowError(Exception):\n    def __str__(self):\n        while True: pass\n'
+                if checker == 'gen_check.py':
+                    body += ('from gen_check import Generator\nfrom exception_format_target import checked\n'
+                             'TARGETS = ["exception_format_target.py:checked"]\n'
+                             'def broken(value):\n    checked(value)\n    raise SlowError()\n'
+                             'properties = {"broken": (Generator(lambda rng: 7, lambda value: []), broken)}\n')
+                    flags, expected = ('--repo', self.repo, '--examples', '1'), 1
+                else:
+                    body += 'def init(): return 7\ndef actions(s): raise SlowError()\ninvariants = {"ok": lambda s: True}\n'
+                    flags, expected = (), 2
+                fixture.write_text(body)
+                try:
+                    report = self.json(sys.executable, self.script('formal-verification', checker), fixture, *flags,
+                                       '--timeout', '0.5', '--call-timeout', '0', '--json', expected=(expected, 3), timeout=8)
+                except subprocess.TimeoutExpired:
+                    failures.append((checker, 'infinite exception formatting exceeded the external guard'))
+                    continue
+                found = report['properties']['broken'] if checker == 'gen_check.py' else report
+                if not (self.last_returncode == expected and found['result'] == ('fail' if expected == 1 else 'error')
+                        and 'SlowError' in (found['detail'] or '') and report['incomplete']):
+                    failures.append((checker, self.last_returncode, report))
+            self.ensure(not failures, f'exception formatting preserves confirmed failures, coverage and diagnostics outside recording: {failures}')
+        finally:
+            target.unlink()
 
     def review_timeout_format_handoff(self):
         body = ('import review_clock as clock\nfrom gen_check import Generator\n'
@@ -2926,6 +3179,8 @@ properties = {"copy": (sampled_from([" title "]), check)}
         methods += [self.review_expression_paths, self.review_query_path_aliases, self.review_go_receiver_workload]
         methods += [self.review_net_change_docs, self.review_timeout_format_handoff,
                     self.review_interruptible_result_format, self.review_bounded_limit_workload]
+        methods += [self.review_exception_format_timeout, self.review_exception_path_provenance,
+                    self.review_registered_boolean_actions, self.review_git_inherited_environment]
         results = {}
         try:
             with (output / 'run.log').open('w') as self.log:

@@ -1,0 +1,13 @@
+| Check | Result | Detail |
+|---|---|---|
+| regenerate examples | FAIL | /private/tmp/poteto-round6-authorized-4mh3rlay/verification-copy/scripts/run-examples.sh: exit 1 Fresh scratch: /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-06xi48fv FAIL create-verification-skill: /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-06xi48fv/todo-app/.claude/skills/verify-todo/scripts/control.sh launch: exit 1, expected 0; see create-verification-skill.log FAIL maintain-verification-skill: /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-06xi48fv/todo-app/.claude/skills/verify-todo/scripts/control.sh launch: exit 1, expected 0; see maintain-verification-skill.log PASS correct: 48 assertions PASS feedback-to-architecture: 9 assertions PASS architect: 2 assertions PASS sharpen: 3 assertions PASS formal-verification: 102 assertions FAIL curator: /private/tmp/poteto-round6-authorized-4mh3rlay/verification-copy/skills/curator/scripts/curate.sh --propose --offline --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-06xi48fv/collection --date 2026-10-19: exit 1, expected 0; see curator.log  |
+| skill frontmatter | PASS | 8 valid skill frontmatters with invocation; source IDs checked by docs |
+| script contracts | PASS | 27 executable scripts; every --help exits 0 |
+| Python syntax | PASS | 99 Python files compiled with py_compile |
+| bash syntax | PASS | 11 shell files checked with bash -n |
+| docs and mapping | PASS | required files present; mapping lists every skill; PASS docs: helper paths, commands, links, counts and source citations |
+| installer isolation | PASS | temp HOME dry-run; project link/copy/uninstall preserve unrelated entries |
+| example app | PASS | fresh nested repo: 7 unit tests and persistence boundary lint pass |
+| example skill results | FAIL | real example checks did not pass: create-verification-skill, curator, maintain-verification-skill |
+
+7 PASS; 2 FAIL

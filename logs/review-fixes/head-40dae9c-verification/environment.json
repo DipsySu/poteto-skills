@@ -1,0 +1,11 @@
+{
+  "create-verification-skill": [
+    "ASSERT PASS: worked feature example has assertions and paired HTTP/CLI read-backs\n$ /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-06xi48fv/todo-app/.claude/skills/verify-todo/scripts/control.sh launch\nTraceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nPermissionError: [Errno 1] Operation not permitted"
+  ],
+  "maintain-verification-skill": [
+    "[exit 0; expected 0]\n$ /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-06xi48fv/todo-app/.claude/skills/verify-todo/scripts/control.sh launch\nTraceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nPermissionError: [Errno 1] Operation not permitted"
+  ],
+  "curator": [
+    "$ git -C /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-06xi48fv/cache/cursor-plugins -c user.name=example-dev -c user.email=dev@example.local -c commit.gpgsign=false commit -qm 'add a skill between curator runs'\n\n[exit 0; expected 0]\n$ /private/tmp/poteto-round6-authorized-4mh3rlay/verification-copy/skills/curator/scripts/curate.sh --propose --offline --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-06xi48fv/collection --date 2026-10-19\n/private/tmp/poteto-round6-authorized-4mh3rlay/verification-copy/skills/curator/scripts/curate.sh: line 57: /dev/fd/63: Operation not permitted"
+  ]
+}

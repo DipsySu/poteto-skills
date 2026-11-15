@@ -226,18 +226,23 @@ def line_matches(rule: dict, rel_path: str, line: str) -> bool:
 # ---------------------------------------------------------------- files
 
 def git(cwd: Path, *args: str, binary: bool = False):
-    res = subprocess.run(["git", "-C", str(cwd), *args], capture_output=True)
+    # Hooks and linked worktrees export these for their own git context. Paths
+    # here belong to the checkout selected by --root/cwd, not that environment.
+    env = {key: value for key, value in os.environ.items() if key not in ("GIT_DIR", "GIT_WORK_TREE")}
+    res = subprocess.run(["git", "-C", str(cwd), *args], capture_output=True, env=env)
     if res.returncode != 0:
         raise RuntimeError(f"git {' '.join(args)}: {res.stderr.decode(errors='replace').strip()}")
     return res.stdout if binary else res.stdout.decode(errors="replace")
 
 
+def has_git_marker(cwd: Path) -> bool:
+    directory = cwd.resolve()
+    return any(os.path.lexists(p / ".git") for p in (directory, *directory.parents))
+
+
 def git_fallback(cwd: Path, error):
     """Allow disk fallback only outside a checkout, never on a broken git context."""
-    directory = cwd.resolve()
-    in_checkout = (any(name in os.environ for name in ("GIT_DIR", "GIT_WORK_TREE"))
-                   or any(os.path.lexists(p / ".git") for p in (directory, *directory.parents)))
-    if not in_checkout:
+    if not has_git_marker(cwd):
         if isinstance(error, FileNotFoundError):
             print(f"patlint: WARNING: git unavailable: {error}; fallback to filesystem traversal", file=sys.stderr)
         return
@@ -263,28 +268,25 @@ def rel_to(root: Path, p: Path) -> str:
 def git_names(cwd: Path, *args: str) -> list[str] | None:
     """NUL-separated names printed by a git command run in CWD; None outside a git checkout."""
     try:
-        res = subprocess.run(["git", "-C", str(cwd), "--literal-pathspecs", *args], capture_output=True)
-    except OSError as error:
+        out = git(cwd, "--literal-pathspecs", *args, binary=True)
+    except (RuntimeError, OSError) as error:
         git_fallback(cwd, error)
         return None
-    if res.returncode != 0:
-        detail = res.stderr.decode(errors="replace").strip()
-        git_fallback(cwd, RuntimeError(detail))
-        return None
-    return [os.fsdecode(n) for n in res.stdout.split(b"\0") if n]
+    return [os.fsdecode(n) for n in out.split(b"\0") if n]
 
 
-def git_file_set(directory: Path) -> tuple[list[str], set[str]] | None:
+def git_file_set(directory: Path, paths: list[str] | None = None) -> tuple[list[str], set[str]] | None:
     """Files git would commit under DIRECTORY (relative to it) and the tracked subset; None outside git.
 
     Tracked plus untracked-and-not-ignored files: the set a CI clone has. Leaves out
     index entries deleted from disk, SKIP_DIRS, and anything inside a nested checkout
     (a directory with its own .git entry, such as a linked worktree).
     """
-    tracked = git_names(directory, "ls-files", "-z", "--cached", "--", ".")
+    pathspecs = paths or ["."]
+    tracked = git_names(directory, "ls-files", "-z", "--cached", "--", *pathspecs)
     if tracked is None:
         return None
-    others = git_names(directory, "ls-files", "-z", "--others", "--exclude-standard", "--", ".")
+    others = git_names(directory, "ls-files", "-z", "--others", "--exclude-standard", "--", *pathspecs)
     if others is None:
         return None
     nested: dict[Path, bool] = {}
@@ -305,34 +307,42 @@ def git_file_set(directory: Path) -> tuple[list[str], set[str]] | None:
     return names, set(tracked)
 
 
-def walk(paths: list[Path], root: Path):
+def walk(paths: list[Path], root: Path, top=...):
     """Yield (rel_path, reader, tracked) for the files PATHS name in the working tree.
 
     A file argument is linted as given. Inside a git checkout a directory argument
-    expands to git_file_set(); outside git it is walked, skipping SKIP_DIRS.
+    expands to the selected checkout's git_file_set(); outside git it is walked,
+    skipping SKIP_DIRS. All arguments share one root-relative index lookup.
     `tracked` says whether git tracks the file (always true outside git); only
     tracked files may enter or lower a ratchet baseline.
     """
+    if top is ...:
+        top = git_toplevel(root)
+    listing = None
+    if top is not None:
+        pathspecs = [rel_to(top, p) for p in paths if p.resolve().is_relative_to(top)]
+        listing = git_file_set(top, pathspecs) if pathspecs else ([], set())
+    names, tracked = listing if listing is not None else ([], set())
     seen = set()
     for p in paths:
         if not p.exists():
             raise FileNotFoundError(f"path not found: {p}")
+        outside_git = listing is None or (not p.resolve().is_relative_to(top)
+                                           and not has_git_marker(p if p.is_dir() else p.parent))
         if p.is_file():
-            listed = git_names(p.parent, "ls-files", "-z", "--cached", "--", p.name)
-            cand = [(p, listed is None or bool(listed))]
+            cand = [(p, outside_git or rel_to(top, p) in tracked)]
         else:
-            listing = git_file_set(p)
-            if listing is None:
+            if outside_git:
                 cand = []
                 for dirpath, dirnames, filenames in os.walk(p):
                     dirnames[:] = sorted(d for d in dirnames if d not in SKIP_DIRS)
                     cand.extend((Path(dirpath) / f, True) for f in sorted(filenames))
             else:
-                names, tracked = listing
-                if not names:
+                directory = p.resolve()
+                cand = [(top / n, n in tracked) for n in names if (top / n).is_relative_to(directory)]
+                if not cand:
                     raise RuntimeError(f"no files to lint in directory: {p} (empty, ignored, or excluded by git); "
                                        "name a file explicitly to lint it as given")
-                cand = [(p / n, n in tracked) for n in names]
         for f, is_tracked in cand:
             rel = rel_to(root, f)
             if rel in seen:
@@ -660,9 +670,10 @@ def main(argv: list[str] | None = None) -> int:
         print("patlint: --today must be YYYY-MM-DD", file=sys.stderr)
         return 2
     try:
-        root = (args.root or git_toplevel(Path.cwd()) or Path.cwd()).resolve()
+        top = None if proof_mode and args.root else git_toplevel(args.root or Path.cwd())
+        root = (args.root or top or Path.cwd()).resolve()
         if args.rev:
-            root = git_toplevel(root) or root
+            root = top or root
     except (OSError, RuntimeError) as e:
         print(f"patlint: {e}", file=sys.stderr)
         return 2
@@ -683,7 +694,7 @@ def main(argv: list[str] | None = None) -> int:
     report = {"violations": [], "allowed": [], "expired": [], "invalid_exceptions": [], "stale_exceptions": []}
     scanned, tracked = [], set()  # tracked: scanned files git tracks (all of them outside git)
     try:
-        files = walk_rev(args.paths, root, args.rev) if args.rev else walk(args.paths, root)
+        files = walk_rev(args.paths, root, args.rev) if args.rev else walk(args.paths, root, top)
         for rel, read, is_tracked in files:
             if not any(applies(r, rel) for r in rules):
                 continue

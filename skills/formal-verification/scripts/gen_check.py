@@ -419,7 +419,7 @@ def attempt(mod, check, value, repo, limits):
             except (Timeout, KeyboardInterrupt):
                 raise  # a time limit or Ctrl-C is not a counterexample
             except BaseException as error:
-                return 'fail', f"{type(error).__name__}: {error}", called
+                return 'fail', error, called  # Record the failure before invoking user __str__.
             return ('fail', 'returned False', called) if result is False else ('pass', None, called)
         finally:
             sys.setprofile(previous)
@@ -431,6 +431,14 @@ def attempt(mod, check, value, repo, limits):
         finally:
             limits.started = None
             limits.arm()
+
+
+def failure_detail(detail, *, formatted=False):
+    """A JSON-safe diagnostic is available before interruptible exception formatting."""
+    if isinstance(detail, BaseException):
+        message = str(detail) if formatted else '<exception message not formatted>'
+        return f"{type(detail).__name__}: {message}"
+    return detail
 
 
 def reduce_failure(mod, gen, check, value, detail, repo, limits, result):
@@ -452,9 +460,13 @@ def reduce_failure(mod, gen, check, value, detail, repo, limits, result):
                     status, why, _ = attempt(mod, check, candidate, repo, limits)
                     checking = None
                     if status == 'fail':
-                        value, detail = candidate, why
+                        value, detail = candidate, failure_detail(why)
                         result.update(counterexample=key, detail=detail, shrink_attempts=attempts)
+                        if isinstance(why, BaseException):
+                            result['output_incomplete'] = 'exception formatting not completed'
                 if status == 'fail':
+                    result['detail'] = detail = failure_detail(why, formatted=True)
+                    result.pop('output_incomplete', None)
                     break
             else:
                 break
@@ -490,9 +502,10 @@ def run_property(mod, name, gen, check, rng, count, repo, limits, result, called
                 result['accepted'] += 1
                 called.update(ran)
                 if status == 'fail':
-                    result.update(result='fail', counterexample=fallback, detail=detail,
-                                  output_incomplete='counterexample formatting not completed')
+                    result.update(result='fail', counterexample=fallback, detail=failure_detail(detail),
+                                  output_incomplete='failure formatting not completed')
             if status == 'fail':
+                result['detail'] = detail = failure_detail(detail, formatted=True)
                 result['counterexample'] = repr(value)
                 result.pop('output_incomplete', None)
                 value, detail, attempts, stopped, checking = reduce_failure(mod, gen, check, value, detail, repo, limits, result)

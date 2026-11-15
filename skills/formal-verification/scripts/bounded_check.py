@@ -261,6 +261,12 @@ def search_result() -> dict:
             "hit_state_bound": False, "violation": None, "stopped": None, "detail": None}
 
 
+def exception_detail(error, where, *, formatted=False):
+    """Keep error identity without running user __str__ while recording a finding."""
+    message = str(error) if formatted else '<exception message not formatted>'
+    return f"{where} raised {type(error).__name__}: {message}"
+
+
 def explore(mod, actions_fn, invariants: dict, depth: int, max_states: int, deadlock: bool, limits: Limits,
             out: dict | None = None) -> dict:
     """Search breadth-first; the run limit returns result "timeout" with the states seen so far."""
@@ -291,6 +297,11 @@ def search(mod, actions_fn, invariants: dict, depth: int, max_states: int, deadl
     limited = limits.active and bool(limits.run_seconds or limits.call_seconds)
     parent: dict = {}  # key -> (parent_key, action, depth)
     queue: deque = deque()
+
+    def state_fallback(s, act, d):
+        scalar = type(s) in (type(None), bool, int, float, str)
+        return {"step": d, "action": act, "state": s if scalar else None, "describe": None,
+                **({} if scalar else {"state_incomplete": True})}
 
     def trace(k, steps) -> None:
         keys = []
@@ -332,15 +343,13 @@ def search(mod, actions_fn, invariants: dict, depth: int, max_states: int, deadl
     def check(k, s):
         fallback = None
         for name, fn in invariants.items():
-            found = None
+            found = error = None
             if limited:
                 # Only built-in state metadata is recorded while alarms are deferred.
                 # Preparing the fallback here also keeps custom key/hash work interruptible.
                 if fallback is None:
                     pk, act, d = parent[k]
-                    scalar = type(s) in (type(None), bool, int, float, str)
-                    fallback = {"step": d, "action": act, "state": s if scalar else None, "describe": None,
-                                **({} if scalar else {"state_incomplete": True})}
+                    fallback = state_fallback(s, act, d)
                 limits.recording += 1
             try:
                 try:
@@ -351,7 +360,8 @@ def search(mod, actions_fn, invariants: dict, depth: int, max_states: int, deadl
                     found = bad(k, "error", name, str(e), timeout=True, record_only=True, fallback=fallback)
                 except Exception as e:  # noqa: BLE001 - an invariant that crashes is a model bug; show where
                     # Store the error identity before invoking any user-defined exception formatting.
-                    found = bad(k, "error", name, record_only=True, fallback=fallback)
+                    found = bad(k, "error", name, exception_detail(e, "invariant"),
+                                record_only=True, fallback=fallback)
                     error = e
                 else:
                     if not ok:
@@ -363,8 +373,8 @@ def search(mod, actions_fn, invariants: dict, depth: int, max_states: int, deadl
                         pending, limits.pending = limits.pending, None
                         raise pending
             if found is not None:
-                if found["result"] == "error" and found["detail"] is None:
-                    detail = f"invariant raised {type(error).__name__}: {error}"
+                if error is not None:
+                    detail = exception_detail(error, "invariant", formatted=True)
                     found["detail"] = found["violation"]["detail"] = detail
                 trace(k, out["violation"]["trace"])
                 return found
@@ -388,18 +398,37 @@ def search(mod, actions_fn, invariants: dict, depth: int, max_states: int, deadl
         if limited: limits.check_run()
         k = queue.popleft()
         s = states[k]
-        d = parent[k][2]
+        pk, act, d = parent[k]
         if d >= depth:
             out["hit_depth_bound"] = True
             continue
+        found = error = None
+        if limited:
+            limits.recording += 1
         try:
-            succ = limits.call(lambda: list(actions_fn(s)), coalesce=True) if limited else list(actions_fn(s))
-        except Timeout as e:
-            if e.scope == "run":
-                raise
-            return bad(k, "error", "actions", str(e), timeout=True)
-        except Exception as e:  # noqa: BLE001
-            return bad(k, "error", "actions", f"actions() raised {type(e).__name__}: {e}")
+            try:
+                succ = limits.call(lambda: list(actions_fn(s)), coalesce=True) if limited else list(actions_fn(s))
+            except Timeout as e:
+                if e.scope == "run":
+                    raise
+                found = bad(k, "error", "actions", str(e), timeout=True,
+                            record_only=True, fallback=state_fallback(s, act, d))
+            except Exception as e:  # noqa: BLE001
+                found = bad(k, "error", "actions", exception_detail(e, "actions()"),
+                            record_only=True, fallback=state_fallback(s, act, d))
+                error = e
+        finally:
+            if limited:
+                limits.recording -= 1
+                if not limits.recording and limits.pending is not None:
+                    pending, limits.pending = limits.pending, None
+                    raise pending
+        if found is not None:
+            if error is not None:
+                detail = exception_detail(error, "actions()", formatted=True)
+                found["detail"] = found["violation"]["detail"] = detail
+            trace(k, out["violation"]["trace"])
+            return found
         if not succ and deadlock:
             if limited: limits.check_run()
             is_terminal = callable(terminal) and terminal(s)

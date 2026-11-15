@@ -1,5 +1,37 @@
 # Curator review fixes
 
+## Authorized fixes for HEAD 40dae9c, 2026-11-15
+
+Base and unchanged HEAD: `40dae9c67a67034dd2667ecc356b81f18f38b2ec`, branch `curator/2026-11-09`. This pass fixes only the four authorized findings from `reviews/round6-second/` (astra ultra / opus max). No commit or push was performed. The 90 s run / 10 s call defaults remain unchanged.
+
+Before any production edit, `python3 -B scripts/run_examples.py --review-regressions OUT` passed all **34 existing groups** and failed all **4 new groups**: [summary](head-40dae9c-before/summary.json), [log](head-40dae9c-before/run.log), [HEAD hashes and empty production diff](head-40dae9c-before/source-state.json). The final runner also reproduces all four failures against byte-identical HEAD production sources: [base replay](head-40dae9c-base-replay/summary.json), [source record](head-40dae9c-base-replay/source-state.json).
+
+After the fixes, the same entry point passes **38 groups / 71 assertions**: [summary](head-40dae9c-after/summary.json), [log](head-40dae9c-after/run.log), [final source hashes and defaults](head-40dae9c-after/source-state.json). Use a fresh output directory, for example `python3 -B scripts/run_examples.py --review-regressions /tmp/poteto-40dae9c-results`. All four new groups are also wired into their corresponding full example paths.
+
+Linux box (2026-11-15, Asia/Taipei): production sources were byte-identical to the Mac worktree (SHA-256: gen_check `a2a7e55e60e2d61d07b56bc110dc5d54ba3bf709ead0045d4da7c79b3531f76d`, bounded_check `b88f2767a3e9b7fdb2e0dee1ad28ce2f23e80b3e2c5101bf546884d4346ba35b`, scan_repo `505dca77ba9e1ac0a47a391d093fc3d658497650f81f4e6a52a02f92950485b1`, patlint `fc0147f2d5ef49010d1542b6fe16bdc9a16111c9f7a172d0bfc19479dd9a5670`, run_examples `0eb307a2b9b6fbfb322ecb958d60c6c9331d1be3a8712aa24e1c5397c6346dd5`). `python3 -B scripts/run_examples.py --review-regressions` passed **38/38** ([log](head-40dae9c-linux/regressions-run.log), [summary](head-40dae9c-linux/regressions/summary.json)). `./scripts/verify.sh --run-examples` passed **9/9 twice**; the two raw logs differ only by the fresh scratch directory name ([first](head-40dae9c-linux/verify-box.log) sha256 `03f3cccac8301f49597cb43d064f46064aad3758694e7f981e06707549d6e3ef`, [second](head-40dae9c-linux/verify-box2.log) sha256 `74ac14a9856c1629727342396756d66c01a28222ba588f951bb47fc0eba26cb0`, [hashes](head-40dae9c-linux/linux-hashes.txt)). Assertion counts: create-verification-skill 68, maintain-verification-skill 51, correct 48, feedback-to-architecture 9, architect 2, sharpen 3, formal-verification 102, curator 71. Mac sandbox verification remained 7 PASS / 2 FAIL (loopback bind and `/dev/fd/63`). Defaults stayed 90 s / 10 s.
+
+| Finding / regression | Root cause, reproduction, fix and coverage |
+|---|---|
+| 1 / `review_exception_format_timeout` | Formatting user exceptions before recording their identity lost gen's initial failure/coverage (exit 3), a confirmed smaller shrink input, and bounded actions/mutant errors (exit 3 with no violation); invariant errors could retain exit 2 but lose their diagnostic. Both checkers now save safe diagnostics and confirmed results before interruptible formatting. Manual clocks cover initial/shrink/invariant/actions/mutant paths, and infinite `__str__` signal probes retain gen exit 1 / bounded exit 2. |
+| 2 / `review_exception_path_provenance` | A try-body assignment that never executed leaked into its handler, reporting phantom `GET /var/www` and making a correct `/api/items` feature map exit 1. Control-flow contexts now revoke unproven exceptional/optional bindings, preserving definite same-arm, try/else and finally assignments. The real handler and drift check pass; loop/with/lazy-expression negatives and the existing if/match/short-circuit tests remain covered. |
+| 3 / `review_registered_boolean_actions` | `action="boolean"` was treated as a token-consuming string despite a preceding registration of `argparse.BooleanOptionalAction`; actual `--json list` parsing succeeded while drift swallowed `list` and exited 1. Static per-parser registration maps resolve official action semantics, including import aliases. The regression omits `nargs=0`, keeps default/store value options unchanged, and checks parser/order isolation plus clean drift. |
+| 4 / `review_git_inherited_environment` | Inherited `GIT_DIR` changed subdirectory git semantics: absolute values made tracked files untracked and bypassed root ignores; relative `.git` caused exit 2. Git now ignores inherited `GIT_DIR`/`GIT_WORK_TREE`, resolves the selected root once, and batches root-relative index queries for file/directory arguments. Ordinary and linked worktrees cover absolute/relative variables and roots, ignores, baseline eligibility, nested indexes and external non-git fallback. Existing locale and fail-closed cases still pass. |
+
+The [assertion audit](head-40dae9c-after/assertion-audit.json) confirms **all 238 original `ensure` assertion ASTs are unchanged**, with four added. The old git-failure fixture now corrupts its actual `.git` pointer instead of relying on inherited `GIT_DIR`; every original failure/baseline assertion is retained. During integration, an external non-git-directory fallback regression was compared with HEAD and corrected before acceptance.
+
+Defaults and performance: CHANGELOG now labels the new limits **incompatible with main**, and the formal skill records measured overhead plus `--timeout 0 --call-timeout 0` and `CHECK_TIMEOUT=0` semantics. `CHECK_TIMEOUT=0` disables the run limit only after import; it leaves the call limit enabled. Repeating the existing benchmark (`python3 -B logs/review-fixes/round6-second-performance/benchmark.py`, Python 3.11.14, 100,000 states / three invariants, three repetitions) gives these observational medians:
+
+| Source | Main, no limit API | Default limits | Both limits disabled |
+|---|---:|---:|---:|
+| Before production edits | 0.129 s | 0.703 s | 0.140 s |
+| Final production source | 0.135 s | 0.674 s | 0.144 s |
+
+[Before](head-40dae9c-performance/before.json) / [after](head-40dae9c-performance/after.json) include individual timings and source hashes. Final default-limit overhead is **5.00× main** on this cheap-call workload; disabled overhead is **1.07×**. No timing threshold or default limit was changed.
+
+Full `bash scripts/verify.sh --run-examples` on an isolated copy: **7 PASS / 2 FAIL, exit 1** ([gate](head-40dae9c-verification/verify.log), [example summary](head-40dae9c-verification/summary.json), [matching production/runner hashes](head-40dae9c-verification/source-state.json)). Formal verification passes **102 assertions**, correct passes **48**; the new scanner checks pass before maintain's launch. Help, syntax, docs/mapping, installer isolation and the fresh example application's seven tests/lint pass. Create/maintain cannot bind the loopback port, and curator is denied `/dev/fd/63`; [exact environment errors](head-40dae9c-verification/environment.json) are retained. Example regeneration and the resulting example-summary gate remain failing in this sandbox; this is not a full-suite pass. No out-of-sandbox or Linux acceptance was performed for this pass.
+
+Only evidence files remain in the new log directories. Isolated copies and fixture repositories were removed; no nested `.git` or temporary fixture directory was added under `logs/`. Other review findings remain in Follow-ups below.
+
 ## Round 6, second fix, 2026-11-15
 
 Base and unchanged HEAD: `31c8c5a20f3caf447da276571ea5d9aca4ddf8eb`, branch `curator/2026-11-09`. This addresses only A1–A3 and B1–B4 from the second round-6 review. Every finding was reproduced before editing its production code. No commit or push was performed.
@@ -82,6 +114,16 @@ Base: `8f599d5873ceb53b811db6c62487eb0276cd0a6c`, branch `curator/2026-11-09`. A
 - Isolated copies and fixture repositories were removed. Detailed output stays in system temporary space; no nested Git repository or temporary fixture directory remains under `logs/`.
 
 ## Follow-ups (retained through round 6)
+
+The review of `40dae9c67a67034dd2667ecc356b81f18f38b2ec` in `reviews/round6-second/` has a separate four-fix authorization. Its M2 default-limit decision is settled for this pass: keep 90 s / 10 s unchanged and document incompatibility, measured overhead and opt-outs. The following remaining findings are recorded only, not implemented:
+
+- Opus L1: proof-only `--test` still depends on git discovery; a checkout without git or with dubious ownership still exits 2. Better fallback/error guidance is deferred.
+- Opus L3: a mutant model error's exit 2 still takes precedence over a main-search violation, including an expected violation. Changing that priority or its documentation is deferred.
+- Opus L4: WSGI `environ["PATH_INFO"]`, Tornado `self.request.path`, Starlette `request.url.path` and dictionary route tables remain outside the recognized request-path forms.
+- Opus L7: gen_check catches Ctrl-C and returns exit 3 instead of terminating by SIGINT, which may leave an outer shell loop running.
+- Opus L8: patlint help still omits some exit-2 / deferred-baseline exit-1 cases; a broader drift-check upgrade warning remains deferred.
+- Opus N4/N5: proposal wording still uses the old module-budget name, and duplicated Limits implementations / scanner-analysis complexity remain maintenance follow-ups. Existing L5/L6 and N1/N2/N3 findings are retained in the entries below.
+- Scanner registration analysis remains static: arbitrary runtime registrations and rebinding imported action aliases are not proven by this fix.
 
 Second-fix status: B3 resolves the split/partition alias item below. B2 resolves the module-budget documentation premise and the empty-directory CHANGELOG notice; earlier references to a `TIMEOUT` migration describe branch history, not a main API. The remaining aspects of these historical entries stay deferred.
 

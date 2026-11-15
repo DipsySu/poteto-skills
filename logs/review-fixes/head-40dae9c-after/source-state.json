@@ -1,0 +1,21 @@
+{
+  "head": "40dae9c67a67034dd2667ecc356b81f18f38b2ec",
+  "branch": "curator/2026-11-09",
+  "sources": {
+    "skills/formal-verification/scripts/gen_check.py": "a2a7e55e60e2d61d07b56bc110dc5d54ba3bf709ead0045d4da7c79b3531f76d",
+    "skills/formal-verification/scripts/bounded_check.py": "b88f2767a3e9b7fdb2e0dee1ad28ce2f23e80b3e2c5101bf546884d4346ba35b",
+    "skills/create-verification-skill/scripts/scan_repo.py": "505dca77ba9e1ac0a47a391d093fc3d658497650f81f4e6a52a02f92950485b1",
+    "skills/correct/scripts/patlint.py": "fc0147f2d5ef49010d1542b6fe16bdc9a16111c9f7a172d0bfc19479dd9a5670",
+    "scripts/run_examples.py": "0eb307a2b9b6fbfb322ecb958d60c6c9331d1be3a8712aa24e1c5397c6346dd5"
+  },
+  "defaults": {
+    "skills/formal-verification/scripts/gen_check.py": {
+      "DEFAULT_TIMEOUT": 90.0,
+      "DEFAULT_CALL_TIMEOUT": 10.0
+    },
+    "skills/formal-verification/scripts/bounded_check.py": {
+      "DEFAULT_TIMEOUT": 90.0,
+      "DEFAULT_CALL_TIMEOUT": 10.0
+    }
+  }
+}

@@ -21,9 +21,11 @@ Test files and agent dirs (.claude, .cursor, ...) are not scanned for routes or 
 A path under a filesystem root (/home, /tmp, /Users, ...) is a route only where the source declares it: a router
 call, decorator, explicitly named route table, "GET /x" string, or comparison with a recognized request path.
 Bare names need a preceding request-path assignment in the same function; path segments need a split of that path.
+Assignments that may not have executed on exceptional paths or after optional suites do not prove a path source.
 Unconfirmed containers/segments retain filesystem-prefix filtering. Go receiver names are restricted to common
 router conventions (r, router, mux, app, engine, group, api, server; http for Handle/HandleFunc). Each CLI option records takes_value: false for argparse's store_true,
 store_false, store_const, append_const, count, help, version, and BooleanOptionalAction, and for click flags.
+Preceding register("action", alias, argparse_action) calls on the same parser preserve those action semantics.
 """
 from __future__ import annotations
 
@@ -301,7 +303,7 @@ def _binding_position(node, end=False):
 
 
 def _if_branches(node, fn):
-    """Cached conditional arms and evaluated short-circuit prefixes."""
+    """Cached control-flow arms and evaluated short-circuit prefixes."""
     if node is fn:
         return {}
     if not hasattr(node, "_branch_arms"):
@@ -338,6 +340,22 @@ def _if_branches(node, fn):
                 branches.update(_condition_branches(parent.guard, True))
             else:
                 branches.pop(parent._parent)
+        elif isinstance(parent, (ast.Try, getattr(ast, "TryStar", ast.Try))):
+            if node in parent.body:
+                branches[parent] = "body"
+            elif node in parent.handlers:
+                branches[parent] = node
+            elif node in parent.orelse:
+                branches[parent] = "else"
+            elif node in parent.finalbody:
+                branches[parent] = "finally"
+        elif isinstance(parent, (ast.For, ast.AsyncFor, ast.While, ast.With, ast.AsyncWith)):
+            if node in parent.body:
+                branches[parent] = "body"
+            elif node in getattr(parent, "orelse", []):
+                branches[parent] = "else"
+        elif isinstance(parent, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
+            branches[parent] = "body"
         node._branch_arms = branches
     return node._branch_arms
 
@@ -350,7 +368,9 @@ def _binding_index(fn):
 
     def record(at, pairs):
         end = _binding_position(at, end=True)
-        assigned_in = _if_branches(at, fn)
+        # Reaching code after a finally suite proves it completed. Other try suites may
+        # have been interrupted before this binding, even when their source precedes it.
+        assigned_in = {branch: arm for branch, arm in _if_branches(at, fn).items() if arm != "finally"}
         for name, value in pairs:
             bindings.setdefault(name, []).append((end, value, assigned_in))
 
@@ -412,10 +432,27 @@ def _assigned_value(node):
     # Stable ordering also preserves left-to-right binding of repeated names in one unpacking assignment.
     for index in range(end - 1, -1, -1):
         _, value, assigned_in = bindings[index]
-        if any((branches.get(branch, arm) < arm if isinstance(branch, ast.BoolOp)
-                else branches.get(branch, arm) != arm) for branch, arm in assigned_in.items()):
-            continue  # This binding is in a mutually exclusive arm.
-        return value if all(branch in branches for branch in assigned_in) else None
+        definite = True
+        for branch, arm in assigned_in.items():
+            current = branches.get(branch)
+            if isinstance(branch, (ast.Try, getattr(ast, "TryStar", ast.Try))):
+                if arm == "body":
+                    # else proves the try body completed; a handler/finally/join does not.
+                    definite &= current in ("body", "else")
+                elif (current is not None and current != "finally" and current != arm
+                      and not isinstance(branch, getattr(ast, "TryStar", ()))):
+                    break  # Separate handlers and else are mutually exclusive.
+                else:
+                    definite &= current == arm
+            elif isinstance(branch, (ast.For, ast.AsyncFor, ast.While)):
+                # A loop's else suite can follow zero iterations or an interrupted body.
+                definite &= current == arm
+            elif current is not None and (current < arm if isinstance(branch, ast.BoolOp) else current != arm):
+                break  # This binding is in a mutually exclusive arm.
+            else:
+                definite &= current is not None
+        else:
+            return value if definite else None
     return None
 
 
@@ -485,7 +522,46 @@ def _compares_path(node) -> bool:
     return False
 
 
-def _takes_value(keywords: list[ast.keyword], default, names: list[str]) -> bool:
+def _registered_argparse_actions(tree):
+    """Resolve preceding parser.register('action', alias, argparse_action) calls without running repo code."""
+    imports, registrations, options = {}, {}, {}
+    nodes = [node for node in ast.walk(tree) if isinstance(node, (ast.Import, ast.ImportFrom, ast.Call))]
+    if not any(isinstance(node, ast.Call) and _call_name(node) == "register" for node in nodes):
+        return options
+    # Obtain the implementation classes from argparse's own built-in action registry, rather
+    # than assuming a user-chosen registration string is a built-in action/class name.
+    builtin = argparse.ArgumentParser(add_help=False)
+    no_value_classes = {builtin._registry_get("action", name).__name__ for name in NO_VALUE_ACTIONS
+                        if builtin._registry_get("action", name) is not None}
+    no_value_classes.add(argparse.BooleanOptionalAction.__name__)
+    no_value_classes = {"argparse." + name for name in no_value_classes}
+    for node in sorted(nodes, key=lambda n: (n.lineno, n.col_offset)):
+        scope = _function(node)
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                imports[scope, alias.asname or alias.name] = alias.name
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            for alias in node.names:
+                imports[scope, alias.asname or alias.name] = node.module + "." + alias.name
+        if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                and isinstance(node.func.value, ast.Name)):
+            continue
+        key = scope, node.func.value.id
+        if node.func.attr == "register" and len(node.args) >= 3 and _str(node.args[0]) == "action":
+            alias, action = _str(node.args[1]), node.args[2]
+            if not alias:
+                continue
+            base = action.value if isinstance(action, ast.Attribute) else action
+            imported = (imports.get((scope, base.id), imports.get((None, base.id), ""))
+                        if isinstance(base, ast.Name) else "")
+            qualified = imported + "." + action.attr if isinstance(action, ast.Attribute) else imported
+            registrations.setdefault(key, {})[alias] = qualified not in no_value_classes
+        elif node.func.attr == "add_argument":
+            options[node] = registrations.get(key, {}).copy()
+    return options
+
+
+def _takes_value(keywords: list[ast.keyword], default, names: list[str], registered=None) -> bool:
     """Whether an argparse or click option consumes the next token. argparse supplies the default of store_true and
     the other no-value actions, so read action= (or nargs=0) and click's is_flag=, count=, flag_value= and
     --on/--off names instead of the default. A custom action class is opaque: guess from a bool default."""
@@ -500,6 +576,8 @@ def _takes_value(keywords: list[ast.keyword], default, names: list[str]) -> bool
     if action is None:
         return True
     if isinstance(action, ast.Constant):
+        if registered is not None and action.value in registered:
+            return registered[action.value]
         return action.value not in NO_VALUE_ACTIONS  # store, append and extend take a value
     if (action.attr if isinstance(action, ast.Attribute) else getattr(action, "id", None)) in NO_VALUE_ACTIONS:
         return False  # argparse.BooleanOptionalAction
@@ -578,6 +656,7 @@ def analyze_python(rel: str, text: str) -> dict:
         info["notes"].append(f"{rel}: not parsed ({e.__class__.__name__})")
         return info
     _parents(tree)
+    registered_actions = _registered_argparse_actions(tree)
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             info["imports"].update(a.name for a in node.names)
@@ -651,7 +730,7 @@ def analyze_python(rel: str, text: str) -> dict:
                 dflt = next((_literal(k.value) for k in node.keywords if k.arg == "default"), None)
                 info["parser_options"].setdefault(node.func.value.id, []).append(
                     {"names": names, "default": dflt, "positional": not names[0].startswith("-"),
-                     "takes_value": _takes_value(node.keywords, dflt, names)})
+                     "takes_value": _takes_value(node.keywords, dflt, names, registered_actions.get(node))})
         # ports
         if name in ("HTTPServer", "ThreadingHTTPServer", "TCPServer", "ThreadingTCPServer", "make_server") and node.args:
             addr = _literal(node.args[0])
