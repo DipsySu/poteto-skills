@@ -1,0 +1,10 @@
+{
+  "head_unchanged": "40dae9c67a67034dd2667ecc356b81f18f38b2ec",
+  "index_unchanged": true,
+  "source_hashes_match_regression_run": true,
+  "nested_git_entries_under_logs": [],
+  "unexpected_entries_in_new_evidence_directories": [],
+  "new_evidence_bytes": 1454909,
+  "final_docs_check": "pass",
+  "diff_check": "pass"
+}

@@ -4,9 +4,9 @@
   "properties": {
     "round_trip": {
       "result": "pass",
-      "accepted": 96,
+      "accepted": 91,
       "generated": 100,
-      "rejected": 5,
+      "rejected": 10,
       "counterexample": null,
       "detail": null,
       "shrink_attempts": 0
@@ -20,5 +20,8 @@
     "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
     "todo/store.py:Store.list_all"
   ],
-  "missing_targets": []
+  "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": null
 }

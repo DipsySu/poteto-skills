@@ -1,0 +1,42 @@
+{
+  "review_deadline_order": {
+    "status": "fail",
+    "error": "AssertionError: bounded_check.py: simultaneous expiry uses the first absolute deadline (run=5, call=6, exit 3)"
+  },
+  "review_mutant_deadline": {
+    "status": "fail",
+    "error": "AssertionError: a timed-out mutant description retains its kill and starts no later search"
+  },
+  "review_mutant_json": {
+    "status": "fail",
+    "error": "AssertionError: mutant JSON preserves timeout, stop reason, detail, states and top-level incompleteness"
+  },
+  "review_mutant_errors": {
+    "status": "fail",
+    "error": "AssertionError: a crashing mutant reports model error exit 2, including before a later run timeout"
+  },
+  "review_sigint": {
+    "status": "fail",
+    "error": "AssertionError: SIGINT during shrinking preserves the best counterexample, accepted target calls and failure exit 1"
+  },
+  "review_fixture_limits": {
+    "status": "fail",
+    "error": "AssertionError: disk-using timeout fixtures use second-scale limits instead of subsecond scheduling assumptions"
+  },
+  "review_phantom_routes": {
+    "status": "fail",
+    "error": "AssertionError: filesystem, curl, args, folders and non-router Go calls create no phantom routes: {'path = self.translate_path(self.path)\\nif path.startswith(\"/var/www/\"): pass': [{'method': 'GET', 'path': '/var/www/<*>', 'source': 'server.py:5', 'how': 'startswith'}], 'cmd = [\"curl\",\"-X\",\"POST\",\"-o\",\"/tmp/out\",url]': [{'method': 'POST', 'path': '/tmp/out', 'source': 'server.py:4', 'how': 'route table'}], 'if args[0] == \"dev\": pass': [{'method': 'GET', 'path': '/dev', 'source': 'server.py:4', 'how': 'path segments'}], 'if tokens[0] == \"var\": pass': [{'method': 'GET', 'path': '/var', 'source': 'server.py:4', 'how': 'path segments'}], 'if folders == [\"tmp\", \"cache\"]: pass': [{'method': 'GET', 'path': '/tmp/cache', 'source': 'server.py:4', 'how': 'path segments'}], 'if path.startswith(\"/var/www/\"): pass': [{'method': 'GET', 'path': '/var/www/<*>', 'source': 'server.py:4', 'how': 'startswith'}], 'cross-function path': [{'method': 'GET', 'path': '/var/files', 'source': 'server.py:6', 'how': 'eq'}], 'kv.Put(\"/var/lib/data\", v)': [{'method': 'GET', 'path': '/Users', 'source': 'main.go:5', 'how': 'go router', 'health': False}, {'method': 'PUT', 'path': '/var/lib/data', 'source': 'main.go:3', 'how': 'go router', 'health': False}, {'method': 'PUT', 'path': '/var/routes', 'source': 'main.go:4', 'how': 'go router', 'health': False}]}"
+  },
+  "review_baseline_retry": {
+    "status": "fail",
+    "error": "AssertionError: failed first adoption leaves no rule key, preserves other rules and explains how to retry"
+  },
+  "review_git_warning": {
+    "status": "fail",
+    "error": "AssertionError: git failure retains disk fallback but warns on stderr: git unavailable"
+  },
+  "review_docs": {
+    "status": "fail",
+    "error": "AssertionError: changelog documents changed seed sequences, default limits and replay/timeout migration"
+  }
+}

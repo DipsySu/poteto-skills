@@ -1,0 +1,331 @@
+$ /Users/dipsy/Developer/poteto-skills-review/examples/build-todo-app.sh /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/todo-app
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/todo-app",
+  "head": "4242a5ae43587ea1ed392b15775e2e3e3acc2aa4",
+  "direct_write_commits": [
+    "570c1e91c25878c9550969a1ba4072a0e1790d27",
+    "dbd44008685859312aee6a60154fd0258c1c063b"
+  ],
+  "direct_write_fix": "2fd7988731eb03a000207e269b441daeb22d2a3e",
+  "status_bug_commits": [
+    "41967033e461ea9fc00af5a5bb985a7bcb6149e0",
+    "2c383ecc2ce27c62d73d049228c0b2542683a1b9"
+  ]
+}
+
+[exit 0; expected 0]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_confirmed_signal_boundary/confirmed_signal_driver.py /tmp/poteto-round6-base-nl285zkp/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_confirmed_signal_boundary/confirmed_gen_check.py initial --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/todo-app --examples 1 --json
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {
+    "broken": {
+      "result": "timeout",
+      "accepted": 0,
+      "generated": 1,
+      "rejected": 0,
+      "counterexample": null,
+      "detail": "stopped at the 90 s limit",
+      "shrink_attempts": 0,
+      "input": "42",
+      "timeout_scope": "run"
+    }
+  },
+  "called": [],
+  "missing_targets": [
+    "confirmed_target.py:checked"
+  ],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": "stopped at the 90 s limit in broken"
+}
+
+[exit 3; expected (1, 3)]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_confirmed_signal_boundary/confirmed_signal_driver.py /tmp/poteto-round6-base-nl285zkp/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_confirmed_signal_boundary/confirmed_gen_check.py shrink --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/todo-app --examples 1 --json
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {
+    "broken": {
+      "result": "fail",
+      "accepted": 1,
+      "generated": 1,
+      "rejected": 0,
+      "counterexample": "42",
+      "detail": "returned False",
+      "shrink_attempts": 1,
+      "timeout_scope": "run",
+      "timeout_phase": "shrink",
+      "input": "7",
+      "incomplete": "run timeout during shrink: stopped at the 90 s limit"
+    }
+  },
+  "called": [
+    "confirmed_target.py:checked"
+  ],
+  "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": "stopped at the 90 s limit in broken"
+}
+
+[exit 1; expected (1, 3)]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_confirmed_signal_boundary/confirmed_signal_driver.py /tmp/poteto-round6-base-nl285zkp/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_confirmed_signal_boundary/confirmed_gen_check.py shrink_handoff --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/todo-app --examples 1 --json
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {
+    "broken": {
+      "result": "fail",
+      "accepted": 1,
+      "generated": 1,
+      "rejected": 0,
+      "counterexample": "42",
+      "detail": "returned False",
+      "shrink_attempts": 0
+    }
+  },
+  "called": [
+    "confirmed_target.py:checked"
+  ],
+  "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": "stopped at the 90 s limit in broken"
+}
+
+[exit 1; expected (1, 3)]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_confirmed_signal_boundary/confirmed_signal_driver.py /tmp/poteto-round6-base-nl285zkp/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_confirmed_signal_boundary/confirmed_bounded_check.py initial --json
+{
+  "model": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_confirmed_signal_boundary/confirmed_bounded_check.py",
+  "depth": 25,
+  "max_states": 200000,
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "invariants": [
+    "broken"
+  ],
+  "ok": false,
+  "result": "timeout",
+  "states": 1,
+  "transitions": 0,
+  "max_depth": 0,
+  "hit_depth_bound": false,
+  "hit_state_bound": false,
+  "violation": null,
+  "stopped": "stopped at the 90 s limit",
+  "detail": "stopped at the 90 s limit",
+  "exhaustive": false,
+  "seconds": 0.0,
+  "incomplete": "stopped at the 90 s limit outside the search",
+  "not_run": [],
+  "mutants": {},
+  "expect_violation": null
+}
+
+[exit 3; expected (1, 3)]
+Traceback (most recent call last):
+  File "<stdin>", line 16, in <module>
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1505, in review_confirmed_signal_boundary
+    self.ensure(not failures, f'SIGALRM after a checked failure returns preserves exit 1, counterexample and coverage: {failures}')
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 43, in ensure
+    raise AssertionError(description)
+AssertionError: SIGALRM after a checked failure returns preserves exit 1, counterexample and coverage: [('gen_check.py', 'initial', 3, {'seed': 0, 'ok': False, 'properties': {'broken': {'result': 'timeout', 'accepted': 0, 'generated': 1, 'rejected': 0, 'counterexample': None, 'detail': 'stopped at the 90 s limit', 'shrink_attempts': 0, 'input': '42', 'timeout_scope': 'run'}}, 'called': [], 'missing_targets': ['confirmed_target.py:checked'], 'timeout': 90.0, 'call_timeout': 10.0, 'incomplete': 'stopped at the 90 s limit in broken'}), ('gen_check.py', 'shrink', 1, {'seed': 0, 'ok': False, 'properties': {'broken': {'result': 'fail', 'accepted': 1, 'generated': 1, 'rejected': 0, 'counterexample': '42', 'detail': 'returned False', 'shrink_attempts': 1, 'timeout_scope': 'run', 'timeout_phase': 'shrink', 'input': '7', 'incomplete': 'run timeout during shrink: stopped at the 90 s limit'}}, 'called': ['confirmed_target.py:checked'], 'missing_targets': [], 'timeout': 90.0, 'call_timeout': 10.0, 'incomplete': 'stopped at the 90 s limit in broken'}), ('gen_check.py', 'shrink_handoff', 1, {'seed': 0, 'ok': False, 'properties': {'broken': {'result': 'fail', 'accepted': 1, 'generated': 1, 'rejected': 0, 'counterexample': '42', 'detail': 'returned False', 'shrink_attempts': 0}}, 'called': ['confirmed_target.py:checked'], 'missing_targets': [], 'timeout': 90.0, 'call_timeout': 10.0, 'incomplete': 'stopped at the 90 s limit in broken'}), ('bounded_check.py', 'initial', 3, {'model': '/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_confirmed_signal_boundary/confirmed_bounded_check.py', 'depth': 25, 'max_states': 200000, 'timeout': 90.0, 'call_timeout': 10.0, 'invariants': ['broken'], 'ok': False, 'result': 'timeout', 'states': 1, 'transitions': 0, 'max_depth': 0, 'hit_depth_bound': False, 'hit_state_bound': False, 'violation': None, 'stopped': 'stopped at the 90 s limit', 'detail': 'stopped at the 90 s limit', 'exhaustive': False, 'seconds': 0.0, 'incomplete': 'stopped at the 90 s limit outside the search', 'not_run': [], 'mutants': {}, 'expect_violation': None})]
+Traceback (most recent call last):
+  File "<stdin>", line 16, in <module>
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 713, in review_match_case_paths
+    self.ensure(not failures, f'match cases keep exclusive bindings separate and revoke uncertain joins: {failures}')
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 43, in ensure
+    raise AssertionError(description)
+AssertionError: match cases keep exclusive bindings separate and revoke uncertain joins: [('path = filesystem\nmatch mode:\n    case "url":\n        path = self.path\n    case "disk":\n        if path.startswith("/var/www/"): pass', [('GET', '/var/www/<*>')], []), ('path = filesystem\nmatch mode:\n    case "url" if allowed:\n        path = self.path\n    case _:\n        if path.startswith("/var/www/"): pass', [('GET', '/var/www/<*>')], []), ('path = filesystem\nmatch mode:\n    case "url":\n        path = self.path\nif path.startswith("/var/www/"): pass', [('GET', '/var/www/<*>')], []), ('path = filesystem\nmatch mode:\n    case "url":\n        path = self.path\n    case "disk":\n        match detail:\n            case _:\n                if path.startswith("/var/www/"): pass', [('GET', '/var/www/<*>')], []), ('path = filesystem\nmatch mode:\n    case "url" if (path := self.path) and False: pass\n    case _:\n        if path.startswith("/var/www/"): pass', [('GET', '/var/www/<*>')], []), ('path = self.path\nmatch mode:\n    case "disk":\n        path = filesystem\n    case "url":\n        if path.startswith("/var/www/"): pass', [], []), ('path = self.path\nmatch mode:\n    case {"disk": path}: pass\n    case "url":\n        if path.startswith("/var/www/"): pass', [], []), ('path = self.path\nmatch mode:\n    case "disk" if allowed:\n        path = filesystem\n    case _:\n        if path.startswith("/var/www/"): pass', [], [])]
+locale=zh_CN.UTF-8 provider=real target=review-git-locale explicit_root=False exit=2
+patlint: git lookup failed; refusing filesystem fallback: git rev-parse --show-toplevel: 致命错误：不是 Git 仓库（或者任何父目录）：.git
+locale=zh_CN.UTF-8 provider=real target=review-git-locale explicit_root=True exit=2
+patlint: git lookup failed; refusing filesystem fallback: 致命错误：不是 Git 仓库（或者任何父目录）：.git
+locale=zh_CN.UTF-8 provider=real target=clean.py explicit_root=False exit=2
+patlint: git lookup failed; refusing filesystem fallback: git rev-parse --show-toplevel: 致命错误：不是 Git 仓库（或者任何父目录）：.git
+locale=zh_CN.UTF-8 provider=real target=clean.py explicit_root=True exit=2
+patlint: git lookup failed; refusing filesystem fallback: 致命错误：不是 Git 仓库（或者任何父目录）：.git
+locale=zh_CN.UTF-8 provider=translated target=review-git-locale explicit_root=False exit=2
+patlint: git lookup failed; refusing filesystem fallback: git rev-parse --show-toplevel: 致命错误：不是 Git 仓库（或者任何父目录）：.git
+locale=zh_CN.UTF-8 provider=translated target=review-git-locale explicit_root=True exit=2
+patlint: git lookup failed; refusing filesystem fallback: 致命错误：不是 Git 仓库（或者任何父目录）：.git
+locale=zh_CN.UTF-8 provider=translated target=clean.py explicit_root=False exit=2
+patlint: git lookup failed; refusing filesystem fallback: git rev-parse --show-toplevel: 致命错误：不是 Git 仓库（或者任何父目录）：.git
+locale=zh_CN.UTF-8 provider=translated target=clean.py explicit_root=True exit=2
+patlint: git lookup failed; refusing filesystem fallback: 致命错误：不是 Git 仓库（或者任何父目录）：.git
+locale=zh_CN.UTF-8 checkout exit=2
+patlint: git lookup failed; refusing filesystem fallback: 致命错误：不是 Git 仓库（或者任何父目录）：.git
+locale=zh_CN.UTF-8 checkout exit=2
+patlint: git lookup failed; refusing filesystem fallback: 致命错误：不是 Git 仓库（或者任何父目录）：.git
+Traceback (most recent call last):
+  File "<stdin>", line 16, in <module>
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 948, in review_git_locale
+    self.ensure(not failures,
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 43, in ensure
+    raise AssertionError(description)
+AssertionError: non-English git errors fall back quietly only outside checkouts, preserving baseline failures: [('real', 'review-git-locale', False, 2, 'patlint: git lookup failed; refusing filesystem fallback: git rev-parse --show-toplevel: 致命错误：不是 Git 仓库（或者任何父目录）：.git\n', {}), ('real', 'review-git-locale', True, 2, 'patlint: git lookup failed; refusing filesystem fallback: 致命错误：不是 Git 仓库（或者任何父目录）：.git\n', {}), ('real', 'clean.py', False, 2, 'patlint: git lookup failed; refusing filesystem fallback: git rev-parse --show-toplevel: 致命错误：不是 Git 仓库（或者任何父目录）：.git\n', {}), ('real', 'clean.py', True, 2, 'patlint: git lookup failed; refusing filesystem fallback: 致命错误：不是 Git 仓库（或者任何父目录）：.git\n', {}), ('translated', 'review-git-locale', False, 2, 'patlint: git lookup failed; refusing filesystem fallback: git rev-parse --show-toplevel: 致命错误：不是 Git 仓库（或者任何父目录）：.git\n', {}), ('translated', 'review-git-locale', True, 2, 'patlint: git lookup failed; refusing filesystem fallback: 致命错误：不是 Git 仓库（或者任何父目录）：.git\n', {}), ('translated', 'clean.py', False, 2, 'patlint: git lookup failed; refusing filesystem fallback: git rev-parse --show-toplevel: 致命错误：不是 Git 仓库（或者任何父目录）：.git\n', {}), ('translated', 'clean.py', True, 2, 'patlint: git lookup failed; refusing filesystem fallback: 致命错误：不是 Git 仓库（或者任何父目录）：.git\n', {})]
+$ /tmp/poteto-round6-base-nl285zkp/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_swallowed_alarm/swallowed_gen_check.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/todo-app --examples 1 --call-timeout 0.3 --timeout 1.5 --json
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {
+    "busy": {
+      "result": "timeout",
+      "accepted": 0,
+      "generated": 1,
+      "rejected": 0,
+      "counterexample": null,
+      "detail": "no return within 0.3 s",
+      "shrink_attempts": 0,
+      "input": "0",
+      "timeout_scope": "call"
+    }
+  },
+  "called": [],
+  "missing_targets": [
+    "todo/store.py:Store.add"
+  ],
+  "timeout": 1.5,
+  "call_timeout": 0.3,
+  "incomplete": "stopped at the 1.5 s limit in busy"
+}
+
+[exit 3; expected 3]
+gen_check.py swallowed-alarm busy loop: 3.068 s (natural duration 3 s)
+$ /tmp/poteto-round6-base-nl285zkp/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_swallowed_alarm/swallowed_bounded_check.py --call-timeout 0.3 --timeout 1.5 --json
+{
+  "model": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_swallowed_alarm/swallowed_bounded_check.py",
+  "depth": 25,
+  "max_states": 200000,
+  "timeout": 1.5,
+  "call_timeout": 0.3,
+  "invariants": [
+    "busy"
+  ],
+  "ok": false,
+  "result": "error",
+  "states": 1,
+  "transitions": 0,
+  "max_depth": 0,
+  "hit_depth_bound": false,
+  "hit_state_bound": false,
+  "violation": {
+    "kind": "error",
+    "name": "busy",
+    "detail": "no return within 0.3 s",
+    "trace": [
+      {
+        "step": 0,
+        "action": "init",
+        "state": 0,
+        "describe": null
+      }
+    ],
+    "timeout": true,
+    "trace_incomplete": "stopped at the 1.5 s limit"
+  },
+  "stopped": "stopped at the 1.5 s limit",
+  "detail": "no return within 0.3 s",
+  "exhaustive": false,
+  "seconds": 3.0,
+  "incomplete": "stopped at the 1.5 s limit outside the search",
+  "not_run": [],
+  "mutants": {},
+  "expect_violation": null
+}
+
+[exit 2; expected 2]
+bounded_check.py swallowed-alarm busy loop: 3.069 s (natural duration 3 s)
+Traceback (most recent call last):
+  File "<stdin>", line 16, in <module>
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1605, in review_swallowed_alarm
+    self.ensure(not failures, f'swallowed alarms retry once at short intervals only after expiry and interrupt busy loops: {failures}')
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 43, in ensure
+    raise AssertionError(description)
+AssertionError: swallowed alarms retry once at short intervals only after expiry and interrupt busy loops: [('gen_check.py', 'call', 'no short one-shot retry', [(0.0, 15.0, 0.0), (0.0, 5.0, 0.0), (6.0, 9.0, 0.0), (6.0, 0, 0.0)]), ('gen_check.py', 'call', 'swallowed alarm disabled the deadline'), ('gen_check.py', 'call', 'second swallowed alarm lost retry', [(0.0, 15.0, 0.0), (0.0, 5.0, 0.0), (6.0, 9.0, 0.0), (6.0, 0, 0.0)]), ('gen_check.py', 'call', 'repeated swallowing disabled the deadline'), ('gen_check.py', 'run', 'no short one-shot retry', [(0.0, 5.0, 0.0), (0.0, 5.0, 0.0), (6.0, 0, 0.0), (6.0, 0, 0.0)]), ('gen_check.py', 'run', 'swallowed alarm disabled the deadline'), ('gen_check.py', 'run', 'second swallowed alarm lost retry', [(0.0, 5.0, 0.0), (0.0, 5.0, 0.0), (6.0, 0, 0.0), (6.0, 0, 0.0)]), ('gen_check.py', 'run', 'repeated swallowing disabled the deadline'), ('bounded_check.py', 'call', 'no short one-shot retry', [(0.0, 15.0, 0.0), (0.0, 5.0, 0.0), (6.0, 9.0, 0.0), (6.0, 0, 0.0)]), ('bounded_check.py', 'call', 'swallowed alarm disabled the deadline'), ('bounded_check.py', 'call', 'second swallowed alarm lost retry', [(0.0, 15.0, 0.0), (0.0, 5.0, 0.0), (6.0, 9.0, 0.0), (6.0, 0, 0.0)]), ('bounded_check.py', 'call', 'repeated swallowing disabled the deadline'), ('bounded_check.py', 'run', 'no short one-shot retry', [(0.0, 5.0, 0.0), (0.0, 5.0, 0.0), (6.0, 0, 0.0), (6.0, 0, 0.0)]), ('bounded_check.py', 'run', 'swallowed alarm disabled the deadline'), ('bounded_check.py', 'run', 'second swallowed alarm lost retry', [(0.0, 5.0, 0.0), (0.0, 5.0, 0.0), (6.0, 0, 0.0), (6.0, 0, 0.0)]), ('bounded_check.py', 'run', 'repeated swallowing disabled the deadline'), ('gen_check.py', 'busy loop reached its natural end', 3.0678437910974026, {'seed': 0, 'ok': False, 'properties': {'busy': {'result': 'timeout', 'accepted': 0, 'generated': 1, 'rejected': 0, 'counterexample': None, 'detail': 'no return within 0.3 s', 'shrink_attempts': 0, 'input': '0', 'timeout_scope': 'call'}}, 'called': [], 'missing_targets': ['todo/store.py:Store.add'], 'timeout': 1.5, 'call_timeout': 0.3, 'incomplete': 'stopped at the 1.5 s limit in busy'}), ('bounded_check.py', 'busy loop reached its natural end', 3.069117516744882, {'model': '/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_swallowed_alarm/swallowed_bounded_check.py', 'depth': 25, 'max_states': 200000, 'timeout': 1.5, 'call_timeout': 0.3, 'invariants': ['busy'], 'ok': False, 'result': 'error', 'states': 1, 'transitions': 0, 'max_depth': 0, 'hit_depth_bound': False, 'hit_state_bound': False, 'violation': {'kind': 'error', 'name': 'busy', 'detail': 'no return within 0.3 s', 'trace': [{'step': 0, 'action': 'init', 'state': 0, 'describe': None}], 'timeout': True, 'trace_incomplete': 'stopped at the 1.5 s limit'}, 'stopped': 'stopped at the 1.5 s limit', 'detail': 'no return within 0.3 s', 'exhaustive': False, 'seconds': 3.0, 'incomplete': 'stopped at the 1.5 s limit outside the search', 'not_run': [], 'mutants': {}, 'expect_violation': None})]
+ROUTE WORKLOAD [{"prefix": "/r", "n": 20, "ast_edges": 4715, "compares_path": 20, "seconds": 0.009472}, {"prefix": "/r", "n": 60, "ast_edges": 30715, "compares_path": 60, "seconds": 0.071516}, {"prefix": "/r", "n": 120, "ast_edges": 111715, "compares_path": 120, "seconds": 0.264848}, {"prefix": "/var/r", "n": 20, "ast_edges": 4715, "compares_path": 20, "seconds": 0.010851}, {"prefix": "/var/r", "n": 60, "ast_edges": 30715, "compares_path": 60, "seconds": 0.066371}, {"prefix": "/var/r", "n": 120, "ast_edges": 111715, "compares_path": 120, "seconds": 0.257805}]
+Traceback (most recent call last):
+  File "<stdin>", line 16, in <module>
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 748, in review_route_workload
+    self.ensure(not failures, f'ordinary and filesystem-like routes retain exact inventory with near-linear AST work: {failures}')
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 43, in ensure
+    raise AssertionError(description)
+AssertionError: ordinary and filesystem-like routes retain exact inventory with near-linear AST work: [('sixfold route growth exceeds near-linear AST work', {'prefix': '/r', 'n': 20, 'ast_edges': 4715, 'compares_path': 20, 'seconds': 0.009472}, {'prefix': '/r', 'n': 120, 'ast_edges': 111715, 'compares_path': 120, 'seconds': 0.264848}), ('sixfold route growth exceeds near-linear AST work', {'prefix': '/var/r', 'n': 20, 'ast_edges': 4715, 'compares_path': 20, 'seconds': 0.010851}, {'prefix': '/var/r', 'n': 120, 'ast_edges': 111715, 'compares_path': 120, 'seconds': 0.257805})]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_driver.py /tmp/poteto-round6-base-nl285zkp/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py --call-timeout 0 --json
+{"code": 3, "stdout": "{\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 0.3,\n  \"call_timeout\": 0.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 0,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 0.3 s limit\",\n  \"detail\": \"stopped at the 0.3 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 0,\n  \"incomplete\": \"stopped at the 0.3 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+{"checker": "bounded_check.py", "case": "business fraction", "code": 3, "stdout": "{\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 0.3,\n  \"call_timeout\": 0.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 0,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 0.3 s limit\",\n  \"detail\": \"stopped at the 0.3 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 0,\n  \"incomplete\": \"stopped at the 0.3 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_driver.py /tmp/poteto-round6-base-nl285zkp/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py --call-timeout 0 --json
+{"code": 2, "stdout": "", "stderr": "bounded_check: MODEL.TIMEOUT must be a nonnegative finite number of seconds (0 disables the limit)\n", "events": []}
+
+[exit 0; expected 0]
+{"checker": "bounded_check.py", "case": "business None", "code": 2, "stdout": "", "stderr": "bounded_check: MODEL.TIMEOUT must be a nonnegative finite number of seconds (0 disables the limit)\n", "events": []}
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_driver.py /tmp/poteto-round6-base-nl285zkp/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py --call-timeout 0 --json
+{"code": 3, "stdout": "{\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 3.0,\n  \"call_timeout\": 0.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 0,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 3 s limit\",\n  \"detail\": \"stopped at the 3 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 0,\n  \"incomplete\": \"stopped at the 3 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+{"checker": "bounded_check.py", "case": "business ticks", "code": 3, "stdout": "{\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 3.0,\n  \"call_timeout\": 0.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 0,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 3 s limit\",\n  \"detail\": \"stopped at the 3 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 0,\n  \"incomplete\": \"stopped at the 3 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_driver.py /tmp/poteto-round6-base-nl285zkp/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py --call-timeout 0 --json
+{"code": 2, "stdout": "", "stderr": "bounded_check: MODEL.TIMEOUT must be a nonnegative finite number of seconds (0 disables the limit)\n", "events": []}
+
+[exit 0; expected 0]
+{"checker": "bounded_check.py", "case": "explicit module", "code": 2, "stdout": "", "stderr": "bounded_check: MODEL.TIMEOUT must be a nonnegative finite number of seconds (0 disables the limit)\n", "events": []}
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_driver.py /tmp/poteto-round6-base-nl285zkp/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py --call-timeout 0 --json
+{"code": 3, "stdout": "{\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 0.3,\n  \"call_timeout\": 0.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 0,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 0.3 s limit\",\n  \"detail\": \"stopped at the 0.3 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 0,\n  \"incomplete\": \"stopped at the 0.3 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+{"checker": "bounded_check.py", "case": "module disabled", "code": 3, "stdout": "{\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 0.3,\n  \"call_timeout\": 0.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"timeout\",\n  \"states\": 0,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": \"stopped at the 0.3 s limit\",\n  \"detail\": \"stopped at the 0.3 s limit\",\n  \"exhaustive\": false,\n  \"seconds\": 0,\n  \"incomplete\": \"stopped at the 0.3 s limit outside the search\",\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_driver.py /tmp/poteto-round6-base-nl285zkp/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py --timeout 2 --call-timeout 0 --json
+{"code": 0, "stdout": "{\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 2.0,\n  \"call_timeout\": 0.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": true,\n  \"result\": \"pass\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": null,\n  \"detail\": null,\n  \"exhaustive\": true,\n  \"seconds\": 0,\n  \"incomplete\": null,\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+{"checker": "bounded_check.py", "case": "CLI override", "code": 0, "stdout": "{\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 2.0,\n  \"call_timeout\": 0.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": true,\n  \"result\": \"pass\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": null,\n  \"detail\": null,\n  \"exhaustive\": true,\n  \"seconds\": 0,\n  \"incomplete\": null,\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["checked"]}
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_driver.py /tmp/poteto-round6-base-nl285zkp/skills/formal-verification/scripts/bounded_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py --timeout 0 --call-timeout 0 --json
+{"code": 0, "stdout": "{\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 0.0,\n  \"call_timeout\": 0.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": true,\n  \"result\": \"pass\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": null,\n  \"detail\": null,\n  \"exhaustive\": true,\n  \"seconds\": 0,\n  \"incomplete\": null,\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+{"checker": "bounded_check.py", "case": "CLI disabled", "code": 0, "stdout": "{\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 0.0,\n  \"call_timeout\": 0.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": true,\n  \"result\": \"pass\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"stopped\": null,\n  \"detail\": null,\n  \"exhaustive\": true,\n  \"seconds\": 0,\n  \"incomplete\": null,\n  \"not_run\": [],\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["checked"]}
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_driver.py /tmp/poteto-round6-base-nl285zkp/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/todo-app --examples 1 --call-timeout 0 --json
+{"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {},\n  \"called\": [],\n  \"missing_targets\": [\n    \"namespace_target.py:checked\"\n  ],\n  \"timeout\": 0.3,\n  \"call_timeout\": 0.0,\n  \"incomplete\": \"stopped at the 0.3 s limit while importing PROPS.py\"\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+{"checker": "gen_check.py", "case": "business fraction", "code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {},\n  \"called\": [],\n  \"missing_targets\": [\n    \"namespace_target.py:checked\"\n  ],\n  \"timeout\": 0.3,\n  \"call_timeout\": 0.0,\n  \"incomplete\": \"stopped at the 0.3 s limit while importing PROPS.py\"\n}\n", "stderr": "", "events": []}
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_driver.py /tmp/poteto-round6-base-nl285zkp/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/todo-app --examples 1 --call-timeout 0 --json
+{"code": 2, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {},\n  \"called\": [],\n  \"missing_targets\": [],\n  \"timeout\": null,\n  \"call_timeout\": 0.0,\n  \"incomplete\": null,\n  \"result\": \"error\",\n  \"error\": \"PropsError: TIMEOUT must be a nonnegative finite number of seconds (0 disables the limit)\"\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+{"checker": "gen_check.py", "case": "business None", "code": 2, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {},\n  \"called\": [],\n  \"missing_targets\": [],\n  \"timeout\": null,\n  \"call_timeout\": 0.0,\n  \"incomplete\": null,\n  \"result\": \"error\",\n  \"error\": \"PropsError: TIMEOUT must be a nonnegative finite number of seconds (0 disables the limit)\"\n}\n", "stderr": "", "events": []}
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_driver.py /tmp/poteto-round6-base-nl285zkp/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/todo-app --examples 1 --call-timeout 0 --json
+{"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {},\n  \"called\": [],\n  \"missing_targets\": [\n    \"namespace_target.py:checked\"\n  ],\n  \"timeout\": 3.0,\n  \"call_timeout\": 0.0,\n  \"incomplete\": \"stopped at the 3 s limit while importing PROPS.py\"\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+{"checker": "gen_check.py", "case": "business ticks", "code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {},\n  \"called\": [],\n  \"missing_targets\": [\n    \"namespace_target.py:checked\"\n  ],\n  \"timeout\": 3.0,\n  \"call_timeout\": 0.0,\n  \"incomplete\": \"stopped at the 3 s limit while importing PROPS.py\"\n}\n", "stderr": "", "events": []}
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_driver.py /tmp/poteto-round6-base-nl285zkp/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/todo-app --examples 1 --call-timeout 0 --json
+{"code": 2, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {},\n  \"called\": [],\n  \"missing_targets\": [],\n  \"timeout\": null,\n  \"call_timeout\": 0.0,\n  \"incomplete\": null,\n  \"result\": \"error\",\n  \"error\": \"PropsError: TIMEOUT must be a nonnegative finite number of seconds (0 disables the limit)\"\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+{"checker": "gen_check.py", "case": "explicit module", "code": 2, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {},\n  \"called\": [],\n  \"missing_targets\": [],\n  \"timeout\": null,\n  \"call_timeout\": 0.0,\n  \"incomplete\": null,\n  \"result\": \"error\",\n  \"error\": \"PropsError: TIMEOUT must be a nonnegative finite number of seconds (0 disables the limit)\"\n}\n", "stderr": "", "events": []}
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_driver.py /tmp/poteto-round6-base-nl285zkp/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/todo-app --examples 1 --call-timeout 0 --json
+{"code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {},\n  \"called\": [],\n  \"missing_targets\": [\n    \"namespace_target.py:checked\"\n  ],\n  \"timeout\": 0.3,\n  \"call_timeout\": 0.0,\n  \"incomplete\": \"stopped at the 0.3 s limit while importing PROPS.py\"\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+{"checker": "gen_check.py", "case": "module disabled", "code": 3, "stdout": "{\n  \"seed\": 0,\n  \"ok\": false,\n  \"properties\": {},\n  \"called\": [],\n  \"missing_targets\": [\n    \"namespace_target.py:checked\"\n  ],\n  \"timeout\": 0.3,\n  \"call_timeout\": 0.0,\n  \"incomplete\": \"stopped at the 0.3 s limit while importing PROPS.py\"\n}\n", "stderr": "", "events": []}
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_driver.py /tmp/poteto-round6-base-nl285zkp/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/todo-app --examples 1 --timeout 2 --call-timeout 0 --json
+{"code": 0, "stdout": "{\n  \"seed\": 0,\n  \"ok\": true,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"pass\",\n      \"accepted\": 1,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": null,\n      \"shrink_attempts\": 0\n    }\n  },\n  \"called\": [\n    \"namespace_target.py:checked\"\n  ],\n  \"missing_targets\": [],\n  \"timeout\": 2.0,\n  \"call_timeout\": 0.0,\n  \"incomplete\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+{"checker": "gen_check.py", "case": "CLI override", "code": 0, "stdout": "{\n  \"seed\": 0,\n  \"ok\": true,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"pass\",\n      \"accepted\": 1,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": null,\n      \"shrink_attempts\": 0\n    }\n  },\n  \"called\": [\n    \"namespace_target.py:checked\"\n  ],\n  \"missing_targets\": [],\n  \"timeout\": 2.0,\n  \"call_timeout\": 0.0,\n  \"incomplete\": null\n}\n", "stderr": "", "events": ["checked"]}
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_driver.py /tmp/poteto-round6-base-nl285zkp/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/todo-app --examples 1 --timeout 0 --call-timeout 0 --json
+{"code": 0, "stdout": "{\n  \"seed\": 0,\n  \"ok\": true,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"pass\",\n      \"accepted\": 1,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": null,\n      \"shrink_attempts\": 0\n    }\n  },\n  \"called\": [\n    \"namespace_target.py:checked\"\n  ],\n  \"missing_targets\": [],\n  \"timeout\": 0.0,\n  \"call_timeout\": 0.0,\n  \"incomplete\": null\n}\n", "stderr": "", "events": ["checked"]}
+
+[exit 0; expected 0]
+{"checker": "gen_check.py", "case": "CLI disabled", "code": 0, "stdout": "{\n  \"seed\": 0,\n  \"ok\": true,\n  \"properties\": {\n    \"ok\": {\n      \"result\": \"pass\",\n      \"accepted\": 1,\n      \"generated\": 1,\n      \"rejected\": 0,\n      \"counterexample\": null,\n      \"detail\": null,\n      \"shrink_attempts\": 0\n    }\n  },\n  \"called\": [\n    \"namespace_target.py:checked\"\n  ],\n  \"missing_targets\": [],\n  \"timeout\": 0.0,\n  \"call_timeout\": 0.0,\n  \"incomplete\": null\n}\n", "stderr": "", "events": ["checked"]}
+Traceback (most recent call last):
+  File "<stdin>", line 16, in <module>
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1878, in review_budget_namespace
+    self.ensure(not failures,
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 43, in ensure
+    raise AssertionError(description)
+AssertionError: business TIMEOUT is ignored (including None); CHECK_TIMEOUT and CLI budgets remain explicit: [('bounded_check.py', 'business fraction', {'code': 3, 'stdout': '{\n  "model": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py",\n  "depth": 25,\n  "max_states": 200000,\n  "timeout": 0.3,\n  "call_timeout": 0.0,\n  "invariants": [\n    "ok"\n  ],\n  "ok": false,\n  "result": "timeout",\n  "states": 0,\n  "transitions": 0,\n  "max_depth": 0,\n  "hit_depth_bound": false,\n  "hit_state_bound": false,\n  "violation": null,\n  "stopped": "stopped at the 0.3 s limit",\n  "detail": "stopped at the 0.3 s limit",\n  "exhaustive": false,\n  "seconds": 0,\n  "incomplete": "stopped at the 0.3 s limit outside the search",\n  "not_run": [],\n  "mutants": {},\n  "expect_violation": null\n}\n', 'stderr': '', 'events': []}), ('bounded_check.py', 'business None', {'code': 2, 'stdout': '', 'stderr': 'bounded_check: MODEL.TIMEOUT must be a nonnegative finite number of seconds (0 disables the limit)\n', 'events': []}), ('bounded_check.py', 'business ticks', {'code': 3, 'stdout': '{\n  "model": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py",\n  "depth": 25,\n  "max_states": 200000,\n  "timeout": 3.0,\n  "call_timeout": 0.0,\n  "invariants": [\n    "ok"\n  ],\n  "ok": false,\n  "result": "timeout",\n  "states": 0,\n  "transitions": 0,\n  "max_depth": 0,\n  "hit_depth_bound": false,\n  "hit_state_bound": false,\n  "violation": null,\n  "stopped": "stopped at the 3 s limit",\n  "detail": "stopped at the 3 s limit",\n  "exhaustive": false,\n  "seconds": 0,\n  "incomplete": "stopped at the 3 s limit outside the search",\n  "not_run": [],\n  "mutants": {},\n  "expect_violation": null\n}\n', 'stderr': '', 'events': []}), ('bounded_check.py', 'explicit module', {'code': 2, 'stdout': '', 'stderr': 'bounded_check: MODEL.TIMEOUT must be a nonnegative finite number of seconds (0 disables the limit)\n', 'events': []}), ('bounded_check.py', 'module disabled', {'code': 3, 'stdout': '{\n  "model": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-nodzqi11/review_budget_namespace/clock_fixture.py",\n  "depth": 25,\n  "max_states": 200000,\n  "timeout": 0.3,\n  "call_timeout": 0.0,\n  "invariants": [\n    "ok"\n  ],\n  "ok": false,\n  "result": "timeout",\n  "states": 0,\n  "transitions": 0,\n  "max_depth": 0,\n  "hit_depth_bound": false,\n  "hit_state_bound": false,\n  "violation": null,\n  "stopped": "stopped at the 0.3 s limit",\n  "detail": "stopped at the 0.3 s limit",\n  "exhaustive": false,\n  "seconds": 0,\n  "incomplete": "stopped at the 0.3 s limit outside the search",\n  "not_run": [],\n  "mutants": {},\n  "expect_violation": null\n}\n', 'stderr': '', 'events': []}), ('gen_check.py', 'business fraction', {'code': 3, 'stdout': '{\n  "seed": 0,\n  "ok": false,\n  "properties": {},\n  "called": [],\n  "missing_targets": [\n    "namespace_target.py:checked"\n  ],\n  "timeout": 0.3,\n  "call_timeout": 0.0,\n  "incomplete": "stopped at the 0.3 s limit while importing PROPS.py"\n}\n', 'stderr': '', 'events': []}), ('gen_check.py', 'business None', {'code': 2, 'stdout': '{\n  "seed": 0,\n  "ok": false,\n  "properties": {},\n  "called": [],\n  "missing_targets": [],\n  "timeout": null,\n  "call_timeout": 0.0,\n  "incomplete": null,\n  "result": "error",\n  "error": "PropsError: TIMEOUT must be a nonnegative finite number of seconds (0 disables the limit)"\n}\n', 'stderr': '', 'events': []}), ('gen_check.py', 'business ticks', {'code': 3, 'stdout': '{\n  "seed": 0,\n  "ok": false,\n  "properties": {},\n  "called": [],\n  "missing_targets": [\n    "namespace_target.py:checked"\n  ],\n  "timeout": 3.0,\n  "call_timeout": 0.0,\n  "incomplete": "stopped at the 3 s limit while importing PROPS.py"\n}\n', 'stderr': '', 'events': []}), ('gen_check.py', 'explicit module', {'code': 2, 'stdout': '{\n  "seed": 0,\n  "ok": false,\n  "properties": {},\n  "called": [],\n  "missing_targets": [],\n  "timeout": null,\n  "call_timeout": 0.0,\n  "incomplete": null,\n  "result": "error",\n  "error": "PropsError: TIMEOUT must be a nonnegative finite number of seconds (0 disables the limit)"\n}\n', 'stderr': '', 'events': []}), ('gen_check.py', 'module disabled', {'code': 3, 'stdout': '{\n  "seed": 0,\n  "ok": false,\n  "properties": {},\n  "called": [],\n  "missing_targets": [\n    "namespace_target.py:checked"\n  ],\n  "timeout": 0.3,\n  "call_timeout": 0.0,\n  "incomplete": "stopped at the 0.3 s limit while importing PROPS.py"\n}\n', 'stderr': '', 'events': []})]

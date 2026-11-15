@@ -4,7 +4,7 @@
   "write": "archive-cli",
   "read_back": [],
   "read_only": false,
-  "started": "2026-10-21T03:10:10Z",
+  "started": "2026-11-15T02:42:57Z",
   "argv": [
     "/usr/bin/python3",
     "-m",
@@ -12,7 +12,7 @@
     "rm",
     "2",
     "--data",
-    "/tmp/poteto-examples-4dfshnbm/verify-state-initial/initial/data"
+    "/tmp/poteto-examples-45v208z6/verify-state-initial/initial/data"
   ],
   "exit_code": 0,
   "stdout": "{\"id\": 2, \"status\": \"archived\", \"title\": \"verify CLI\"}\n",
@@ -27,5 +27,5 @@
   ],
   "execution_ok": true,
   "ok": true,
-  "elapsed_ms": 52.7
+  "elapsed_ms": 48.4
 }

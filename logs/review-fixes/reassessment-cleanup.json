@@ -1,0 +1,106 @@
+{
+  "retained_outside_logs": "/tmp/poteto-review-fixtures-awfkx4wf",
+  "moved_untracked_fixtures": [
+    {
+      "path": "logs/review-fixes/recheck-before/review_baseline_retry",
+      "files": 24,
+      "bytes": 26834
+    },
+    {
+      "path": "logs/review-fixes/recheck-before/review_deadline_order",
+      "files": 2,
+      "bytes": 1248
+    },
+    {
+      "path": "logs/review-fixes/recheck-before/review_docs",
+      "files": 0,
+      "bytes": 0
+    },
+    {
+      "path": "logs/review-fixes/recheck-before/review_fixture_limits",
+      "files": 0,
+      "bytes": 0
+    },
+    {
+      "path": "logs/review-fixes/recheck-before/review_git_warning",
+      "files": 1,
+      "bytes": 4
+    },
+    {
+      "path": "logs/review-fixes/recheck-before/review_mutant_deadline",
+      "files": 2,
+      "bytes": 1463
+    },
+    {
+      "path": "logs/review-fixes/recheck-before/review_mutant_errors",
+      "files": 2,
+      "bytes": 1343
+    },
+    {
+      "path": "logs/review-fixes/recheck-before/review_mutant_json",
+      "files": 2,
+      "bytes": 1355
+    },
+    {
+      "path": "logs/review-fixes/recheck-before/review_phantom_routes",
+      "files": 1,
+      "bytes": 116
+    },
+    {
+      "path": "logs/review-fixes/recheck-before/review_sigint",
+      "files": 2,
+      "bytes": 1251
+    },
+    {
+      "path": "logs/review-fixes/recheck-after/review_baseline_retry",
+      "files": 24,
+      "bytes": 26929
+    },
+    {
+      "path": "logs/review-fixes/recheck-after/review_deadline_order",
+      "files": 2,
+      "bytes": 1324
+    },
+    {
+      "path": "logs/review-fixes/recheck-after/review_docs",
+      "files": 0,
+      "bytes": 0
+    },
+    {
+      "path": "logs/review-fixes/recheck-after/review_fixture_limits",
+      "files": 0,
+      "bytes": 0
+    },
+    {
+      "path": "logs/review-fixes/recheck-after/review_git_warning",
+      "files": 1,
+      "bytes": 4
+    },
+    {
+      "path": "logs/review-fixes/recheck-after/review_mutant_deadline",
+      "files": 2,
+      "bytes": 1501
+    },
+    {
+      "path": "logs/review-fixes/recheck-after/review_mutant_errors",
+      "files": 2,
+      "bytes": 1370
+    },
+    {
+      "path": "logs/review-fixes/recheck-after/review_mutant_json",
+      "files": 2,
+      "bytes": 1381
+    },
+    {
+      "path": "logs/review-fixes/recheck-after/review_phantom_routes",
+      "files": 1,
+      "bytes": 116
+    },
+    {
+      "path": "logs/review-fixes/recheck-after/review_sigint",
+      "files": 2,
+      "bytes": 1312
+    }
+  ],
+  "nested_git_remaining": []
+}

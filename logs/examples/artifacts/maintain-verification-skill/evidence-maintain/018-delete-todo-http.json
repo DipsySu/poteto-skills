@@ -4,14 +4,14 @@
   "write": "archive-http",
   "read_back": [],
   "read_only": false,
-  "started": "2026-10-21T03:10:17Z",
+  "started": "2026-11-15T02:43:05Z",
   "method": "DELETE",
-  "url": "http://127.0.0.1:34795/todos/1",
+  "url": "http://127.0.0.1:38299/todos/1",
   "request_body": null,
   "status": 200,
   "response_headers": {
     "Server": "BaseHTTP/0.6 Python/3.13.5",
-    "Date": "Wed, 21 Oct 2026 03:10:17 GMT",
+    "Date": "Sun, 15 Nov 2026 02:43:05 GMT",
     "Content-Type": "application/json",
     "Content-Length": "55"
   },
@@ -30,5 +30,5 @@
   ],
   "execution_ok": true,
   "ok": true,
-  "elapsed_ms": 11.6
+  "elapsed_ms": 8.6
 }

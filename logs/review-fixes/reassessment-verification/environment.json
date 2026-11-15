@@ -1,0 +1,11 @@
+{
+  "loopback_bind": {
+    "ok": false,
+    "error": "PermissionError: [Errno 1] Operation not permitted"
+  },
+  "captured_process_substitution": {
+    "code": 0,
+    "stdout": "probe",
+    "stderr": "bash: line 1: /dev/fd/63: Operation not permitted\n"
+  }
+}

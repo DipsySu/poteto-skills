@@ -1,0 +1,54 @@
+{
+  "review_deadline_order": {
+    "status": "pass",
+    "assertions": 8
+  },
+  "review_mutant_deadline": {
+    "status": "pass",
+    "assertions": 5
+  },
+  "review_mutant_json": {
+    "status": "pass",
+    "assertions": 5
+  },
+  "review_mutant_errors": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_sigint": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_fixture_limits": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_phantom_routes": {
+    "status": "pass",
+    "assertions": 3
+  },
+  "review_baseline_retry": {
+    "status": "pass",
+    "assertions": 3
+  },
+  "review_git_warning": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_docs": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_import_budget": {
+    "status": "fail",
+    "error": "AssertionError: import time counts toward TIMEOUT, including equality; explicit overrides retain their budget: [('gen_check.py', 1, None, 3, {'code': 0, 'stdout': '{\\n  \"seed\": 0,\\n  \"ok\": true,\\n  \"properties\": {\\n    \"ok\": {\\n      \"result\": \"pass\",\\n      \"accepted\": 1,\\n      \"generated\": 1,\\n      \"rejected\": 0,\\n      \"counterexample\": null,\\n      \"detail\": null,\\n      \"shrink_attempts\": 0\\n    }\\n  },\\n  \"called\": [\\n    \"review_budget_target.py:checked\"\\n  ],\\n  \"missing_targets\": [],\\n  \"timeout\": 1.0,\\n  \"call_timeout\": 10.0,\\n  \"incomplete\": null\\n}\\n', 'stderr': '', 'events': ['checked']}), ('gen_check.py', 1.1, None, 3, {'code': 0, 'stdout': '{\\n  \"seed\": 0,\\n  \"ok\": true,\\n  \"properties\": {\\n    \"ok\": {\\n      \"result\": \"pass\",\\n      \"accepted\": 1,\\n      \"generated\": 1,\\n      \"rejected\": 0,\\n      \"counterexample\": null,\\n      \"detail\": null,\\n      \"shrink_attempts\": 0\\n    }\\n  },\\n  \"called\": [\\n    \"review_budget_target.py:checked\"\\n  ],\\n  \"missing_targets\": [],\\n  \"timeout\": 1.0,\\n  \"call_timeout\": 10.0,\\n  \"incomplete\": null\\n}\\n', 'stderr': '', 'events': ['checked']}), ('gen_check.py', 2.1, 2, 3, {'code': 0, 'stdout': '{\\n  \"seed\": 0,\\n  \"ok\": true,\\n  \"properties\": {\\n    \"ok\": {\\n      \"result\": \"pass\",\\n      \"accepted\": 1,\\n      \"generated\": 1,\\n      \"rejected\": 0,\\n      \"counterexample\": null,\\n      \"detail\": null,\\n      \"shrink_attempts\": 0\\n    }\\n  },\\n  \"called\": [\\n    \"review_budget_target.py:checked\"\\n  ],\\n  \"missing_targets\": [],\\n  \"timeout\": 2.0,\\n  \"call_timeout\": 10.0,\\n  \"incomplete\": null\\n}\\n', 'stderr': '', 'events': ['checked']})]"
+  },
+  "review_go_receivers": {
+    "status": "fail",
+    "error": "AssertionError: Go aliases, fields and returned muxes retain routes and server launches; FS bypass needs a known receiver: [('mux alias', [], [('GET', '/todos')], {'cli'}), ('struct field', [], [('GET', '/todos')], {'cli'}), ('Handle alias', [], [('ANY', '/todos/<*>')], {'cli'}), ('router alias', [], [('GET', '/todos')], {'cli'}), ('router field', [], [('POST', '/todos')], {'cli'}), ('returned mux', [], [('GET', '/todos')], {'cli'})]"
+  },
+  "review_shrink_call_timeout": {
+    "status": "fail",
+    "error": "AssertionError: shrink call timeout preserves the best confirmed failure and reports incomplete reduction (exit 2)"
+  }
+}

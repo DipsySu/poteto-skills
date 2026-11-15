@@ -1,0 +1,174 @@
+{
+  "review_deadline_order": {
+    "status": "pass",
+    "assertions": 8
+  },
+  "review_mutant_deadline": {
+    "status": "pass",
+    "assertions": 5
+  },
+  "review_mutant_json": {
+    "status": "pass",
+    "assertions": 5
+  },
+  "review_mutant_errors": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_sigint": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_fixture_limits": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_phantom_routes": {
+    "status": "pass",
+    "assertions": 3
+  },
+  "review_baseline_retry": {
+    "status": "pass",
+    "assertions": 3
+  },
+  "review_git_warning": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_docs": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_import_budget": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_go_receivers": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_shrink_call_timeout": {
+    "status": "pass",
+    "assertions": 7
+  },
+  "review_synchronous_deadlines": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_path_rebindings": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_property_handoff": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_path_branches": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_git_fail_closed": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_call_timeout_exit": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_oneshot_timers": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_disabled_limits": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_confirmed_signal_boundary": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_match_case_paths": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_git_locale": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_swallowed_alarm": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_route_workload": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_budget_namespace": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_expression_paths": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_query_path_aliases": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_go_receiver_workload": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_net_change_docs": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_timeout_format_handoff": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_interruptible_result_format": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_bounded_limit_workload": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_exception_format_timeout": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_exception_path_provenance": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_registered_boolean_actions": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_git_inherited_environment": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_infrastructure_exception_format": {
+    "status": "fail",
+    "error": "AssertionError: import and infrastructure errors retain exit 2 and safe diagnostics during interrupted formatting: [('gen_check.py', 'import', True, '/Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/review-artifacts/review_infrastructure_exception_format/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/review-artifacts/review_infrastructure_exception_format/clock_fixture.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/todo-app --examples 1 --timeout 10 --call-timeout 0 --json: exit 1, expected 0; see review_infrastructure_exception_format.log'), ('gen_check.py', 'setup', True, '/Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/review-artifacts/review_infrastructure_exception_format/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/review-artifacts/review_infrastructure_exception_format/clock_fixture.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/todo-app --examples 1 --timeout 10 --call-timeout 0 --json: exit 1, expected 0; see review_infrastructure_exception_format.log'), ('gen_check.py', 'reset', True, '/Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/review-artifacts/review_infrastructure_exception_format/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/review-artifacts/review_infrastructure_exception_format/clock_fixture.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/todo-app --examples 1 --timeout 10 --call-timeout 0 --json: exit 1, expected 0; see review_infrastructure_exception_format.log'), ('gen_check.py', 'generation', True, '/Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/review-artifacts/review_infrastructure_exception_format/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/review-artifacts/review_infrastructure_exception_format/clock_fixture.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/todo-app --examples 1 --timeout 10 --call-timeout 0 --json: exit 1, expected 0; see review_infrastructure_exception_format.log'), ('gen_check.py', 'shrink', True, '/Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/review-artifacts/review_infrastructure_exception_format/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/review-artifacts/review_infrastructure_exception_format/clock_fixture.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/todo-app --examples 1 --timeout 10 --call-timeout 0 --json: exit 1, expected 0; see review_infrastructure_exception_format.log'), ('gen_check.py', 'import', 'infinite message exceeded the external 1.2 s guard'), ('gen_check.py', 'setup', 'infinite message exceeded the external 1.2 s guard'), ('bounded_check.py', 'import', True, {'code': 3, 'stdout': '{\\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/review-artifacts/review_infrastructure_exception_format/clock_fixture.py\",\\n  \"depth\": null,\\n  \"max_states\": null,\\n  \"timeout\": 10.0,\\n  \"call_timeout\": 0.0,\\n  \"invariants\": [],\\n  \"ok\": false,\\n  \"result\": \"timeout\",\\n  \"states\": 0,\\n  \"transitions\": 0,\\n  \"max_depth\": 0,\\n  \"hit_depth_bound\": false,\\n  \"hit_state_bound\": false,\\n  \"violation\": null,\\n  \"stopped\": \"stopped at the 10 s limit outside the search\",\\n  \"detail\": \"stopped at the 10 s limit outside the search\",\\n  \"exhaustive\": false,\\n  \"incomplete\": \"stopped at the 10 s limit outside the search\",\\n  \"not_run\": [],\\n  \"mutants\": {},\\n  \"expect_violation\": null\\n}\\n', 'stderr': '', 'events': [[0, None]]}), ('bounded_check.py', 'import', 3, '{\\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/review-artifacts/review_infrastructure_exception_format/import_bounded_check.py\",\\n  \"depth\": null,\\n  \"max_states\": null,\\n  \"timeout\": 0.05,\\n  \"call_timeout\": 0.0,\\n  \"invariants\": [],\\n  \"ok\": false,\\n  \"result\": \"timeout\",\\n  \"states\": 0,\\n  \"transitions\": 0,\\n  \"max_depth\": 0,\\n  \"hit_depth_bound\": false,\\n  \"hit_state_bound\": false,\\n  \"violation\": null,\\n  \"stopped\": \"stopped at the 0.05 s limit outside the search\",\\n  \"detail\": \"stopped at the 0.05 s limit outside the search\",\\n  \"exhaustive\": false,\\n  \"incomplete\": \"stopped at the 0.05 s limit outside the search\",\\n  \"not_run\": [],\\n  \"mutants\": {},\\n  \"expect_violation\": null\\n}\\n')]"
+  },
+  "review_with_item_provenance": {
+    "status": "fail",
+    "error": "AssertionError: with items establish path provenance only along an evaluated prefix: [(\"path = filesystem\\nwith suppress(PermissionError), denied(), nullcontext(path := self.path): pass\\nif path == '/var/www': pass\", [('GET', '/var/www')], []), (\"path = filesystem\\nasync with suppress_error(), denied(), context(path := self.path): pass\\nif path == '/var/www': pass\", [('GET', '/var/www')], []), (\"path = filesystem\\nwith suppress(PermissionError), denied(), nullcontext(path := self.path): pass\\nif path == '/Users/shared': pass\", [('GET', '/Users/shared')], []), (\"path = filesystem\\nasync with suppress_error(), denied(), context(path := self.path): pass\\nif path == '/Users/shared': pass\", [('GET', '/Users/shared')], []), (\"path = filesystem\\nwith suppress(PermissionError), denied(), nullcontext(path := self.path): pass\\nif path == '/opt/service': pass\", [('GET', '/opt/service')], []), (\"path = filesystem\\nasync with suppress_error(), denied(), context(path := self.path): pass\\nif path == '/opt/service': pass\", [('GET', '/opt/service')], []), ('unentered context item must not create a route or drift', 1, {'skill_dir': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/with-item-route-map/.agents/skills/verify-items', 'repo': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/with-item-route-map', 'index': {'missing': [], 'dead': [], 'duplicate': [], 'extra': []}, 'contract': [], 'routes': {'source': 2, 'missing': [{'method': 'GET', 'path': '/var/www', 'source': 'server.py:7'}], 'dead': []}, 'commands': {'source': 0, 'missing': [], 'dead': []}, 'unanchored_features': [], 'notes': [], 'drift': True})]"
+  },
+  "review_parser_action_bindings": {
+    "status": "fail",
+    "error": "AssertionError: /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 -m app --json list: exit 1, expected 0; see review_parser_action_bindings.log"
+  },
+  "review_git_case_aliases": {
+    "status": "fail",
+    "error": "AssertionError: case aliases of a checkout scan directory/file arguments and adopt tracked baseline keys consistently: [('/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/REVIEW-gIT-cASE', False, 2, 'patlint: no files to lint in directory: /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/REVIEW-gIT-cASE (empty, ignored, or excluded by git); name a file explicitly to lint it as given\\n', {}, None), ('/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/REVIEW-gIT-cASE', True, 2, 'patlint: no files to lint in directory: /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/REVIEW-gIT-cASE (empty, ignored, or excluded by git); name a file explicitly to lint it as given\\n', {}, None), ('/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/REVIEW-gIT-cASE/src', False, 2, 'patlint: no files to lint in directory: /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/REVIEW-gIT-cASE/src (empty, ignored, or excluded by git); name a file explicitly to lint it as given\\n', {}, None), ('/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/REVIEW-gIT-cASE/src', True, 2, 'patlint: no files to lint in directory: /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/REVIEW-gIT-cASE/src (empty, ignored, or excluded by git); name a file explicitly to lint it as given\\n', {}, None), ('/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/REVIEW-gIT-cASE/src/tracked.py', False, 1, 'patlint: rule probe not adopted: untracked hits in /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/REVIEW-gIT-cASE/src/tracked.py; track or ignore these files and rerun --update-baseline\\n', {'ok': False, 'rules': ['probe'], 'files_scanned': 1, 'untracked': ['/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/REVIEW-gIT-cASE/src/tracked.py'], 'rev': None, 'root': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/review-Git-Case', 'failing': [{'rule': 'probe', 'path': '/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/REVIEW-gIT-cASE/src/tracked.py', 'line': 1, 'col': 1, 'message': 'Use good() instead.', 'text': 'BAD'}], 'violations': [{'rule': 'probe', 'path': '/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/REVIEW-gIT-cASE/src/tracked.py', 'line': 1, 'col': 1, 'message': 'Use good() instead.', 'text': 'BAD'}], 'allowed': [], 'expired': [], 'invalid_exceptions': [], 'stale_exceptions': [], 'baseline': {'path': '/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/review-artifacts/review_git_case_aliases/case-baseline.json', 'over': [{'rule': 'probe', 'path': '/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/REVIEW-gIT-cASE/src/tracked.py', 'count': 1, 'baseline': 0}], 'improved': [], 'refused': [], 'deferred': [{'rule': 'probe', 'untracked': ['/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/REVIEW-gIT-cASE/src/tracked.py']}], 'updated': True}}, {}), ('/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/REVIEW-gIT-cASE/src/tracked.py', True, 1, 'patlint: rule probe not adopted: untracked hits in src/tracked.py; track or ignore these files and rerun --update-baseline\\n', {'ok': False, 'rules': ['probe'], 'files_scanned': 1, 'untracked': ['src/tracked.py'], 'rev': None, 'root': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/REVIEW-gIT-cASE', 'failing': [{'rule': 'probe', 'path': 'src/tracked.py', 'line': 1, 'col': 1, 'message': 'Use good() instead.', 'text': 'BAD'}], 'violations': [{'rule': 'probe', 'path': 'src/tracked.py', 'line': 1, 'col': 1, 'message': 'Use good() instead.', 'text': 'BAD'}], 'allowed': [], 'expired': [], 'invalid_exceptions': [], 'stale_exceptions': [], 'baseline': {'path': '/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-edx1nvwf/review-artifacts/review_git_case_aliases/case-baseline.json', 'over': [{'rule': 'probe', 'path': 'src/tracked.py', 'count': 1, 'baseline': 0}], 'improved': [], 'refused': [], 'deferred': [{'rule': 'probe', 'untracked': ['src/tracked.py']}], 'updated': True}}, {})]"
+  },
+  "review_acceptance_record_scope": {
+    "status": "fail",
+    "error": "AssertionError: the historical Linux acceptance and Mac sandbox limitation do not contradict each other"
+  }
+}

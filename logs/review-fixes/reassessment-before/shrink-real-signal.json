@@ -1,0 +1,42 @@
+{
+  "command": [
+    "python3",
+    "/tmp/poteto-shrink-before-jkti13nl/gen_check.py",
+    "/tmp/poteto-shrink-before-jkti13nl/shrink_hang.py",
+    "--repo",
+    "/tmp/poteto-shrink-before-jkti13nl/repo",
+    "--examples",
+    "1",
+    "--timeout",
+    "20",
+    "--call-timeout",
+    "2",
+    "--expect-fail",
+    "broken",
+    "--json"
+  ],
+  "code": 0,
+  "report": {
+    "seed": 0,
+    "ok": true,
+    "properties": {
+      "broken": {
+        "result": "fail",
+        "accepted": 1,
+        "generated": 1,
+        "rejected": 0,
+        "counterexample": "100",
+        "detail": "returned False",
+        "shrink_attempts": 1
+      }
+    },
+    "called": [
+      "review_shrink_target.py:confirmed"
+    ],
+    "missing_targets": [],
+    "timeout": 20.0,
+    "call_timeout": 2.0,
+    "incomplete": null
+  },
+  "stderr": ""
+}

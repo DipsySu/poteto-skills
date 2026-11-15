@@ -1,0 +1,8 @@
+{
+  "before_assertions": 230,
+  "after_assertions": 238,
+  "unchanged_assertions": 229,
+  "changed_assertion": "review_docs: tighten TIMEOUT substring to CHECK_TIMEOUT and describe added limits; seed/default/revalidate/pinned and evidence assertions unchanged",
+  "removed_or_weakened_assertions": 0,
+  "added_assertions": 8
+}

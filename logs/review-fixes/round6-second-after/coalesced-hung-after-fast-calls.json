@@ -1,0 +1,70 @@
+[
+  {
+    "run": 0,
+    "call": 0.2,
+    "code": 2,
+    "expected": 2,
+    "elapsed": 0.4109696829691529,
+    "result": "error",
+    "detail": "no return within 0.2 s",
+    "violation": {
+      "kind": "error",
+      "name": "ok",
+      "detail": "no return within 0.2 s",
+      "trace": [
+        {
+          "step": 0,
+          "action": "init",
+          "state": 0,
+          "describe": null
+        },
+        {
+          "step": 1,
+          "action": "next",
+          "state": 1,
+          "describe": null
+        }
+      ],
+      "timeout": true
+    }
+  },
+  {
+    "run": 1,
+    "call": 0.2,
+    "code": 2,
+    "expected": 2,
+    "elapsed": 0.4139227019622922,
+    "result": "error",
+    "detail": "no return within 0.2 s",
+    "violation": {
+      "kind": "error",
+      "name": "ok",
+      "detail": "no return within 0.2 s",
+      "trace": [
+        {
+          "step": 0,
+          "action": "init",
+          "state": 0,
+          "describe": null
+        },
+        {
+          "step": 1,
+          "action": "next",
+          "state": 1,
+          "describe": null
+        }
+      ],
+      "timeout": true
+    }
+  },
+  {
+    "run": 0.3,
+    "call": 0.2,
+    "code": 3,
+    "expected": 3,
+    "elapsed": 0.36598374182358384,
+    "result": "timeout",
+    "detail": "stopped at the 0.3 s limit",
+    "violation": null
+  }
+]

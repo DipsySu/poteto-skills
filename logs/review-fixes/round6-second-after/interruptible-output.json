@@ -1,0 +1,216 @@
+[
+  {
+    "checker": "gen_check.py",
+    "fixture": "timeout_props.py",
+    "options": [
+      "--repo",
+      "/tmp/poteto-round6-independent-checkers",
+      "--examples",
+      "1",
+      "--call-timeout",
+      "0.1",
+      "--expect-fail",
+      "slow"
+    ],
+    "expected": 3,
+    "code": 3,
+    "elapsed": 0.45648790802806616,
+    "report": {
+      "seed": 0,
+      "ok": false,
+      "properties": {
+        "slow": {
+          "result": "timeout",
+          "accepted": 0,
+          "generated": 1,
+          "rejected": 0,
+          "counterexample": null,
+          "detail": "no return within 0.1 s",
+          "shrink_attempts": 0,
+          "input": null,
+          "timeout_scope": "call"
+        }
+      },
+      "called": [],
+      "missing_targets": [
+        "target.py:hang"
+      ],
+      "timeout": 0.4,
+      "call_timeout": 0.1,
+      "incomplete": "stopped at the 0.4 s limit in slow"
+    }
+  },
+  {
+    "checker": "gen_check.py",
+    "fixture": "fail_props.py",
+    "options": [
+      "--repo",
+      "/tmp/poteto-round6-independent-checkers",
+      "--examples",
+      "1"
+    ],
+    "expected": 1,
+    "code": 1,
+    "elapsed": 0.4618497430346906,
+    "report": {
+      "seed": 0,
+      "ok": false,
+      "properties": {
+        "broken": {
+          "result": "fail",
+          "accepted": 1,
+          "generated": 1,
+          "rejected": 0,
+          "counterexample": "<unformatted input>",
+          "detail": "returned False",
+          "shrink_attempts": 0,
+          "output_incomplete": "counterexample formatting not completed"
+        }
+      },
+      "called": [
+        "target.py:checked"
+      ],
+      "missing_targets": [],
+      "timeout": 0.4,
+      "call_timeout": 10.0,
+      "incomplete": "stopped at the 0.4 s limit in broken"
+    }
+  },
+  {
+    "checker": "gen_check.py",
+    "fixture": "fail_props.py",
+    "options": [
+      "--repo",
+      "/tmp/poteto-round6-independent-checkers",
+      "--examples",
+      "1",
+      "--expect-fail",
+      "broken"
+    ],
+    "expected": 3,
+    "code": 3,
+    "elapsed": 0.4546300293877721,
+    "report": {
+      "seed": 0,
+      "ok": false,
+      "properties": {
+        "broken": {
+          "result": "fail",
+          "accepted": 1,
+          "generated": 1,
+          "rejected": 0,
+          "counterexample": "<unformatted input>",
+          "detail": "returned False",
+          "shrink_attempts": 0,
+          "output_incomplete": "counterexample formatting not completed"
+        }
+      },
+      "called": [
+        "target.py:checked"
+      ],
+      "missing_targets": [],
+      "timeout": 0.4,
+      "call_timeout": 10.0,
+      "incomplete": "stopped at the 0.4 s limit in broken"
+    }
+  },
+  {
+    "checker": "bounded_check.py",
+    "fixture": "fail_model.py",
+    "options": [],
+    "expected": 1,
+    "code": 1,
+    "elapsed": 0.4674603738822043,
+    "report": {
+      "model": "/tmp/poteto-round6-independent-checkers/fail_model.py",
+      "depth": 25,
+      "max_states": 200000,
+      "timeout": 0.4,
+      "call_timeout": 10.0,
+      "invariants": [
+        "broken"
+      ],
+      "ok": false,
+      "result": "violation",
+      "states": 1,
+      "transitions": 0,
+      "max_depth": 0,
+      "hit_depth_bound": false,
+      "hit_state_bound": false,
+      "violation": {
+        "kind": "invariant",
+        "name": "broken",
+        "detail": null,
+        "trace": [
+          {
+            "step": 0,
+            "action": "init",
+            "state": null,
+            "describe": null,
+            "state_incomplete": true
+          }
+        ],
+        "trace_incomplete": "stopped at the 0.4 s limit"
+      },
+      "stopped": "stopped at the 0.4 s limit",
+      "detail": null,
+      "exhaustive": false,
+      "seconds": 0.408,
+      "incomplete": "stopped at the 0.4 s limit outside the search",
+      "not_run": [],
+      "mutants": {},
+      "expect_violation": null
+    }
+  },
+  {
+    "checker": "bounded_check.py",
+    "fixture": "fail_model.py",
+    "options": [
+      "--expect-violation",
+      "broken"
+    ],
+    "expected": 0,
+    "code": 0,
+    "elapsed": 0.46669284673407674,
+    "report": {
+      "model": "/tmp/poteto-round6-independent-checkers/fail_model.py",
+      "depth": 25,
+      "max_states": 200000,
+      "timeout": 0.4,
+      "call_timeout": 10.0,
+      "invariants": [
+        "broken"
+      ],
+      "ok": true,
+      "result": "violation",
+      "states": 1,
+      "transitions": 0,
+      "max_depth": 0,
+      "hit_depth_bound": false,
+      "hit_state_bound": false,
+      "violation": {
+        "kind": "invariant",
+        "name": "broken",
+        "detail": null,
+        "trace": [
+          {
+            "step": 0,
+            "action": "init",
+            "state": null,
+            "describe": null,
+            "state_incomplete": true
+          }
+        ],
+        "trace_incomplete": "stopped at the 0.4 s limit"
+      },
+      "stopped": "stopped at the 0.4 s limit",
+      "detail": null,
+      "exhaustive": false,
+      "seconds": 0.409,
+      "incomplete": "stopped at the 0.4 s limit outside the search",
+      "not_run": [],
+      "mutants": {},
+      "expect_violation": "broken"
+    }
+  }
+]

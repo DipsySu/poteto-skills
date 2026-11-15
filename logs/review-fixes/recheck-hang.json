@@ -1,0 +1,75 @@
+{
+  "before": {
+    "outer_timeout": true
+  },
+  "after": {
+    "exit": 3,
+    "report": {
+      "model": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-hang-regression-th_1vuqo/model.py",
+      "depth": 25,
+      "max_states": 200000,
+      "timeout": 1.0,
+      "call_timeout": 10.0,
+      "invariants": [
+        "ok"
+      ],
+      "ok": false,
+      "result": "pass",
+      "states": 1,
+      "transitions": 0,
+      "max_depth": 0,
+      "hit_depth_bound": false,
+      "hit_state_bound": false,
+      "violation": null,
+      "stopped": null,
+      "detail": null,
+      "exhaustive": true,
+      "seconds": 0.0,
+      "incomplete": "stopped at the 1 s limit",
+      "not_run": [
+        "second"
+      ],
+      "mutants": {
+        "first": {
+          "killed": true,
+          "by": "ok",
+          "steps": 1,
+          "result": "violation",
+          "stopped": "stopped at the 1 s limit",
+          "detail": null,
+          "states": 2,
+          "transitions": 1,
+          "max_depth": 1,
+          "trace": [
+            {
+              "step": 0,
+              "action": "init",
+              "state": 0,
+              "describe": null
+            },
+            {
+              "step": 1,
+              "action": "bad",
+              "state": -1,
+              "describe": null
+            }
+          ]
+        },
+        "second": {
+          "killed": false,
+          "by": null,
+          "steps": null,
+          "result": "timeout",
+          "stopped": "stopped at the 1 s limit",
+          "detail": "not run: stopped at the 1 s limit",
+          "states": 0,
+          "transitions": 0,
+          "max_depth": 0,
+          "trace": null
+        }
+      },
+      "expect_violation": null
+    },
+    "outer_timeout": false
+  }
+}

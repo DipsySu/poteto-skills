@@ -1,7 +1,7 @@
-scratch: /tmp/poteto-examples-imj4eqch
-$ /home/box/developer/poteto-skills/skills/correct/scripts/mine_mistakes.py /tmp/poteto-examples-imj4eqch/todo-app --since 2026-09-01 --feedback /tmp/poteto-examples-imj4eqch/todo-app/review-comments.json /tmp/poteto-examples-imj4eqch/todo-app/chat-feedback.md --json
+scratch: /tmp/poteto-examples-45v208z6
+$ /workspace/pr-fix/skills/correct/scripts/mine_mistakes.py /tmp/poteto-examples-45v208z6/todo-app --since 2026-09-01 --feedback /tmp/poteto-examples-45v208z6/todo-app/review-comments.json /tmp/poteto-examples-45v208z6/todo-app/chat-feedback.md --json
 {
-  "repo": "/tmp/poteto-examples-imj4eqch/todo-app",
+  "repo": "/tmp/poteto-examples-45v208z6/todo-app",
   "since": "2026-09-01",
   "items": 13,
   "counts": {
@@ -423,9 +423,9 @@ $ git -c user.name=t -c user.email=t@t -c commit.gpgsign=false add -A
 $ git -c user.name=t -c user.email=t@t -c commit.gpgsign=false commit -qm 'test: keep the layout from overlapping again'
 
 [exit 0; expected 0]
-$ /home/box/developer/poteto-skills/skills/correct/scripts/mine_mistakes.py /tmp/poteto-examples-imj4eqch/mine-fixture --json
+$ /workspace/pr-fix/skills/correct/scripts/mine_mistakes.py /tmp/poteto-examples-45v208z6/mine-fixture --json
 {
-  "repo": "/tmp/poteto-examples-imj4eqch/mine-fixture",
+  "repo": "/tmp/poteto-examples-45v208z6/mine-fixture",
   "since": null,
   "items": 2,
   "counts": {
@@ -449,34 +449,34 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/mine_mistakes.py /tmp
       ],
       "evidence": [
         {
-          "id": "commit:f8be16c40f",
+          "id": "commit:bcf5c87873",
           "source": "commit",
           "kind": "fix",
-          "ref": "f8be16c40f35b76202b287365ab4c9c2c84cb457",
-          "text": "fix: layout overlap in the changelog renderer again",
-          "paths": [
-            "CHANGELOG.md"
-          ],
-          "line": null,
-          "author": "t",
-          "date": "2026-10-21",
-          "url": null,
-          "diff_ids": [],
-          "diff_added": [],
-          "diff_removed": []
-        },
-        {
-          "id": "commit:47d23562cb",
-          "source": "commit",
-          "kind": "fix",
-          "ref": "47d23562cb9a7bb97dd3aa93b1dc8749a160330a",
+          "ref": "bcf5c87873a2a2df3de172e4c2dc704fc163def8",
           "text": "feat: layout pass, plus 3 layout-audit fixes",
           "paths": [
             "CHANGELOG.md"
           ],
           "line": null,
           "author": "t",
-          "date": "2026-10-21",
+          "date": "2026-11-15",
+          "url": null,
+          "diff_ids": [],
+          "diff_added": [],
+          "diff_removed": []
+        },
+        {
+          "id": "commit:43c4450992",
+          "source": "commit",
+          "kind": "fix",
+          "ref": "43c4450992869041f778846d0f52d29273370039",
+          "text": "fix: layout overlap in the changelog renderer again",
+          "paths": [
+            "CHANGELOG.md"
+          ],
+          "line": null,
+          "author": "t",
+          "date": "2026-11-15",
           "url": null,
           "diff_ids": [],
           "diff_added": [],
@@ -497,7 +497,588 @@ ASSERT PASS: feat commits that mention "fix" only in the body are not counted as
 ASSERT PASS: a typed feat subject that names its fixes still counts
 ASSERT PASS: a test: subject with a weak word ("again") is not a fix
 ASSERT PASS: an orientation bullet sharing a file name does not mark a class as repeat
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-imj4eqch/todo-app --record no-direct-json-write --commit 2fd7988731eb03a000207e269b441daeb22d2a3e --json
+$ git init -q
+
+[exit 0; expected 0]
+$ git add todo/new.py
+
+[exit 0; expected 0]
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/skills/correct/references/lint-rules.example.json --root /tmp/poteto-examples-45v208z6/ratchet-contract --json --baseline /tmp/poteto-examples-45v208z6/ratchet-contract/baseline.json --update-baseline /tmp/poteto-examples-45v208z6/ratchet-contract
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/tmp/poteto-examples-45v208z6/ratchet-contract",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/tmp/poteto-examples-45v208z6/ratchet-contract/baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+
+[exit 0; expected 0]
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/skills/correct/references/lint-rules.example.json --root /tmp/poteto-examples-45v208z6/ratchet-contract --json --baseline /tmp/poteto-examples-45v208z6/ratchet-contract/baseline.json --update-baseline /tmp/poteto-examples-45v208z6/ratchet-contract
+{
+  "ok": false,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/tmp/poteto-examples-45v208z6/ratchet-contract",
+  "failing": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/tmp/poteto-examples-45v208z6/ratchet-contract/baseline.json",
+    "over": [
+      {
+        "rule": "no-direct-json-write",
+        "path": "todo/new.py",
+        "count": 1,
+        "baseline": 0
+      }
+    ],
+    "improved": [],
+    "refused": [
+      {
+        "rule": "no-direct-json-write",
+        "path": "todo/new.py",
+        "count": 1,
+        "baseline": 0
+      }
+    ],
+    "deferred": [],
+    "updated": true
+  }
+}
+
+[exit 1; expected 1]
+ASSERT PASS: a tracked hit cannot raise an existing rule baseline, even after the file enters git
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/skills/correct/references/lint-rules.example.json --root /tmp/poteto-examples-45v208z6/ratchet-contract --json --baseline /tmp/poteto-examples-45v208z6/ratchet-contract/first.json --update-baseline /tmp/poteto-examples-45v208z6/ratchet-contract
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/tmp/poteto-examples-45v208z6/ratchet-contract",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/tmp/poteto-examples-45v208z6/ratchet-contract/first.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+
+[exit 0; expected 0]
+ASSERT PASS: tracked existing hits may enter a baseline only when the rule is first adopted
+ASSERT PASS: SKILL.md explains first adoption and the ratchet for existing rules
+ASSERT PASS: patlint.py explains first adoption and the ratchet for existing rules
+$ git init -q
+
+[exit 0; expected 0]
+$ git add tracked.py
+
+[exit 0; expected 0]
+{
+  "ok": false,
+  "rules": [
+    "probe",
+    "clean"
+  ],
+  "files_scanned": 2,
+  "untracked": [
+    "new.py"
+  ],
+  "rev": null,
+  "root": "/tmp/poteto-examples-45v208z6/review-baseline-adoption",
+  "failing": [
+    {
+      "rule": "probe",
+      "path": "new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    },
+    {
+      "rule": "probe",
+      "path": "tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    },
+    {
+      "rule": "probe",
+      "path": "tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/tmp/poteto-examples-45v208z6/review-baseline-adoption/baseline.json",
+    "over": [
+      {
+        "rule": "probe",
+        "path": "new.py",
+        "count": 1,
+        "baseline": 0
+      },
+      {
+        "rule": "probe",
+        "path": "tracked.py",
+        "count": 1,
+        "baseline": 0
+      }
+    ],
+    "improved": [],
+    "refused": [],
+    "deferred": [
+      {
+        "rule": "probe",
+        "untracked": [
+          "new.py"
+        ]
+      }
+    ],
+    "updated": true
+  }
+}
+patlint: rule probe not adopted: untracked hits in new.py; track or ignore these files and rerun --update-baseline
+ASSERT PASS: failed first adoption leaves no rule key, preserves other rules and explains how to retry
+$ git add new.py
+
+[exit 0; expected 0]
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-45v208z6/review-baseline-adoption/rules.json --root /tmp/poteto-examples-45v208z6/review-baseline-adoption --baseline /tmp/poteto-examples-45v208z6/review-baseline-adoption/baseline.json --update-baseline --json /tmp/poteto-examples-45v208z6/review-baseline-adoption
+{
+  "ok": true,
+  "rules": [
+    "probe",
+    "clean"
+  ],
+  "files_scanned": 2,
+  "untracked": [],
+  "rev": null,
+  "root": "/tmp/poteto-examples-45v208z6/review-baseline-adoption",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    },
+    {
+      "rule": "probe",
+      "path": "tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/tmp/poteto-examples-45v208z6/review-baseline-adoption/baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+
+[exit 0; expected 0]
+ASSERT PASS: tracking the hit after a failed first adoption lets the retry adopt all current counts
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /tmp/poteto-examples-45v208z6/review-baseline-adoption/rules.json --root /tmp/poteto-examples-45v208z6/review-baseline-adoption --baseline /tmp/poteto-examples-45v208z6/review-baseline-adoption/baseline.json --update-baseline --json /tmp/poteto-examples-45v208z6/review-baseline-adoption
+{
+  "ok": false,
+  "rules": [
+    "probe",
+    "clean"
+  ],
+  "files_scanned": 2,
+  "untracked": [],
+  "rev": null,
+  "root": "/tmp/poteto-examples-45v208z6/review-baseline-adoption",
+  "failing": [
+    {
+      "rule": "probe",
+      "path": "new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    },
+    {
+      "rule": "probe",
+      "path": "new.py",
+      "line": 2,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    },
+    {
+      "rule": "probe",
+      "path": "new.py",
+      "line": 2,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    },
+    {
+      "rule": "probe",
+      "path": "tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/tmp/poteto-examples-45v208z6/review-baseline-adoption/baseline.json",
+    "over": [
+      {
+        "rule": "probe",
+        "path": "new.py",
+        "count": 2,
+        "baseline": 1
+      }
+    ],
+    "improved": [],
+    "refused": [
+      {
+        "rule": "probe",
+        "path": "new.py",
+        "count": 2,
+        "baseline": 1
+      }
+    ],
+    "deferred": [],
+    "updated": true
+  }
+}
+
+[exit 1; expected 1]
+ASSERT PASS: successful retry still ratchets subsequent increases
+ASSERT PASS: git failure retains disk fallback but warns on stderr: git unavailable
+ASSERT PASS: dubious ownership is a git error, never permission to traverse the disk
+$ git init -q
+
+[exit 0; expected 0]
+$ git add tracked.py
+
+[exit 0; expected 0]
+patlint: git lookup failed; refusing filesystem fallback: git rev-parse --show-toplevel: fatal: not a git repository: '/tmp/poteto-examples-45v208z6/review-git-errors/missing.git'
+patlint: git lookup failed; refusing filesystem fallback: git rev-parse --show-toplevel: fatal: not a git repository: '/tmp/poteto-examples-45v208z6/review-git-errors/missing.git'
+patlint: git lookup failed; refusing filesystem fallback: fatal: not a git repository: '/tmp/poteto-examples-45v208z6/review-git-errors/missing.git'
+patlint: git lookup failed; refusing filesystem fallback: fatal: not a git repository: '/tmp/poteto-examples-45v208z6/review-git-errors/missing.git'
+patlint: git lookup failed; refusing filesystem fallback: git rev-parse --show-toplevel: fatal: not a git repository: '/tmp/poteto-examples-45v208z6/review-git-errors/missing.git'
+patlint: git lookup failed; refusing filesystem fallback: git rev-parse --show-toplevel: fatal: not a git repository: '/tmp/poteto-examples-45v208z6/review-git-errors/missing.git'
+patlint: git lookup failed; refusing filesystem fallback: fatal: not a git repository: '/tmp/poteto-examples-45v208z6/review-git-errors/missing.git'
+patlint: git lookup failed; refusing filesystem fallback: fatal: not a git repository: '/tmp/poteto-examples-45v208z6/review-git-errors/missing.git'
+ASSERT PASS: git failure inside a worktree exits 2 without adopting any baseline hits: []
+ASSERT PASS: ordinary non-git directories retain quiet filesystem fallback
+locale=zh_CN.UTF-8 provider=real target=review-git-locale explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/tmp/poteto-examples-45v208z6/review-git-locale",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+locale=zh_CN.UTF-8 provider=real target=review-git-locale explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/tmp/poteto-examples-45v208z6/review-git-locale",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+locale=zh_CN.UTF-8 provider=real target=clean.py explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/tmp/poteto-examples-45v208z6/review-git-locale",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+locale=zh_CN.UTF-8 provider=real target=clean.py explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/tmp/poteto-examples-45v208z6/review-git-locale",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+locale=zh_CN.UTF-8 provider=translated target=review-git-locale explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/tmp/poteto-examples-45v208z6/review-git-locale",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+locale=zh_CN.UTF-8 provider=translated target=review-git-locale explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/tmp/poteto-examples-45v208z6/review-git-locale",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+locale=zh_CN.UTF-8 provider=translated target=clean.py explicit_root=False exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/tmp/poteto-examples-45v208z6/review-git-locale",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+locale=zh_CN.UTF-8 provider=translated target=clean.py explicit_root=True exit=0
+{
+  "ok": true,
+  "rules": [
+    "probe"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/tmp/poteto-examples-45v208z6/review-git-locale",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+locale=zh_CN.UTF-8 checkout exit=2
+patlint: git lookup failed; refusing filesystem fallback: 致命错误：不是 Git 仓库（或者任何父目录）：.git
+locale=zh_CN.UTF-8 checkout exit=2
+patlint: git lookup failed; refusing filesystem fallback: 致命错误：不是 Git 仓库（或者任何父目录）：.git
+ASSERT PASS: non-English git errors fall back quietly only outside checkouts, preserving baseline failures: []
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-45v208z6/todo-app --record no-direct-json-write --commit 2fd7988731eb03a000207e269b441daeb22d2a3e --json
 {
   "ok": true,
   "rule": "no-direct-json-write",
@@ -509,7 +1090,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
 
 [exit 0; expected 0]
 ASSERT PASS: --record keeps the raw removed mistake after whole-file parent/fix proof
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-imj4eqch/todo-app --test --json
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-45v208z6/todo-app --test --json
 {
   "ok": true,
   "tests": 2,
@@ -518,7 +1099,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
 
 [exit 0; expected 0]
 ASSERT PASS: --test passes the retained history cases and explicit Store.add fix
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/skills/correct/references/lint-rules.example.json --root /tmp/poteto-examples-imj4eqch/todo-app --test --json
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/skills/correct/references/lint-rules.example.json --root /tmp/poteto-examples-45v208z6/todo-app --test --json
 {
   "ok": true,
   "tests": 4,
@@ -527,7 +1108,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
 
 [exit 0; expected 0]
 ASSERT PASS: both documented example rules replay successfully and name existing owner APIs
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-imj4eqch/todo-app --test --json
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-45v208z6/todo-app --test --json
 {
   "ok": false,
   "tests": 2,
@@ -538,7 +1119,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
 
 [exit 1; expected 1]
 ASSERT PASS: --test detects missing matches when include no longer covers todo/api.py
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-imj4eqch/todo-app --test --json
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-45v208z6/todo-app --test --json
 {
   "ok": false,
   "tests": 2,
@@ -549,7 +1130,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
 
 [exit 1; expected 1]
 ASSERT PASS: --test rejects a renamed Store.add when the explicit fix reference stays unchanged
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-imj4eqch/todo-app --test --json
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-45v208z6/todo-app --test --json
 {
   "ok": true,
   "tests": 3,
@@ -558,7 +1139,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
 
 [exit 0; expected 0]
 ASSERT PASS: message and cases mentioning json.dump as the mistake pass with an explicit fix
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-imj4eqch/todo-app --test --json
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-45v208z6/todo-app --test --json
 {
   "ok": true,
   "tests": 3,
@@ -567,7 +1148,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
 
 [exit 0; expected 0]
 ASSERT PASS: absent fix field never resolves names from the message
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-imj4eqch/todo-app --test --json
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-45v208z6/todo-app --test --json
 {
   "ok": false,
   "tests": 1,
@@ -578,7 +1159,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
 
 [exit 1; expected 1]
 ASSERT PASS: --test requires a ruleid case even when all ok cases pass
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-imj4eqch/todo-app --test --json
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-45v208z6/todo-app --test --json
 {
   "ok": false,
   "tests": 3,
@@ -589,14 +1170,14 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
 
 [exit 1; expected 1]
 ASSERT PASS: --test rejects a matching ok case
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-imj4eqch/todo-app --record no-direct-json-write --commit 4242a5ae43587ea1ed392b15775e2e3e3acc2aa4
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-45v208z6/todo-app --record no-direct-json-write --commit 4242a5ae43587ea1ed392b15775e2e3e3acc2aa4
 patlint: no-direct-json-write: no removed matching line
 patlint: no-direct-json-write: whole-file parent replay must hit
 patlint: FAIL: 0 test case(s)
 
 [exit 1; expected 1]
 ASSERT PASS: --record without a removed match fails without replacing tests
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-imj4eqch/todo-app --record no-direct-json-write --commit 2fd7988731eb03a000207e269b441daeb22d2a3e --json
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-45v208z6/todo-app --record no-direct-json-write --commit 2fd7988731eb03a000207e269b441daeb22d2a3e --json
 {
   "ok": false,
   "rule": "no-direct-json-write",
@@ -610,7 +1191,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
 
 [exit 1; expected 1]
 ASSERT PASS: --record rejects unchanged fixed-file matches even when added diff lines are quiet
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-imj4eqch/todo-app --record no-direct-json-write --commit 2fd7988731eb03a000207e269b441daeb22d2a3e --json
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-45v208z6/todo-app --record no-direct-json-write --commit 2fd7988731eb03a000207e269b441daeb22d2a3e --json
 {
   "ok": false,
   "rule": "no-direct-json-write",
@@ -625,20 +1206,21 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
 
 [exit 1; expected 1]
 ASSERT PASS: --record rejects added lines that still match the rule
-$ git worktree add --detach /tmp/poteto-examples-imj4eqch/past-direct-write dbd44008685859312aee6a60154fd0258c1c063b
+$ git worktree add --detach /tmp/poteto-examples-45v208z6/past-direct-write dbd44008685859312aee6a60154fd0258c1c063b
 Preparing worktree (detached HEAD dbd4400)
 HEAD is now at dbd4400 fix: persist API additions with direct JSON writes bypassing store.py
 
 [exit 0; expected 0]
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-imj4eqch/past-direct-write --json /tmp/poteto-examples-imj4eqch/past-direct-write/todo
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-45v208z6/past-direct-write --json /tmp/poteto-examples-45v208z6/past-direct-write/todo
 {
   "ok": false,
   "rules": [
     "no-direct-json-write"
   ],
   "files_scanned": 3,
+  "untracked": [],
   "rev": null,
-  "root": "/tmp/poteto-examples-imj4eqch/past-direct-write",
+  "root": "/tmp/poteto-examples-45v208z6/past-direct-write",
   "failing": [
     {
       "rule": "no-direct-json-write",
@@ -668,24 +1250,26 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
     "over": [],
     "improved": [],
     "refused": [],
+    "deferred": [],
     "updated": false
   }
 }
 
 [exit 1; expected 1]
 ASSERT PASS: patlint fails on a real past mistake checked out in a worktree
-$ git worktree remove --force /tmp/poteto-examples-imj4eqch/past-direct-write
+$ git worktree remove --force /tmp/poteto-examples-45v208z6/past-direct-write
 
 [exit 0; expected 0]
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-imj4eqch/todo-app --json /tmp/poteto-examples-imj4eqch/todo-app/todo
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-45v208z6/todo-app --json /tmp/poteto-examples-45v208z6/todo-app/todo
 {
   "ok": true,
   "rules": [
     "no-direct-json-write"
   ],
   "files_scanned": 3,
+  "untracked": [],
   "rev": null,
-  "root": "/tmp/poteto-examples-imj4eqch/todo-app",
+  "root": "/tmp/poteto-examples-45v208z6/todo-app",
   "failing": [],
   "violations": [],
   "allowed": [],
@@ -697,30 +1281,47 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
     "over": [],
     "improved": [],
     "refused": [],
+    "deferred": [],
     "updated": false
   }
 }
 
 [exit 0; expected 0]
 ASSERT PASS: same persistence lint passes on HEAD
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-imj4eqch/ratchet --json --baseline /tmp/poteto-examples-imj4eqch/ratchet/baseline.json --update-baseline /tmp/poteto-examples-imj4eqch/ratchet/todo/legacy.py
+$ git worktree add --detach /tmp/poteto-examples-45v208z6/todo-app/.claude/worktrees/past dbd44008685859312aee6a60154fd0258c1c063b
+Preparing worktree (detached HEAD dbd4400)
+HEAD is now at dbd4400 fix: persist API additions with direct JSON writes bypassing store.py
+
+[exit 0; expected 0]
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/skills/correct/references/lint-rules.example.json --root /tmp/poteto-examples-45v208z6/todo-app/.claude/worktrees/past --json /tmp/poteto-examples-45v208z6/todo-app/.claude/worktrees/past/todo
 {
-  "ok": true,
+  "ok": false,
   "rules": [
-    "no-direct-json-write"
+    "no-direct-json-write",
+    "no-raw-status-strings"
   ],
-  "files_scanned": 1,
+  "files_scanned": 3,
+  "untracked": [],
   "rev": null,
-  "root": "/tmp/poteto-examples-imj4eqch/ratchet",
-  "failing": [],
+  "root": "/tmp/poteto-examples-45v208z6/todo-app/.claude/worktrees/past",
+  "failing": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/api.py",
+      "line": 43,
+      "col": 17,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(json.dumps(rows))"
+    }
+  ],
   "violations": [
     {
       "rule": "no-direct-json-write",
-      "path": "todo/legacy.py",
-      "line": 1,
-      "col": 1,
-      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence; avoid json.dump.",
-      "text": "store.path.write_text(payload)"
+      "path": "todo/api.py",
+      "line": 43,
+      "col": 17,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(json.dumps(rows))"
     }
   ],
   "allowed": [],
@@ -728,24 +1329,235 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
   "invalid_exceptions": [],
   "stale_exceptions": [],
   "baseline": {
-    "path": "/tmp/poteto-examples-imj4eqch/ratchet/baseline.json",
+    "path": null,
     "over": [],
     "improved": [],
     "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+
+[exit 1; expected 1]
+ASSERT PASS: a leftover worktree under .claude/worktrees/ holds the real past mistake, caught when linted as its own checkout
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/skills/correct/references/lint-rules.example.json --root /tmp/poteto-examples-45v208z6/todo-app --json /tmp/poteto-examples-45v208z6/todo-app
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 3,
+  "untracked": [],
+  "rev": null,
+  "root": "/tmp/poteto-examples-45v208z6/todo-app",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+
+[exit 0; expected 0]
+ASSERT PASS: linting the main checkout skips the leftover worktree (a nested checkout CI never sees) and passes
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/skills/correct/references/lint-rules.example.json --root /tmp/poteto-examples-45v208z6/todo-app --json --baseline /tmp/poteto-examples-45v208z6/git-set-baseline.json --update-baseline /tmp/poteto-examples-45v208z6/todo-app
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 3,
+  "untracked": [],
+  "rev": null,
+  "root": "/tmp/poteto-examples-45v208z6/todo-app",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/tmp/poteto-examples-45v208z6/git-set-baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
     "updated": true
   }
 }
 
 [exit 0; expected 0]
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-imj4eqch/ratchet --json --baseline /tmp/poteto-examples-imj4eqch/ratchet/baseline.json /tmp/poteto-examples-imj4eqch/ratchet/todo/legacy.py
+ASSERT PASS: --update-baseline writes no key for files inside a leftover worktree
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/skills/correct/references/lint-rules.example.json --root /tmp/poteto-examples-45v208z6/todo-app --json /tmp/poteto-examples-45v208z6/todo-app
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 3,
+  "untracked": [],
+  "rev": null,
+  "root": "/tmp/poteto-examples-45v208z6/todo-app",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+
+[exit 0; expected 0]
+ASSERT PASS: a hit in a gitignored env/ directory stays quiet
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/skills/correct/references/lint-rules.example.json --root /tmp/poteto-examples-45v208z6/todo-app --json /tmp/poteto-examples-45v208z6/todo-app/env
+patlint: no files to lint in directory: /tmp/poteto-examples-45v208z6/todo-app/env (empty, ignored, or excluded by git); name a file explicitly to lint it as given
+
+[exit 2; expected 2]
+ASSERT PASS: an explicitly named ignored directory fails visibly instead of reporting a clean zero-file lint
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/skills/correct/references/lint-rules.example.json --root /tmp/poteto-examples-45v208z6/todo-app --json /tmp/poteto-examples-45v208z6/todo-app
+{
+  "ok": false,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 4,
+  "untracked": [
+    "todo/new.py"
+  ],
+  "rev": null,
+  "root": "/tmp/poteto-examples-45v208z6/todo-app",
+  "failing": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+
+[exit 1; expected 1]
+ASSERT PASS: a hit in an untracked, unignored todo/new.py still fails and is reported as untracked
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/skills/correct/references/lint-rules.example.json --root /tmp/poteto-examples-45v208z6/todo-app --json --baseline /tmp/poteto-examples-45v208z6/git-set-fresh.json --update-baseline /tmp/poteto-examples-45v208z6/todo-app
+{
+  "ok": false,
+  "rules": [
+    "no-direct-json-write",
+    "no-raw-status-strings"
+  ],
+  "files_scanned": 4,
+  "untracked": [
+    "todo/new.py"
+  ],
+  "rev": null,
+  "root": "/tmp/poteto-examples-45v208z6/todo-app",
+  "failing": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use `Store.add` / `Store.transition` in todo/store.py; direct json.dump writes skip atomic persistence and locking.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/tmp/poteto-examples-45v208z6/git-set-fresh.json",
+    "over": [
+      {
+        "rule": "no-direct-json-write",
+        "path": "todo/new.py",
+        "count": 1,
+        "baseline": 0
+      }
+    ],
+    "improved": [],
+    "refused": [],
+    "deferred": [
+      {
+        "rule": "no-direct-json-write",
+        "untracked": [
+          "todo/new.py"
+        ]
+      }
+    ],
+    "updated": true
+  }
+}
+patlint: rule no-direct-json-write not adopted: untracked hits in todo/new.py; track or ignore these files and rerun --update-baseline
+
+[exit 1; expected 1]
+ASSERT PASS: adopting a rule writes no count for an untracked file, whose hits keep failing
+$ git worktree remove --force /tmp/poteto-examples-45v208z6/todo-app/.claude/worktrees/past
+
+[exit 0; expected 0]
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-45v208z6/ratchet --json --baseline /tmp/poteto-examples-45v208z6/ratchet/baseline.json --update-baseline /tmp/poteto-examples-45v208z6/ratchet/todo/legacy.py
 {
   "ok": true,
   "rules": [
     "no-direct-json-write"
   ],
   "files_scanned": 1,
+  "untracked": [],
   "rev": null,
-  "root": "/tmp/poteto-examples-imj4eqch/ratchet",
+  "root": "/tmp/poteto-examples-45v208z6/ratchet",
   "failing": [],
   "violations": [
     {
@@ -762,25 +1574,63 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
   "invalid_exceptions": [],
   "stale_exceptions": [],
   "baseline": {
-    "path": "/tmp/poteto-examples-imj4eqch/ratchet/baseline.json",
+    "path": "/tmp/poteto-examples-45v208z6/ratchet/baseline.json",
     "over": [],
     "improved": [],
     "refused": [],
+    "deferred": [],
+    "updated": true
+  }
+}
+
+[exit 0; expected 0]
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-45v208z6/ratchet --json --baseline /tmp/poteto-examples-45v208z6/ratchet/baseline.json /tmp/poteto-examples-45v208z6/ratchet/todo/legacy.py
+{
+  "ok": true,
+  "rules": [
+    "no-direct-json-write"
+  ],
+  "files_scanned": 1,
+  "untracked": [],
+  "rev": null,
+  "root": "/tmp/poteto-examples-45v208z6/ratchet",
+  "failing": [],
+  "violations": [
+    {
+      "rule": "no-direct-json-write",
+      "path": "todo/legacy.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use Store.add or Store.transition in todo/store.py for atomic persistence; avoid json.dump.",
+      "text": "store.path.write_text(payload)"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/tmp/poteto-examples-45v208z6/ratchet/baseline.json",
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
     "updated": false
   }
 }
 
 [exit 0; expected 0]
 ASSERT PASS: ratchet permits an adopted existing violation
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-imj4eqch/ratchet --json --baseline /tmp/poteto-examples-imj4eqch/ratchet/baseline.json --update-baseline /tmp/poteto-examples-imj4eqch/ratchet/todo/legacy.py
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-45v208z6/ratchet --json --baseline /tmp/poteto-examples-45v208z6/ratchet/baseline.json --update-baseline /tmp/poteto-examples-45v208z6/ratchet/todo/legacy.py
 {
   "ok": false,
   "rules": [
     "no-direct-json-write"
   ],
   "files_scanned": 1,
+  "untracked": [],
   "rev": null,
-  "root": "/tmp/poteto-examples-imj4eqch/ratchet",
+  "root": "/tmp/poteto-examples-45v208z6/ratchet",
   "failing": [
     {
       "rule": "no-direct-json-write",
@@ -822,7 +1672,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
   "invalid_exceptions": [],
   "stale_exceptions": [],
   "baseline": {
-    "path": "/tmp/poteto-examples-imj4eqch/ratchet/baseline.json",
+    "path": "/tmp/poteto-examples-45v208z6/ratchet/baseline.json",
     "over": [
       {
         "rule": "no-direct-json-write",
@@ -840,21 +1690,23 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
         "baseline": 1
       }
     ],
+    "deferred": [],
     "updated": true
   }
 }
 
 [exit 1; expected 1]
 ASSERT PASS: ratchet refuses increasing a known violation count
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-imj4eqch/ratchet --json --baseline /tmp/poteto-examples-imj4eqch/ratchet/baseline.json --update-baseline /tmp/poteto-examples-imj4eqch/ratchet/todo/legacy.py
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-45v208z6/ratchet --json --baseline /tmp/poteto-examples-45v208z6/ratchet/baseline.json --update-baseline /tmp/poteto-examples-45v208z6/ratchet/todo/legacy.py
 {
   "ok": true,
   "rules": [
     "no-direct-json-write"
   ],
   "files_scanned": 1,
+  "untracked": [],
   "rev": null,
-  "root": "/tmp/poteto-examples-imj4eqch/ratchet",
+  "root": "/tmp/poteto-examples-45v208z6/ratchet",
   "failing": [],
   "violations": [],
   "allowed": [],
@@ -862,7 +1714,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
   "invalid_exceptions": [],
   "stale_exceptions": [],
   "baseline": {
-    "path": "/tmp/poteto-examples-imj4eqch/ratchet/baseline.json",
+    "path": "/tmp/poteto-examples-45v208z6/ratchet/baseline.json",
     "over": [],
     "improved": [
       {
@@ -873,21 +1725,23 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
       }
     ],
     "refused": [],
+    "deferred": [],
     "updated": true
   }
 }
 
 [exit 0; expected 0]
 ASSERT PASS: zero-count adopted rules remain in the baseline
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-imj4eqch/ratchet --json --baseline /tmp/poteto-examples-imj4eqch/ratchet/baseline.json --update-baseline /tmp/poteto-examples-imj4eqch/ratchet/todo/legacy.py
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-45v208z6/ratchet --json --baseline /tmp/poteto-examples-45v208z6/ratchet/baseline.json --update-baseline /tmp/poteto-examples-45v208z6/ratchet/todo/legacy.py
 {
   "ok": false,
   "rules": [
     "no-direct-json-write"
   ],
   "files_scanned": 1,
+  "untracked": [],
   "rev": null,
-  "root": "/tmp/poteto-examples-imj4eqch/ratchet",
+  "root": "/tmp/poteto-examples-45v208z6/ratchet",
   "failing": [
     {
       "rule": "no-direct-json-write",
@@ -913,7 +1767,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
   "invalid_exceptions": [],
   "stale_exceptions": [],
   "baseline": {
-    "path": "/tmp/poteto-examples-imj4eqch/ratchet/baseline.json",
+    "path": "/tmp/poteto-examples-45v208z6/ratchet/baseline.json",
     "over": [
       {
         "rule": "no-direct-json-write",
@@ -931,21 +1785,23 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
         "baseline": 0
       }
     ],
+    "deferred": [],
     "updated": true
   }
 }
 
 [exit 1; expected 1]
 ASSERT PASS: ratchet cannot re-adopt violations after reaching zero
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-imj4eqch/ratchet --json --baseline /tmp/poteto-examples-imj4eqch/ratchet/baseline.json --today 2026-10-19 /tmp/poteto-examples-imj4eqch/ratchet/todo/legacy.py
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-45v208z6/ratchet --json --baseline /tmp/poteto-examples-45v208z6/ratchet/baseline.json --today 2026-10-19 /tmp/poteto-examples-45v208z6/ratchet/todo/legacy.py
 {
   "ok": false,
   "rules": [
     "no-direct-json-write"
   ],
   "files_scanned": 1,
+  "untracked": [],
   "rev": null,
-  "root": "/tmp/poteto-examples-imj4eqch/ratchet",
+  "root": "/tmp/poteto-examples-45v208z6/ratchet",
   "failing": [],
   "violations": [],
   "allowed": [],
@@ -966,7 +1822,7 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
   "invalid_exceptions": [],
   "stale_exceptions": [],
   "baseline": {
-    "path": "/tmp/poteto-examples-imj4eqch/ratchet/baseline.json",
+    "path": "/tmp/poteto-examples-45v208z6/ratchet/baseline.json",
     "over": [
       {
         "rule": "no-direct-json-write",
@@ -977,21 +1833,23 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
     ],
     "improved": [],
     "refused": [],
+    "deferred": [],
     "updated": false
   }
 }
 
 [exit 1; expected 1]
 ASSERT PASS: expired exception fails even in ratchet mode
-$ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /home/box/developer/poteto-skills/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-imj4eqch/ratchet --json --today 2026-10-19 /tmp/poteto-examples-imj4eqch/ratchet/todo/legacy.py
+$ /workspace/pr-fix/skills/correct/scripts/patlint.py --rules /workspace/pr-fix/logs/examples/artifacts/correct/rules.json --root /tmp/poteto-examples-45v208z6/ratchet --json --today 2026-10-19 /tmp/poteto-examples-45v208z6/ratchet/todo/legacy.py
 {
   "ok": true,
   "rules": [
     "no-direct-json-write"
   ],
   "files_scanned": 1,
+  "untracked": [],
   "rev": null,
-  "root": "/tmp/poteto-examples-imj4eqch/ratchet",
+  "root": "/tmp/poteto-examples-45v208z6/ratchet",
   "failing": [],
   "violations": [],
   "allowed": [
@@ -1015,15 +1873,16 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/patlint.py --rules /h
     "over": [],
     "improved": [],
     "refused": [],
+    "deferred": [],
     "updated": false
   }
 }
 
 [exit 0; expected 0]
 ASSERT PASS: unexpired exception with reason and approver allows the intended violation
-$ /home/box/developer/poteto-skills/skills/correct/scripts/rule_table.py check /tmp/poteto-examples-imj4eqch/todo-app/AGENTS.md --json
+$ /workspace/pr-fix/skills/correct/scripts/rule_table.py check /tmp/poteto-examples-45v208z6/todo-app/AGENTS.md --json
 {
-  "file": "/tmp/poteto-examples-imj4eqch/todo-app/AGENTS.md",
+  "file": "/tmp/poteto-examples-45v208z6/todo-app/AGENTS.md",
   "tables": 1,
   "rules": [
     {
@@ -1054,9 +1913,9 @@ $ /home/box/developer/poteto-skills/skills/correct/scripts/rule_table.py check /
 
 [exit 1; expected 1]
 ASSERT PASS: rule table flags exactly the prose-only example rule
-$ /home/box/developer/poteto-skills/skills/correct/scripts/rule_table.py check /tmp/poteto-examples-imj4eqch/ratchet/AGENTS.md --json
+$ /workspace/pr-fix/skills/correct/scripts/rule_table.py check /tmp/poteto-examples-45v208z6/ratchet/AGENTS.md --json
 {
-  "file": "/tmp/poteto-examples-imj4eqch/ratchet/AGENTS.md",
+  "file": "/tmp/poteto-examples-45v208z6/ratchet/AGENTS.md",
   "tables": 1,
   "rules": [
     {

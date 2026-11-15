@@ -40,5 +40,5 @@ Prove behavior on the running app, not a proxy. Every step goes through `.claude
 
 - `scripts/control.sh`: `launch | doctor | drive | evidence | cleanup | status | prove`. `.claude/skills/verify-todo/scripts/control.sh --help` lists the arguments.
 - One-shot proof: `.claude/skills/verify-todo/scripts/control.sh prove --feature <id> http GET /todos --expect-json '.=[]'` runs launch, doctor, drive, evidence, and cleanup, then checks the evidence survived. This shortcut accepts read-only drives. For mutations, run launch, doctor, the recipe's `--write KEY` drive and asserted `--read-back KEY` drive, evidence --copy-data, then cleanup; cleanup is required after a failed attempt too.
-- Contract check: `python3 /home/box/developer/poteto-skills/skills/create-verification-skill/scripts/check_verify_skill.py .claude/skills/verify-todo`.
-- Drift check: `python3 /home/box/developer/poteto-skills/skills/maintain-verification-skill/scripts/drift_check.py .claude/skills/verify-todo --repo .`.
+- Contract check: `python3 /workspace/pr-fix/skills/create-verification-skill/scripts/check_verify_skill.py .claude/skills/verify-todo`.
+- Drift check: `python3 /workspace/pr-fix/skills/maintain-verification-skill/scripts/drift_check.py .claude/skills/verify-todo --repo .`.

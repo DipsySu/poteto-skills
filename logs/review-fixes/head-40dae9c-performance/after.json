@@ -1,0 +1,69 @@
+{
+  "refs": {
+    "main": "98c3efb3ad5879ca38faa5879c5fcc523e8dccc5",
+    "reviewed_HEAD": "31c8c5a20f3caf447da276571ea5d9aca4ddf8eb"
+  },
+  "states": 100000,
+  "invariants": 3,
+  "repeats": 3,
+  "python": "3.11.14 (main, Jan 27 2026, 23:32:31) [Clang 21.1.4 ]",
+  "sha256": {
+    "main": "ef9a8f4a611d02ed791f5d4cfb1d9a204bff396c2d013c41423d3aa53c76a350",
+    "reviewed_HEAD": "d9fc7223d45cb5abd871b4d09fea7e7abb7217a4af293b397ffacbe172943bc6",
+    "working": "b88f2767a3e9b7fdb2e0dee1ad28ce2f23e80b3e2c5101bf546884d4346ba35b"
+  },
+  "results": [
+    {
+      "version": "main",
+      "mode": "no_limits_API",
+      "seconds": [
+        0.13464548531919718,
+        0.12718484504148364,
+        0.14166268426924944
+      ],
+      "median": 0.13464548531919718
+    },
+    {
+      "version": "reviewed_HEAD",
+      "mode": "default",
+      "seconds": [
+        2.1935349069535732,
+        2.2347297249361873,
+        2.0720306583680212
+      ],
+      "median": 2.1935349069535732
+    },
+    {
+      "version": "reviewed_HEAD",
+      "mode": "disabled",
+      "seconds": [
+        0.8012477196753025,
+        0.7969104070216417,
+        0.8543680277653039
+      ],
+      "median": 0.8012477196753025
+    },
+    {
+      "version": "working",
+      "mode": "default",
+      "seconds": [
+        0.698210182134062,
+        0.6738491258583963,
+        0.6628637411631644
+      ],
+      "median": 0.6738491258583963
+    },
+    {
+      "version": "working",
+      "mode": "disabled",
+      "seconds": [
+        0.15896268282085657,
+        0.14362907269969583,
+        0.13784984033554792
+      ],
+      "median": 0.14362907269969583
+    }
+  ],
+  "working_tree_base": "40dae9c67a67034dd2667ecc356b81f18f38b2ec",
+  "working_source": "skills/formal-verification/scripts/bounded_check.py"
+}

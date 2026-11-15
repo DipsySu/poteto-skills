@@ -18,6 +18,7 @@ import sys
 import tempfile
 import time
 import traceback
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parent.parent
 SKILLS = sorted(p.name for p in (ROOT / "skills").iterdir() if (p / "SKILL.md").is_file())
@@ -44,13 +45,14 @@ class Examples:
         self.log.write(f"ASSERT PASS: {description}\n")
         self.log.flush()
 
-    def run(self, *argv, expected=0, cwd=None, env=None):
+    def run(self, *argv, expected=0, cwd=None, env=None, timeout=90, json_stdout=False):
         args = [str(a) for a in argv]
         self.log.write("$ " + shlex.join(args) + "\n")
         self.log.flush()
         result = subprocess.run(args, cwd=cwd or self.repo, env=env or self.env,
-                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=90)
-        self.log.write(result.stdout + f"\n[exit {result.returncode}; expected {expected}]\n")
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE if json_stdout else subprocess.STDOUT,
+                                text=True, timeout=timeout)
+        self.log.write(result.stdout + (result.stderr or '') + f"\n[exit {result.returncode}; expected {expected}]\n")
         self.log.flush()
         self.last_output = result.stdout
         self.last_returncode = result.returncode
@@ -60,7 +62,7 @@ class Examples:
         return result.stdout
 
     def json(self, *argv, **kwargs):
-        return json.loads(self.run(*argv, **kwargs))
+        return json.loads(self.run(*argv, json_stdout=True, **kwargs))
 
     def script(self, skill, file):
         return ROOT / "skills" / skill / "scripts" / file
@@ -503,8 +505,631 @@ class Examples:
                 self.ensure(not self.json(*command)['drift'], 'an incidental python command in a recipe is not a dead app command')
             finally:
                 feature.write_text(original)
+            self.maintain_scan_regressions()
+            self.maintain_path_comparisons()
+            self.review_phantom_routes()
+            self.review_path_rebindings()
+            self.review_path_branches()
+            self.review_match_case_paths()
+            self.review_expression_paths()
+            self.review_exception_path_provenance()
+            self.review_with_item_provenance()
+            self.review_registered_boolean_actions()
+            self.review_parser_action_bindings()
+            self.review_parser_helper_defaults()
+            self.review_parser_constructor_arguments()
+            self.review_query_path_aliases()
+            self.review_go_receiver_workload()
+            self.review_route_workload()
+            self.review_go_receivers()
+            self.maintain_zero_nargs()
+            self.maintain_exit_contract()
             self.run(*command)
             self.live_pass('maintain')
+
+    def maintain_scan_regressions(self):
+        """Routes named like filesystem roots (/home) and store_true flags before the subcommand (curator 2026-11-09)."""
+        command = [self.script(self.name, 'drift_check.py'), self.skill, '--repo', self.repo, '--json']
+        api, listing = self.repo / 'todo/api.py', self.skill / 'features/list-todos.md'
+        originals = {path: path.read_text() for path in (api, listing)}
+        try:
+            api.write_text(originals[api].replace('if path == "/health":', 'if path == "/home":\n'
+                           '            self.server.store.export("/tmp/todo-export")\n'
+                           '            self.reply(200, {"page": "home"})\n        elif path == "/health":'))
+            drift = self.json(*command, expected=1)
+            self.save('home-route.json', drift)
+            missing = [(r['method'], r['path']) for r in drift['routes']['missing']]
+            self.ensure(('GET', '/home') in missing, 'a GET /home branch is reported missing from the map, though /home is also a filesystem root')
+            self.ensure(not any(path.startswith('/tmp') for _, path in missing), 'a /tmp path passed only to a generic call is still not a route')
+            listing.write_text(originals[listing] + '- `GET /home` serves the home page.\n')
+            mapped = self.json(*command, expected=0)
+            self.ensure(not mapped['routes']['dead'] and not mapped['drift'], 'a feature file that maps GET /home is not reported dead')
+        finally:
+            for path, text in originals.items():
+                path.write_text(text)
+        cli, create = self.repo / 'todo/__main__.py', self.skill / 'features/create-todo.md'
+        features = sorted((self.skill / 'features').glob('*.md'))
+        originals = {path: path.read_text() for path in (cli, *features)}
+        flag = 'parser.add_argument("--json", action="store_true")'
+        try:
+            cli.write_text(originals[cli].replace('    commands = parser.add_subparsers(', f'    {flag}\n    commands = parser.add_subparsers('))
+            for path in features:
+                path.write_text(originals[path].replace('python3 -m todo list', 'python3 -m todo --json list'))
+            create.write_text(create.read_text() + '- `python3 -m todo --json add milk --data {DATA_DIR}` adds a todo titled milk.\n')
+            texts = [path.read_text() for path in features]
+            self.ensure(flag in cli.read_text() and not any('-m todo list' in t for t in texts) and any('-m todo --json list' in t for t in texts),
+                        'scratch CLI declares a top-level store_true --json and every list recipe passes it before the subcommand')
+            drift = self.json(*command, expected=0)
+            self.save('store-true-flag.json', drift)
+            self.ensure(not any(c['name'] == 'list' for c in drift['commands']['missing']),
+                        'a store_true flag does not take the subcommand as its value: python3 -m todo --json list maps list')
+            self.ensure(not any(c['name'] == 'milk' for c in drift['commands']['dead']),
+                        'python3 -m todo --json add milk maps add instead of reporting milk as a dead command')
+            self.ensure(not drift['drift'], 'the map stays clean when its recipes pass the store_true --json before the subcommand')
+        finally:
+            for path, text in originals.items():
+                path.write_text(text)
+
+    def maintain_path_comparisons(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'review_scan')
+        source = '''import os, re
+from http.server import BaseHTTPRequestHandler
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        path = self.path
+        if data_dir == "/tmp/cache": pass
+        if data_dir.startswith("/var/lib/"): pass
+        if real.startswith("/var/www/"): pass
+        if os.environ.get("HOME") == "/root": pass
+        if re.match(r"^/Users/files$", real): pass
+        match real:
+            case "/etc/config": pass
+        if self.path == "/Users": pass
+        if "/home" == path: pass
+        if request.path.startswith("/var/routes/"): pass
+        if re.fullmatch(r"/root/routes", path): pass
+        match self.path:
+            case "/opt/routes": pass
+'''
+        routes = {(r['method'], r['path']) for r in scanner.analyze_python('server.py', source)['routes']}
+        self.ensure(routes == {('GET', p) for p in ('/Users', '/home', '/var/routes/<*>', '/root/routes', '/opt/routes')},
+                    'only request-path comparisons bypass filesystem filtering, including equality, prefix, regex and match/case')
+        api = self.repo / 'todo/api.py'
+        original = api.read_text()
+        try:
+            api.write_text(original.replace('        path = urlsplit(self.path).path',
+                           '        data_dir = "/unused"\n'
+                           '        if data_dir == "/tmp/cache": pass\n'
+                           '        if data_dir.startswith("/var/www/"): pass\n'
+                           '        path = urlsplit(self.path).path'))
+            drift = self.json(self.script(self.name, 'drift_check.py'), self.skill, '--repo', self.repo, '--json')
+            self.ensure(not drift['drift'], 'filesystem equality and startswith checks introduce no phantom routes or drift')
+        finally:
+            api.write_text(original)
+
+    def maintain_zero_nargs(self):
+        cli = self.repo / 'todo/__main__.py'
+        features = sorted((self.skill / 'features').glob('*.md'))
+        originals = {p: p.read_text() for p in (cli, *features)}
+        try:
+            action = ('import argparse\nclass Zero(argparse.Action):\n'
+                      '    def __call__(self, parser, namespace, values, option_string=None):\n'
+                      '        setattr(namespace, self.dest, True)\n')
+            cli.write_text(action + originals[cli].replace('    commands = parser.add_subparsers(',
+                           '    parser.register("action", "zero", Zero)\n'
+                           '    parser.add_argument("--zero", action="zero", nargs=0, default=False)\n'
+                           '    commands = parser.add_subparsers('))
+            self.run(sys.executable, '-m', 'todo', '--zero', 'list', '--data', self.scratch / 'zero-data')
+            scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'review_zero_scan')
+            option = next(o for o in scanner.analyze_python('cli.py', cli.read_text())['parser_options']['parser']
+                          if '--zero' in o['names'])
+            self.ensure(option['takes_value'] is False, 'registered string argparse actions with explicit nargs=0 consume no value')
+            for p in features:
+                p.write_text(originals[p].replace('python3 -m todo list', 'python3 -m todo --zero list'))
+            drift = self.json(self.script(self.name, 'drift_check.py'), self.skill, '--repo', self.repo, '--json')
+            self.ensure(not drift['drift'], 'a registered nargs=0 action before list keeps its command mapped and exits 0')
+        finally:
+            for p, text in originals.items():
+                p.write_text(text)
+
+    def review_phantom_routes(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'recheck_scan')
+        prefix = 'from http.server import BaseHTTPRequestHandler\nclass Handler(BaseHTTPRequestHandler):\n'
+        negatives = [
+            'path = self.translate_path(self.path)\nif path.startswith("/var/www/"): pass',
+            'cmd = ["curl","-X","POST","-o","/tmp/out",url]',
+            'if args[0] == "dev": pass',
+            'if tokens[0] == "var": pass',
+            'if folders == ["tmp", "cache"]: pass',
+            'if path.startswith("/var/www/"): pass',
+        ]
+        unexpected = {}
+        for source in negatives:
+            body = prefix + '    def do_GET(self):\n' + ''.join('        ' + line + '\n' for line in source.splitlines())
+            routes = scanner.analyze_python('server.py', body)['routes']
+            if routes:
+                unexpected[source] = routes
+        # A request-path assignment in another function must not bless this function's bare name.
+        body = (prefix + '    def do_POST(self):\n        path = self.path\n'
+                '    def do_GET(self):\n        if path == "/var/files": pass\n')
+        if routes := scanner.analyze_python('server.py', body)['routes']:
+            unexpected['cross-function path'] = routes
+        root = self.scratch / 'review-go-routes'
+        root.mkdir()
+        (root / 'main.go').write_text('package main\nfunc main() {\n'
+                                      'kv.Put("/var/lib/data", v)\n'
+                                      'r.Put("/var/routes", handler)\n'
+                                      'router.GET("/Users", handler)\n}\n')
+        go = self.json(self.script('create-verification-skill', 'scan_repo.py'), root, '--json')
+        if any(r['path'] == '/var/lib/data' for r in go['http_routes']):
+            unexpected['kv.Put("/var/lib/data", v)'] = go['http_routes']
+        self.ensure(not unexpected, f'filesystem, curl, args, folders and non-router Go calls create no phantom routes: {unexpected}')
+        self.ensure({(r['method'], r['path']) for r in go['http_routes']} == {('PUT', '/var/routes'), ('GET', '/Users')},
+                    'known Go route receivers retain filesystem-like route names')
+        body = (prefix + '    def do_GET(self):\n'
+                '        path = urlsplit(self.path).path\n'
+                '        if path.startswith("/var/routes/"): pass\n'
+                '        parts = path.strip("/").split("/")\n'
+                '        if parts == ["tmp", "cache"]: pass\n'
+                '        if parts[0] == "dev": pass\n'
+                '        path = self.translate_path(self.path)\n'
+                '        if path.startswith("/var/www/"): pass\n')
+        self.ensure({r['path'] for r in scanner.analyze_python('server.py', body)['routes']}
+                    == {'/var/routes/<*>', '/tmp/cache', '/dev'},
+                    'same-function request-path aliases and split segments keep real routes; reassignment revokes provenance')
+
+    def review_match_case_paths(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'case_path_scan')
+        prefix = 'class Handler:\n    def do_GET(self):\n'
+        probe = 'if path.startswith("/var/www/"): pass'
+        negatives = [
+            'path = filesystem\nmatch mode:\n    case "url":\n        path = self.path\n'
+            '    case "disk":\n        ' + probe,
+            'path = filesystem\nmatch mode:\n    case "url" if allowed:\n        path = self.path\n'
+            '    case _:\n        ' + probe,
+            'path = filesystem\nmatch mode:\n    case "url":\n        path = self.path\n' + probe,
+            'path = self.path\nmatch mode:\n    case "disk":\n        path = filesystem\n' + probe,
+            'path = filesystem\nmatch mode:\n    case "url":\n        if allowed:\n'
+            '            path = self.path\n        ' + probe,
+            'path = filesystem\nmatch mode:\n    case "url":\n        path = self.path\n'
+            '    case "disk":\n        match detail:\n            case _:\n                ' + probe,
+            'path = self.path\nmatch filesystem:\n    case path if False: pass\n'
+            '    case _:\n        ' + probe,
+            'path = self.path\nmatch mode:\n    case "disk" if (path := filesystem) and False: pass\n'
+            '    case _:\n        ' + probe,
+            'path = filesystem\nmatch mode:\n    case "url" if (path := self.path) and False: pass\n'
+            '    case _:\n        ' + probe,
+        ]
+        positives = [
+            'match mode:\n    case "url":\n        path = self.path\n        ' + probe,
+            'path = self.path\nmatch mode:\n    case "disk":\n        path = filesystem\n'
+            '    case "url":\n        ' + probe,
+            'path = self.path\nmatch mode:\n    case {"disk": path}: pass\n'
+            '    case "url":\n        ' + probe,
+            'match mode:\n    case "disk":\n        path = filesystem\npath = self.path\n' + probe,
+            'match mode:\n    case "url" if (path := self.path):\n        ' + probe,
+            'path = self.path\nmatch mode:\n    case "disk" if allowed:\n        path = filesystem\n'
+            '    case _:\n        ' + probe,
+        ]
+        failures = []
+        for expected, sources in ((set(), negatives), ({('GET', '/var/www/<*>')}, positives)):
+            for source in sources:
+                body = prefix + ''.join('        ' + line + '\n' for line in source.splitlines())
+                info = scanner.analyze_python('server.py', body)
+                routes = {(r['method'], r['path']) for r in info['routes']}
+                if routes != expected or info['notes']:
+                    failures.append((source, sorted(routes), info['notes']))
+        self.ensure(not failures, f'match cases keep exclusive bindings separate and revoke uncertain joins: {failures}')
+
+    def review_route_workload(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'route_work_scan')
+        original_children, original_compares = scanner.ast.iter_child_nodes, scanner._compares_path
+        samples = []
+        failures = []
+        for path_prefix in ('/r', '/var/r'):
+            for count in (20, 60, 120):
+                metrics = {'prefix': path_prefix, 'n': count, 'ast_edges': 0, 'compares_path': 0}
+
+                def children(node):
+                    for child in original_children(node):
+                        metrics['ast_edges'] += 1
+                        yield child
+
+                def compares(node):
+                    metrics['compares_path'] += 1
+                    return original_compares(node)
+
+                source = 'class Handler:\n    def do_GET(self):\n        path = self.path\n'
+                source += ''.join(f'        if path == "{path_prefix}{i}": pass\n' for i in range(count))
+                started = time.monotonic()
+                with patch.object(scanner.ast, 'iter_child_nodes', children), patch.object(scanner, '_compares_path', compares):
+                    info = scanner.analyze_python('server.py', source)
+                metrics['seconds'] = round(time.monotonic() - started, 6)
+                samples.append(metrics)
+                expected = {('GET', f'{path_prefix}{i}') for i in range(count)}
+                if {(r['method'], r['path']) for r in info['routes']} != expected or info['notes']:
+                    failures.append(('routes', metrics))
+        self.log.write('ROUTE WORKLOAD ' + json.dumps(samples) + '\n')
+        self.log.flush()
+        for first, last in ((samples[0], samples[2]), (samples[3], samples[5])):
+            if last['ast_edges'] > 8 * first['ast_edges']:
+                failures.append(('sixfold route growth exceeds near-linear AST work', first, last))
+        self.ensure(not failures, f'ordinary and filesystem-like routes retain exact inventory with near-linear AST work: {failures}')
+
+    def review_path_rebindings(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'rebind_scan')
+        prefix = 'from http.server import BaseHTTPRequestHandler\nclass Handler(BaseHTTPRequestHandler):\n'
+        probe = 'if path.startswith("/var/www/"): pass'
+        negatives = [
+            'path, query = self.translate_path(path), ""\n' + probe,
+            '[path, query] = [self.translate_path(path), ""]\n' + probe,
+            '(query, [path, *rest]) = translated\n' + probe,
+            'path, path = self.path, filesystem\n' + probe,
+            'for path in files:\n    ' + probe,
+            'for query, [path] in files:\n    ' + probe,
+            'for path in files: pass\n' + probe,
+            'async for path in files:\n    ' + probe,
+            'with open_file() as path:\n    ' + probe,
+            'with open_file() as (path, query):\n    ' + probe,
+            'with open_file() as path: pass\n' + probe,
+            'async with open_file() as path:\n    ' + probe,
+            '(path := self.translate_path(path))\n' + probe,
+            'if (path := self.translate_path(path)) and path.startswith("/var/www/"): pass',
+            'path += suffix\n' + probe,
+            'del path\n' + probe,
+            'import filesystem as path\n' + probe,
+            'from filesystem import root as path\n' + probe,
+            'def path(): pass\n' + probe,
+            'class path: pass\n' + probe,
+            'try: read_file()\nexcept OSError as path:\n    ' + probe,
+            'match filesystem:\n    case {"root": path}:\n        ' + probe,
+            'checks = [path.startswith("/var/www/") for path in files]',
+            'parts = path.strip("/").split("/")\nparts, query = folders, ""\n'
+            'if parts == ["var", "www"]: pass',
+        ]
+        failures = []
+        for source in negatives:
+            body = prefix + '    async def do_GET(self):\n        path = self.path\n'
+            body += ''.join('        ' + line + '\n' for line in source.splitlines())
+            info = scanner.analyze_python('server.py', body)
+            if info['routes'] or info['notes']:
+                failures.append((source, info['routes'], info['notes']))
+        positives = [
+            'path = self.path',
+            'path, query = self.path, ""',
+            'path, path = filesystem, self.path',
+            '[query, [path]] = ["", [urlsplit(self.path).path]]',
+            '(path := self.path)',
+            'path = self.path\npath: str',
+            'path = self.path\nfor other in files: pass',
+            'path = self.path\nwith open_file() as other: pass',
+            'path = self.path\nchecks = [path for path in files]',
+            'path = self.translate_path(self.path)\npath = self.path',
+        ]
+        for source in positives:
+            body = prefix + '    def do_GET(self):\n'
+            body += ''.join('        ' + line + '\n' for line in (source + '\n' + probe).splitlines())
+            routes = {(r['method'], r['path']) for r in scanner.analyze_python('server.py', body)['routes']}
+            if routes != {('GET', '/var/www/<*>')}:
+                failures.append((source, sorted(routes)))
+        self.ensure(not failures, f'rebindings revoke unknown path/segment sources and retain proven request aliases: {failures}')
+
+    def review_baseline_retry(self):
+        root = self.scratch / 'review-baseline-adoption'
+        root.mkdir()
+        self.run('git', 'init', '-q', cwd=root)
+        rules, baseline = root / 'rules.json', root / 'baseline.json'
+        rules.write_text(json.dumps({'rules': [
+            {'id': 'probe', 'regex': 'BAD', 'include': ['*.py'], 'message': 'Use good() instead.'},
+            {'id': 'clean', 'regex': 'OTHER', 'include': ['*.py'], 'message': 'Use good() instead.'}]}))
+        (root / 'new.py').write_text('BAD\n')
+        (root / 'tracked.py').write_text('BAD\n')
+        self.run('git', 'add', 'tracked.py', cwd=root)
+        command = [str(self.script('correct', 'patlint.py')), '--rules', str(rules), '--root', str(root),
+                   '--baseline', str(baseline), '--update-baseline', '--json', str(root)]
+        result = subprocess.run(command, env=self.env, capture_output=True, text=True, timeout=10)
+        self.log.write(result.stdout + result.stderr)
+        counts = json.loads(baseline.read_text())['counts']
+        self.ensure(result.returncode == 1 and 'probe' not in counts and counts.get('clean') == {}
+                    and 'probe' in result.stderr and 'track' in result.stderr and 'rerun' in result.stderr,
+                    'failed first adoption leaves no rule key, preserves other rules and explains how to retry')
+        self.run('git', 'add', 'new.py', cwd=root)
+        adopted = self.json(*command)
+        self.ensure(adopted['ok'] and json.loads(baseline.read_text())['counts']['probe'] == {'new.py': 1, 'tracked.py': 1},
+                    'tracking the hit after a failed first adoption lets the retry adopt all current counts')
+        (root / 'new.py').write_text('BAD\nBAD\n')
+        refused = self.json(*command, expected=1)
+        self.ensure(refused['baseline']['refused'], 'successful retry still ratchets subsequent increases')
+
+    def review_path_branches(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'branch_scan')
+        prefix = 'class Handler:\n    def do_GET(self):\n'
+        probe = 'if path.startswith("/var/www/"): pass'
+        negatives = [
+            'path = self.translate_path(self.path)\nif flag:\n    path = self.path\nelif path.startswith("/var/www/"): pass',
+            'path = self.translate_path(self.path)\nif flag:\n    path = self.path\nelse:\n    ' + probe,
+            'path = self.translate_path(self.path)\nif flag: pass\nelif other:\n    path = self.path\nelse:\n    ' + probe,
+            'path = self.translate_path(self.path)\nif flag:\n    path = self.path\n' + probe,
+            'path = self.path\nif flag:\n    path = filesystem\nelse:\n    path = self.path\n' + probe,
+            'path = filesystem\nif flag:\n    if other:\n        path = self.path\n    ' + probe,
+        ]
+        positives = [
+            'path = self.path\nif flag:\n    path = filesystem\nelif path.startswith("/var/www/"): pass',
+            'path = self.path\nif flag:\n    path = filesystem\nelse:\n    ' + probe,
+            'if flag:\n    path = self.path\n    ' + probe,
+            'path = self.path\nif flag:\n    if other: pass\n    ' + probe,
+            'if flag:\n    path = filesystem\npath = self.path\n' + probe,
+        ]
+        failures = []
+        for expected, sources in ((set(), negatives), ({('GET', '/var/www/<*>')}, positives)):
+            for source in sources:
+                body = prefix + ''.join('        ' + line + '\n' for line in source.splitlines())
+                info = scanner.analyze_python('server.py', body)
+                routes = {(r['method'], r['path']) for r in info['routes']}
+                if routes != expected or info['notes']:
+                    failures.append((source, sorted(routes), info['notes']))
+        self.ensure(not failures, f'exclusive branches cannot lend path provenance; uncertain joins revoke it: {failures}')
+
+    def review_git_fail_closed(self):
+        root = self.scratch / 'review-git-errors'
+        root.mkdir()
+        self.run('git', 'init', '-q', cwd=root)
+        (root / 'tracked.py').write_text('BAD\n')
+        (root / 'scratch.py').write_text('BAD\n')
+        self.run('git', 'add', 'tracked.py', cwd=root)
+        rules = self.save('rules.json', {'rules': [
+            {'id': 'probe', 'regex': 'BAD', 'include': ['*.py'], 'message': 'Use good() instead.'}]})
+        baseline = root / 'baseline.json'
+        original = '{"counts": {}}\n'
+        baseline.write_text(original)
+        env = dict(self.env, GIT_DIR=str(root / 'missing.git'))
+        # Inherited GIT_DIR no longer selects the checkout. Break the actual
+        # checkout marker so this still exercises a genuine git lookup failure.
+        (root / '.git').rename(root / 'saved.git')
+        (root / '.git').write_text('gitdir: missing.git\n')
+        failures = []
+        for target in (root, root / 'tracked.py'):
+            for explicit_root in ((), ('--root', str(root))):
+                for mode in ((), ('--baseline', str(baseline), '--update-baseline')):
+                    command = [str(self.script('correct', 'patlint.py')), '--rules', str(rules),
+                               *explicit_root, *mode, str(target)]
+                    result = subprocess.run(command, cwd=root, env=env, capture_output=True, text=True, timeout=10)
+                    self.log.write(result.stdout + result.stderr)
+                    if (result.returncode != 2 or 'git' not in result.stderr.lower()
+                            or 'missing.git' not in result.stderr or 'Traceback' in result.stderr
+                            or baseline.read_text() != original):
+                        failures.append((command, result.returncode, result.stderr, baseline.read_text()))
+                    baseline.write_text(original)
+        self.ensure(not failures, f'git failure inside a worktree exits 2 without adopting any baseline hits: {failures}')
+        outside = self.scratch / 'review-non-git'
+        outside.mkdir()
+        (outside / 'clean.py').write_text('GOOD\n')
+        result = subprocess.run([str(self.script('correct', 'patlint.py')), '--rules', str(rules), str(outside)],
+                                cwd=outside, env=self.env, capture_output=True, text=True, timeout=10)
+        self.ensure(result.returncode == 0 and not result.stderr,
+                    'ordinary non-git directories retain quiet filesystem fallback')
+
+    def review_git_case_aliases(self):
+        """Filesystem identity, not spelling, selects a checkout and its index."""
+        root = self.scratch / 'review-Git-Case'
+        root.mkdir()
+        alias = root.with_name(root.name.swapcase())
+        if not alias.exists() or not alias.samefile(root):
+            self.log.write('SKIP case-alias probe: scratch filesystem is case-sensitive\n')
+            self.ensure(True, 'case-alias regression skips on a case-sensitive filesystem')
+            return
+        clean_env = {k: v for k, v in self.env.items() if k not in ('GIT_DIR', 'GIT_WORK_TREE')}
+        self.run('git', 'init', '-q', cwd=root, env=clean_env)
+        (root / 'src').mkdir()
+        (root / 'src/tracked.py').write_text('BAD\n')
+        self.run('git', 'add', 'src/tracked.py', cwd=root, env=clean_env)
+        rules = self.save('case-rules.json', {'rules': [
+            {'id': 'probe', 'regex': 'BAD', 'include': ['*.py'], 'message': 'Use good() instead.'}]})
+        failures = []
+        for target in (alias, alias / 'src', alias / 'src/tracked.py',
+                       root / 'SRC', alias / 'SRC', alias / 'SRC/tracked.py'):
+            for explicit_root in ((), ('--root', str(alias))):
+                baseline = self.art / 'case-baseline.json'
+                baseline.unlink(missing_ok=True)
+                command = [str(self.script('correct', 'patlint.py')), '--rules', str(rules), '--json',
+                           *explicit_root, '--baseline', str(baseline), '--update-baseline', str(target)]
+                result = subprocess.run(command, cwd=root, env=clean_env, capture_output=True,
+                                        text=True, timeout=10)
+                self.log.write(f'case alias target={target} explicit_root={bool(explicit_root)} '
+                               f'exit={result.returncode}\n' + result.stdout + result.stderr)
+                report = json.loads(result.stdout) if result.stdout.strip().startswith('{') else {}
+                counts = json.loads(baseline.read_text())['counts'] if baseline.exists() else None
+                if (result.returncode != 0 or result.stderr or report.get('files_scanned') != 1
+                        or report.get('untracked') != [] or counts != {'probe': {'src/tracked.py': 1}}
+                        or [v['path'] for v in report.get('violations', [])] != ['src/tracked.py']):
+                    failures.append((str(target), bool(explicit_root), result.returncode,
+                                     result.stderr, report, counts))
+        self.ensure(not failures,
+                    f'case aliases of a checkout scan directory/file arguments and adopt tracked baseline keys consistently: {failures}')
+
+    def review_git_inherited_environment(self):
+        root = self.scratch / 'review-git-inherited'
+        root.mkdir()
+        clean_env = {k: v for k, v in self.env.items() if k not in ('GIT_DIR', 'GIT_WORK_TREE')}
+        self.run('git', 'init', '-q', cwd=root, env=clean_env)
+        (root / 'src').mkdir()
+        (root / 'src/tracked.py').write_text('BAD\n')
+        (root / '.gitignore').write_text('ignored.py\n')
+        self.run('git', 'add', '.', cwd=root, env=clean_env)
+        self.run('git', '-c', 'user.name=Regression', '-c', 'user.email=regression@example.invalid',
+                 'commit', '-qm', 'fixture', cwd=root, env=clean_env)
+        linked = self.scratch / 'review-git-linked'
+        self.run('git', 'worktree', 'add', '--detach', str(linked), 'HEAD', cwd=root, env=clean_env)
+        rules = self.save('inherited-rules.json', {'rules': [
+            {'id': 'probe', 'regex': 'BAD', 'include': ['*.py'], 'message': 'Use good() instead.'}]})
+        failures = []
+        for checkout in (root, linked):
+            (checkout / 'src/ignored.py').write_text('BAD\n')
+            (checkout / 'src/new.py').write_text('GOOD\n')
+            nested = checkout / 'src/nested'
+            nested.mkdir()
+            self.run('git', 'init', '-q', cwd=nested, env=clean_env)
+            (nested / 'nested.py').write_text('BAD\n')
+            self.run('git', 'add', 'nested.py', cwd=nested, env=clean_env)
+            git_dir = self.run('git', 'rev-parse', '--absolute-git-dir', cwd=checkout, env=clean_env).strip()
+            variants = [dict(GIT_DIR=git_dir), dict(GIT_DIR=os.path.relpath(git_dir, checkout.resolve())),
+                        dict(GIT_DIR=git_dir, GIT_WORK_TREE=str(nested))]
+            for inherited in variants:
+                env = dict(clean_env, **inherited)
+                for target in ('src/tracked.py', 'src'):
+                    for explicit_root in ((), ('--root', str(checkout)), ('--root', '.')):
+                        baseline = self.art / 'inherited-baseline.json'
+                        baseline.unlink(missing_ok=True)
+                        command = [str(self.script('correct', 'patlint.py')), '--rules', str(rules),
+                                   '--json', *explicit_root, '--baseline', str(baseline), '--update-baseline', target]
+                        result = subprocess.run(command, cwd=checkout, env=env, capture_output=True,
+                                                text=True, timeout=10)
+                        self.log.write(f'checkout={checkout.name} inherited={inherited} target={target} '
+                                       f'explicit_root={bool(explicit_root)} exit={result.returncode}\n'
+                                       + result.stdout + result.stderr)
+                        report = json.loads(result.stdout) if result.stdout.strip().startswith('{') else {}
+                        counts = json.loads(baseline.read_text())['counts'] if baseline.exists() else None
+                        expected_untracked = ['src/new.py'] if target == 'src' else []
+                        if (result.returncode != 0 or result.stderr or report.get('untracked') != expected_untracked
+                                or report.get('files_scanned') != (2 if target == 'src' else 1)
+                                or counts != {'probe': {'src/tracked.py': 1}}
+                                or report.get('root') != str(checkout.resolve())):
+                            failures.append((checkout.name, inherited, target, bool(explicit_root),
+                                             result.returncode, result.stderr, report, counts))
+            # An explicit nested file is linted as given, but its own index must
+            # not make it eligible for this checkout's ratchet baseline.
+            baseline = self.art / 'nested-baseline.json'
+            baseline.unlink(missing_ok=True)
+            result = subprocess.run([str(self.script('correct', 'patlint.py')), '--rules', str(rules),
+                                     '--root', str(checkout), '--baseline', str(baseline), '--update-baseline',
+                                     '--json', str(nested / 'nested.py')], cwd=checkout,
+                                    env=dict(clean_env, GIT_DIR=git_dir), capture_output=True, text=True, timeout=10)
+            self.log.write(result.stdout + result.stderr)
+            report = json.loads(result.stdout) if result.stdout.strip().startswith('{') else {}
+            if (result.returncode != 1 or report.get('untracked') != ['src/nested/nested.py']
+                    or not baseline.exists() or json.loads(baseline.read_text())['counts'] != {}):
+                failures.append(('nested index adopted', checkout.name, result.returncode, report))
+        outside = self.scratch / 'review-inherited-non-git'
+        outside.mkdir()
+        (outside / 'clean.py').write_text('GOOD\n')
+        for cwd in (root, outside):
+            for target in (outside, outside / 'clean.py'):
+                result = subprocess.run([str(self.script('correct', 'patlint.py')), '--rules', str(rules),
+                                         '--json', str(target)], cwd=cwd,
+                                        env=dict(clean_env, GIT_DIR=str(root / '.git'), GIT_WORK_TREE=str(root)),
+                                        capture_output=True, text=True, timeout=10)
+                self.log.write(result.stdout + result.stderr)
+                report = json.loads(result.stdout) if result.stdout.strip().startswith('{') else {}
+                if (result.returncode != 0 or result.stderr or report.get('files_scanned') != 1
+                        or report.get('untracked') != []):
+                    failures.append(('non-git fallback', cwd.name, target.name, result.returncode, result.stderr, report))
+        self.ensure(not failures,
+                    f'inherited absolute/relative GIT_DIR and GIT_WORK_TREE cannot change root, tracking, ignores or baseline eligibility in ordinary/linked checkouts: {failures}')
+
+    def review_git_locale(self):
+        root = self.scratch / 'review-git-locale'
+        root.mkdir()
+        (root / 'clean.py').write_text('GOOD\n')
+        rules = self.save('locale-rules.json', {'rules': [
+            {'id': 'probe', 'regex': 'BAD', 'include': ['*.py'], 'message': 'Use good() instead.'}]})
+        fake_bin = self.scratch / 'review-translated-git'
+        fake_bin.mkdir()
+        fake_git = fake_bin / 'git'
+        fake_git.write_text('#!/bin/sh\nprintf "%s\\n" "致命错误：不是 Git 仓库（或者任何父目录）：.git" >&2\nexit 128\n')
+        fake_git.chmod(0o755)
+        env = {k: v for k, v in self.env.items() if k not in ('GIT_DIR', 'GIT_WORK_TREE')}
+        env['LC_ALL'] = 'zh_CN.UTF-8'
+        translated_env = dict(env, PATH=str(fake_bin) + os.pathsep + env['PATH'])
+        failures = []
+        # Real git reproduces localized installations; the stub keeps the test
+        # effective on machines whose git lacks a Chinese message catalog.
+        for provider, command_env in (('real', env), ('translated', translated_env)):
+            for target in (root, root / 'clean.py'):
+                for explicit_root in ((), ('--root', str(root))):
+                    command = [str(self.script('correct', 'patlint.py')), '--rules', str(rules),
+                               '--json', *explicit_root, str(target)]
+                    result = subprocess.run(command, cwd=root, env=command_env,
+                                            capture_output=True, text=True, timeout=10)
+                    self.log.write(f'locale=zh_CN.UTF-8 provider={provider} target={target.name} '
+                                   f'explicit_root={bool(explicit_root)} exit={result.returncode}\n'
+                                   + result.stdout + result.stderr)
+                    report = json.loads(result.stdout) if result.returncode == 0 else {}
+                    if result.returncode != 0 or result.stderr or report.get('files_scanned') != 1:
+                        failures.append((provider, target.name, bool(explicit_root),
+                                         result.returncode, result.stderr, report))
+        # The same translated failure in a checkout must never authorize a
+        # filesystem scan or a baseline update, including linked-worktree markers.
+        checkout = self.scratch / 'review-locale-worktree'
+        checkout.mkdir()
+        (checkout / '.git').write_text('gitdir: missing.git\n')
+        (checkout / 'hit.py').write_text('BAD\n')
+        baseline = checkout / 'baseline.json'
+        original = '{"counts": {}}\n'
+        baseline.write_text(original)
+        for target in (checkout, checkout / 'hit.py'):
+            command = [str(self.script('correct', 'patlint.py')), '--rules', str(rules),
+                       '--root', str(checkout), '--baseline', str(baseline), '--update-baseline', str(target)]
+            result = subprocess.run(command, cwd=checkout, env=translated_env,
+                                    capture_output=True, text=True, timeout=10)
+            self.log.write(f'locale=zh_CN.UTF-8 checkout exit={result.returncode}\n' + result.stdout + result.stderr)
+            if (result.returncode != 2 or 'refusing filesystem fallback' not in result.stderr
+                    or baseline.read_text() != original):
+                failures.append(('checkout', target.name, result.returncode, result.stderr, baseline.read_text()))
+        self.ensure(not failures,
+                    f'non-English git errors fall back quietly only outside checkouts, preserving baseline failures: {failures}')
+
+    def review_git_warning(self):
+        import contextlib
+        import io
+        lint = load_module(self.script('correct', 'patlint.py'), 'recheck_patlint')
+        root = self.scratch / 'review-git-fallback'
+        root.mkdir()
+        (root / 'hit.py').write_text('BAD\n')
+        for error in (FileNotFoundError('git unavailable'),
+                      subprocess.CompletedProcess(['git'], 128, b'', b'fatal: dubious ownership')):
+            if isinstance(error, subprocess.CompletedProcess):
+                # Dubious ownership describes a checkout; outside one all git
+                # failures now fall back without depending on translated text.
+                (root / '.git').mkdir()
+            err = io.StringIO()
+            kwargs = {'side_effect': error} if isinstance(error, Exception) else {'return_value': error}
+            with patch.object(lint.subprocess, 'run', **kwargs), contextlib.redirect_stderr(err):
+                try:
+                    files = list(lint.walk([root], root))
+                    top = lint.git_toplevel(root)
+                except RuntimeError as failure:
+                    self.ensure(isinstance(error, subprocess.CompletedProcess)
+                                and 'dubious ownership' in str(failure) and 'refusing filesystem fallback' in str(failure),
+                                'dubious ownership is a git error, never permission to traverse the disk')
+                    continue
+            self.ensure([f[0] for f in files] == ['hit.py'] and top is None
+                        and 'WARNING' in err.getvalue() and 'git' in err.getvalue()
+                        and 'fallback' in err.getvalue(),
+                        f'git failure retains disk fallback but warns on stderr: {error}')
+
+    def maintain_exit_contract(self):
+        """Prove both clean-map regressions reject a checker that returns clean JSON with exit 1."""
+        from unittest.mock import patch
+        checker = str(self.script(self.name, 'drift_check.py'))
+        run = subprocess.run
+        for target in (0, 1):  # mapped /home; store_true recipes
+            clean = 0
+            def wrong_exit(*args, **kwargs):
+                nonlocal clean
+                result = run(*args, **kwargs)
+                if args[0][0] == checker and not json.loads(result.stdout)['drift']:
+                    if clean == target:
+                        result.returncode = 1
+                    clean += 1
+                return result
+            caught = None
+            with patch.object(subprocess, 'run', wrong_exit):
+                try:
+                    self.maintain_scan_regressions()
+                except AssertionError as error:
+                    caught = str(error)
+            self.ensure(caught is not None and 'exit 1, expected 0;' in caught,
+                        f'clean drift regression {target + 1} rejects exit 1 even when its JSON reports no drift')
 
     def correct_grok_regressions(self):
         """mine_mistakes false positives seen on pixel-agent-garden (logs/grok-trial/)."""
@@ -532,9 +1157,72 @@ class Examples:
         self.ensure('keep the layout from overlapping again' not in texts, 'a test: subject with a weak word ("again") is not a fix')
         self.ensure(not any(c['repeat'] for c in mined['classes']), 'an orientation bullet sharing a file name does not mark a class as repeat')
 
+    def correct_git_file_set(self):
+        """patlint lints what git would commit, so a leftover worktree or an ignored dir can't fail it or enter the baseline."""
+        rules = ROOT / 'skills/correct/references/lint-rules.example.json'
+        past = self.repo / '.claude/worktrees/past'
+        gitignore, env, new = self.repo / '.gitignore', self.repo / 'env', self.repo / 'todo/new.py'
+        ignored = gitignore.read_text()
+        baseline, fresh = self.scratch / 'git-set-baseline.json', self.scratch / 'git-set-fresh.json'
+        self.run('git', 'worktree', 'add', '--detach', past, self.built['direct_write_commits'][1])
+        try:
+            self.ensure(any(v['path'] == 'todo/api.py' for v in self.lint(rules, past / 'todo', root=past, expected=1)['violations']),
+                        'a leftover worktree under .claude/worktrees/ holds the real past mistake, caught when linted as its own checkout')
+            whole = self.lint(rules, self.repo)
+            self.ensure(whole['ok'] and not any(v['path'].startswith('.claude/') for v in whole['violations']),
+                        'linting the main checkout skips the leftover worktree (a nested checkout CI never sees) and passes')
+            self.lint(rules, self.repo, extra=('--baseline', baseline, '--update-baseline'))
+            self.ensure(not any(p.startswith('.claude/') for f in json.loads(baseline.read_text())['counts'].values() for p in f),
+                        '--update-baseline writes no key for files inside a leftover worktree')
+            env.mkdir()
+            (env / 'x.py').write_text('store.path.write_text(payload)\n')
+            gitignore.write_text(ignored + 'env/\n')
+            self.ensure(self.lint(rules, self.repo)['ok'], 'a hit in a gitignored env/ directory stays quiet')
+            output = self.run(self.script('correct', 'patlint.py'), '--rules', rules, '--root', self.repo,
+                              '--json', env, expected=2)
+            self.ensure('no files' in output and str(env) in output,
+                        'an explicitly named ignored directory fails visibly instead of reporting a clean zero-file lint')
+            new.write_text('store.path.write_text(payload)\n')
+            hit = self.lint(rules, self.repo, expected=1)
+            self.ensure([v['path'] for v in hit['failing']] == ['todo/new.py'] and 'todo/new.py' in hit['untracked'],
+                        'a hit in an untracked, unignored todo/new.py still fails and is reported as untracked')
+            adopted = self.lint(rules, self.repo, extra=('--baseline', fresh, '--update-baseline'), expected=1)
+            self.ensure(not any('todo/new.py' in f for f in json.loads(fresh.read_text())['counts'].values())
+                        and any(o['path'] == 'todo/new.py' for o in adopted['baseline']['over']),
+                        'adopting a rule writes no count for an untracked file, whose hits keep failing')
+        finally:
+            new.unlink(missing_ok=True)
+            shutil.rmtree(env, ignore_errors=True)
+            gitignore.write_text(ignored)
+            self.run('git', 'worktree', 'remove', '--force', past)
+            if not any(past.parent.iterdir()):
+                past.parent.rmdir()
+
     def lint(self, rules, path, *, root=None, expected=0, extra=()):
         return self.json(self.script('correct', 'patlint.py'), '--rules', rules, '--root', root or self.repo,
                          '--json', *extra, path, expected=expected)
+
+    def correct_baseline_contract(self):
+        rules = ROOT / 'skills/correct/references/lint-rules.example.json'
+        root = self.scratch / 'ratchet-contract'
+        (root / 'todo').mkdir(parents=True)
+        self.run('git', 'init', '-q', cwd=root)
+        file = root / 'todo/new.py'
+        baseline, first = root / 'baseline.json', root / 'first.json'
+        file.write_text('# clean\n')
+        self.run('git', 'add', 'todo/new.py', cwd=root)
+        self.lint(rules, root, root=root, extra=('--baseline', baseline, '--update-baseline'))
+        file.write_text('store.path.write_text(payload)\n')
+        existing = self.lint(rules, root, root=root, extra=('--baseline', baseline, '--update-baseline'), expected=1)
+        self.ensure(existing['baseline']['refused'] and not existing['ok'],
+                    'a tracked hit cannot raise an existing rule baseline, even after the file enters git')
+        adopted = self.lint(rules, root, root=root, extra=('--baseline', first, '--update-baseline'))
+        self.ensure(adopted['ok'] and json.loads(first.read_text())['counts']['no-direct-json-write']['todo/new.py'] == 1,
+                    'tracked existing hits may enter a baseline only when the rule is first adopted')
+        for path in (ROOT / 'skills/correct/SKILL.md', self.script('correct', 'patlint.py')):
+            text = path.read_text()
+            self.ensure('first adopted' in text and 'existing rule' in text,
+                        f'{path.name} explains first adoption and the ratchet for existing rules')
 
     def correct(self):
         with self.case('correct'):
@@ -547,6 +1235,13 @@ class Examples:
             self.ensure(any('status' in ' '.join(c['signature']).lower() and c['sources'].get('commit',0)>=2
                             for c in mined['classes']), 'status-transition class contains both fix commits')
             self.correct_grok_regressions()
+            self.correct_baseline_contract()
+            self.review_baseline_retry()
+            self.review_git_warning()
+            self.review_git_fail_closed()
+            self.review_git_locale()
+            self.review_git_inherited_environment()
+            self.review_git_case_aliases()
             rules = self.save('rules.json', {'rules':[{'id':'no-direct-json-write','regex':r'\b\w+\.path\.write_text\s*\(',
                 'include':['todo/*.py'], 'exclude':['todo/store.py'],
                 'message':'Use Store.add or Store.transition in todo/store.py for atomic persistence; avoid json.dump.',
@@ -629,6 +1324,7 @@ class Examples:
             finally:
                 self.run('git', 'worktree', 'remove', '--force', old)
             self.ensure(self.lint(rules, self.repo / 'todo')['ok'], 'same persistence lint passes on HEAD')
+            self.correct_git_file_set()
             fixture = self.scratch / 'ratchet'
             (fixture / 'todo').mkdir(parents=True)
             file = fixture / 'todo/legacy.py'
@@ -753,6 +1449,929 @@ class Examples:
             self.ensure(self.last_returncode == (0 if availability['available'] else 1), 'TLA availability exit code matches its report and advertises the stdlib fallback')
             self.save('tla-availability.json', availability)
             self.generated_properties()
+            self.formal_time_limits()
+            self.formal_trace_timeout()
+            self.formal_shrink_interrupt()
+            self.formal_property_seeds()
+            self.formal_import_timeout_json()
+            self.formal_limit_support()
+            self.review_deadline_order()
+            self.review_synchronous_deadlines()
+            self.review_import_budget()
+            self.review_shrink_call_timeout()
+            self.review_mutant_deadline()
+            self.review_mutant_json()
+            self.review_mutant_errors()
+            self.review_sigint()
+            self.review_fixture_limits()
+            self.review_docs()
+            self.review_net_change_docs()
+            self.review_property_handoff()
+            self.review_call_timeout_exit()
+            self.review_oneshot_timers()
+            self.review_disabled_limits()
+            self.review_confirmed_signal_boundary()
+            self.review_swallowed_alarm()
+            self.review_budget_namespace()
+            self.review_timeout_format_handoff()
+            self.review_interruptible_result_format()
+            self.review_exception_format_timeout()
+            self.review_infrastructure_exception_format()
+            self.review_acceptance_record_scope()
+            self.review_supplemental_acceptance_scope()
+            self.review_bounded_limit_workload()
+
+    def clock_check(self, checker, body, *, run=5, call=10, flags=()):
+        """CLI semantics with a manually advanced clock: no scheduler or disk-speed assumptions."""
+        driver = self.art / 'clock_driver.py'
+        driver.write_text('''import contextlib, importlib.util, io, json, sys, types
+checker, fixture, *argv = sys.argv[1:]
+spec = importlib.util.spec_from_file_location("gen_check" if "gen_check" in checker else "bounded_check", checker)
+mod = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = mod
+spec.loader.exec_module(mod)
+clock = types.ModuleType("review_clock")
+clock.now, clock.events = 0.0, []
+def advance(now, tick=True):
+    clock.now = now
+    if tick: clock.limits.tick(None, None)
+clock.advance = advance
+sys.modules[clock.__name__] = clock
+mod.time = types.SimpleNamespace(monotonic=lambda: clock.now, time=lambda: clock.now)
+class ManualLimits(mod.Limits):
+    def __enter__(self):
+        self.active = True
+        clock.limits = self
+        return self
+    def __exit__(self, *exc):
+        return False
+mod.Limits = ManualLimits
+out, err = io.StringIO(), io.StringIO()
+with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+    code = mod.main([fixture, *argv])
+print(json.dumps({"code": code, "stdout": out.getvalue(), "stderr": err.getvalue(), "events": clock.events}))
+''')
+        fixture = self.art / 'clock_fixture.py'
+        fixture.write_text(body)
+        args = ('--repo', self.repo, '--examples', '1') if checker == 'gen_check.py' else ()
+        timeout_args = ('--timeout', run) if run is not None else ()
+        return self.json(sys.executable, driver, self.script('formal-verification', checker), fixture,
+                         *args, *timeout_args, '--call-timeout', call, *flags, timeout=10)
+
+    def review_property_handoff(self):
+        target = self.repo / 'handoff_target.py'
+        target.write_text('def checked(x): return False\n')
+        fixture = self.art / 'handoff_props.py'
+        fixture.write_text('from gen_check import sampled_from\nfrom handoff_target import checked\n'
+                           'TARGETS = ["handoff_target.py:checked"]\n'
+                           'properties = {"broken": (sampled_from([42]), checked)}\n')
+        driver = self.art / 'handoff_driver.py'
+        driver.write_text('''import importlib.util, signal, sys
+checker, *argv = sys.argv[1:]
+spec = importlib.util.spec_from_file_location("gen_check", checker)
+mod = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = mod
+spec.loader.exec_module(mod)
+original = mod.run_property
+def interrupted_return(*args, **kwargs):
+    result = original(*args, **kwargs)
+    assert result[0]["result"] == "fail" and result[0]["counterexample"] == "42"
+    limits = args[7]
+    limits.deadline = limits.begun - 1
+    signal.raise_signal(signal.SIGALRM)  # exactly after return, before main can write back
+    raise AssertionError("injected SIGALRM was not delivered")
+mod.run_property = interrupted_return
+raise SystemExit(mod.main(argv))
+''')
+        try:
+            for flags, code in (((), 1), (('--expect-fail', 'broken'), 3)):
+                report = self.json(sys.executable, driver, self.script('formal-verification', 'gen_check.py'),
+                                   fixture, '--repo', self.repo, '--examples', '1', '--json', *flags, expected=code)
+                found = report['properties']['broken']
+                self.ensure(not report['ok'] and found['result'] == 'fail' and found['counterexample'] == '42'
+                            and found['detail'] == 'returned False' and found['accepted'] == 1
+                            and report['called'] == ['handoff_target.py:checked'] and not report['missing_targets']
+                            and 'in broken' in report['incomplete'] and 'import' not in report['incomplete'],
+                            f'SIGALRM at property return retains the confirmed counterexample and coverage (exit {code})')
+        finally:
+            target.unlink()
+
+    def review_call_timeout_exit(self):
+        body = ('import review_clock as clock\nfrom gen_check import sampled_from\n'
+                'TARGETS = ["todo/store.py:Store.add"]\n'
+                'def check(x): clock.advance(2)\n'
+                'properties = {"slow": (sampled_from([42]), check), "later": (sampled_from([0]), lambda x: True)}\n')
+        failures = []
+        for flags in ((), ('--expect-fail', 'slow')):
+            result = self.clock_check('gen_check.py', body, run=20, call=1, flags=(*flags, '--json'))
+            report = json.loads(result['stdout'])
+            if (result['code'] != 3 or report['ok'] or report['properties']['slow']['result'] != 'timeout'
+                    or report['properties']['slow']['input'] != '42'
+                    or report['properties']['slow']['timeout_scope'] != 'call'
+                    or report['properties']['later']['result'] != 'pass'):
+                failures.append(result)
+            text = self.clock_check('gen_check.py', body, run=20, call=1, flags=flags)
+            if (text['code'] != 3 or 'ERROR' in text['stdout'] or 'INCONCLUSIVE' not in text['stdout']
+                    or 'input: 42' not in text['stdout']):
+                failures.append(text)
+        self.ensure(not failures, f'property call timeouts are inconclusive exit 3 in JSON and text, never ERROR: {failures}')
+
+    def review_confirmed_signal_boundary(self):
+        target = self.repo / 'confirmed_target.py'
+        target.write_text('def checked(x): return False\n')
+        driver = self.art / 'confirmed_signal_driver.py'
+        driver.write_text('''import importlib.util, json, signal, sys
+checker, fixture, phase, *argv = sys.argv[1:]
+name = "gen_check" if "gen_check" in checker else "bounded_check"
+spec = importlib.util.spec_from_file_location(name, checker)
+mod = importlib.util.module_from_spec(spec)
+sys.modules[name] = mod
+spec.loader.exec_module(mod)
+fired = False
+def inject(frame, event, arg):
+    global fired
+    data = frame.f_locals
+    returned = ((name == "gen_check" and phase == "initial" and frame.f_code.co_name == "run_property"
+                 and data.get("status") == "fail" and data["result"]["result"] != "fail")
+                or (name == "gen_check" and phase == "shrink" and frame.f_code.co_name == "reduce_failure"
+                    and data.get("status") == "fail" and data.get("candidate") == 7)
+                or (name == "gen_check" and phase == "shrink_handoff" and frame.f_code.co_name == "run_property"
+                    and data.get("value") == 7 and "attempts" in data)
+                or (name == "bounded_check" and frame.f_code.co_name == "check"
+                    and data.get("ok") is False))
+    if event == "line" and returned and not fired:
+        fired = True
+        limits = data["limits"]
+        limits.deadline = limits.begun - 1
+        signal.raise_signal(signal.SIGALRM)
+    return inject
+sys.settrace(inject)
+try:
+    code = mod.main([fixture, *argv])
+finally:
+    sys.settrace(None)
+assert fired, "return-to-record signal injection did not run"
+raise SystemExit(code)
+''')
+        failures = []
+        try:
+            for checker, phase in (('gen_check.py', 'initial'), ('gen_check.py', 'shrink'),
+                                   ('gen_check.py', 'shrink_handoff'),
+                                   ('bounded_check.py', 'initial')):
+                fixture = self.art / ('confirmed_' + checker)
+                if checker == 'gen_check.py':
+                    fixture.write_text('from gen_check import Generator\nfrom confirmed_target import checked\n'
+                                       'TARGETS = ["confirmed_target.py:checked"]\n'
+                                       'properties = {"broken": (Generator(lambda rng: 42, lambda x: [7] if x == 42 else []), checked)}\n')
+                    flags = ('--repo', self.repo, '--examples', '1')
+                else:
+                    fixture.write_text('def init(): return 42\ndef actions(s): return []\n'
+                                       'invariants = {"broken": lambda s: False}\n')
+                    flags = ()
+                report = self.json(sys.executable, driver, self.script('formal-verification', checker), fixture, phase,
+                                   *flags, '--json', expected=(1, 3))
+                if checker == 'gen_check.py':
+                    found = report['properties']['broken']
+                    valid = (found['result'] == 'fail' and found['counterexample'] == ('7' if phase.startswith('shrink') else '42')
+                             and found['detail'] == 'returned False' and found['accepted'] == 1
+                             and report['called'] == ['confirmed_target.py:checked'] and not report['missing_targets'])
+                else:
+                    found = report['violation']
+                    valid = (report['result'] == 'violation' and found is not None
+                             and found['kind'] == 'invariant' and found['name'] == 'broken'
+                             and found['trace'] and found['trace'][0]['state'] == 42)
+                if self.last_returncode != 1 or not valid:
+                    failures.append((checker, phase, self.last_returncode, report))
+            self.ensure(not failures, f'SIGALRM after a checked failure returns preserves exit 1, counterexample and coverage: {failures}')
+        finally:
+            target.unlink()
+
+    def review_swallowed_alarm(self):
+        from types import SimpleNamespace
+        failures = []
+        for checker in ('gen_check.py', 'bounded_check.py'):
+            mod = load_module(self.script('formal-verification', checker), 'retry_' + checker[:-3])
+            for scope, run, call in (('call', 15, 5), ('run', 5, 15)):
+                now, due, repeat = 0.0, 0.0, 0.0
+                handler = signal.SIG_DFL
+                timers = []
+
+                def set_handler(sig, value):
+                    nonlocal handler
+                    old, handler = handler, value
+                    return old
+
+                def set_timer(which, delay, interval=0.0):
+                    nonlocal due, repeat
+                    old = (max(0, due - now), repeat)
+                    due, repeat = now + delay if delay else 0.0, interval
+                    timers.append((now, delay, interval))
+                    return old
+
+                def deliver():
+                    nonlocal due
+                    if due and now >= due:
+                        due = 0.0  # The OS consumes a one-shot before delivering SIGALRM.
+                        handler(signal.SIGALRM, None)
+
+                alarm = SimpleNamespace(SIGALRM=signal.SIGALRM, ITIMER_REAL=signal.ITIMER_REAL,
+                                        SIG_DFL=signal.SIG_DFL, signal=set_handler,
+                                        getsignal=lambda sig: handler, getitimer=lambda which: (0.0, 0.0),
+                                        setitimer=set_timer)
+                with patch.object(mod, 'signal', alarm), patch.object(mod, 'time', SimpleNamespace(monotonic=lambda: now)):
+                    with mod.Limits(run, call) as limits:
+                        limits.started = 0.0
+                        limits.arm()
+                        initial = list(timers)
+                        now = 5.0
+                        try:
+                            deliver()
+                        except BaseException:
+                            pass  # The checked function swallowed the first alarm.
+                        if not due or not 0 < due - now <= 0.5 or repeat:
+                            failures.append((checker, scope, 'no short one-shot retry', timers))
+                        now += 0.5
+                        try:
+                            deliver()
+                        except mod.Timeout as error:
+                            if error.scope != scope:
+                                failures.append((checker, scope, 'changed timeout scope', error.scope))
+                        else:
+                            failures.append((checker, scope, 'swallowed alarm disabled the deadline'))
+                        # Swallowing a retry must schedule another one, not just a single rescue alarm.
+                        if not due or not 0 < due - now <= 0.5 or repeat:
+                            failures.append((checker, scope, 'second swallowed alarm lost retry', timers))
+                        now += 0.5
+                        try:
+                            deliver()
+                        except mod.Timeout as error:
+                            if error.scope != scope:
+                                failures.append((checker, scope, 'third alarm changed timeout scope', error.scope))
+                        else:
+                            failures.append((checker, scope, 'repeated swallowing disabled the deadline'))
+                        if any(interval for _, _, interval in timers) or any(delay < 5 for _, delay, _ in initial):
+                            failures.append((checker, scope, 'polling before deadline', timers))
+                        limits.started = None
+                        limits.arm()
+                        if (scope == 'call' and due != 15) or (scope == 'run' and due):
+                            failures.append((checker, scope, 'call exit did not reset retry', due))
+        # A real busy loop catches its first alarm; the retry must interrupt before natural completion.
+        for checker in ('gen_check.py', 'bounded_check.py'):
+            fixture = self.art / ('swallowed_' + checker)
+            body = ('import time\n'
+                    'def busy(x):\n'
+                    '    end = time.monotonic() + 3\n'
+                    '    try:\n'
+                    '        while time.monotonic() < end: pass\n'
+                    '    except:\n'
+                    '        pass\n'
+                    '    while time.monotonic() < end: pass\n'
+                    '    raise AssertionError("busy loop ran to completion")\n')
+            if checker == 'gen_check.py':
+                body += ('from gen_check import sampled_from\nTARGETS = ["todo/store.py:Store.add"]\n'
+                         'properties = {"busy": (sampled_from([0]), busy)}\n')
+                flags, expected = ('--repo', self.repo, '--examples', '1'), 3
+            else:
+                body += 'def init(): return 0\ndef actions(s): return []\ninvariants = {"busy": busy}\n'
+                flags, expected = (), 2
+            fixture.write_text(body)
+            started = time.monotonic()
+            report = self.json(self.script('formal-verification', checker), fixture, *flags,
+                               '--call-timeout', '0.3', '--timeout', '1.5', '--json', expected=expected, timeout=8)
+            elapsed = time.monotonic() - started
+            self.log.write(f'{checker} swallowed-alarm busy loop: {elapsed:.3f} s (natural duration 3 s)\n')
+            if elapsed >= 2.5 or 'busy loop ran to completion' in json.dumps(report):
+                failures.append((checker, 'busy loop reached its natural end', elapsed, report))
+        self.ensure(not failures, f'swallowed alarms retry once at short intervals only after expiry and interrupt busy loops: {failures}')
+
+    def review_oneshot_timers(self):
+        from types import SimpleNamespace
+        failures = []
+        for checker in ('gen_check.py', 'bounded_check.py'):
+            mod = load_module(self.script('formal-verification', checker), 'timer_' + checker[:-3])
+            now, due, interval = 0.0, 40.0, 2.0
+            previous = handler = lambda *args: None
+            calls = []
+
+            def set_handler(sig, value):
+                nonlocal handler
+                old, handler = handler, value
+                return old
+
+            def get_timer(which):
+                return (max(0.0, due - now) if due else 0.0, interval)
+
+            def set_timer(which, delay, repeat=0.0):
+                nonlocal due, interval
+                old = get_timer(which)
+                due, interval = now + delay if delay else 0.0, repeat
+                calls.append((now, delay, repeat))
+                return old
+
+            alarm = SimpleNamespace(SIGALRM=signal.SIGALRM, ITIMER_REAL=signal.ITIMER_REAL, SIG_DFL=signal.SIG_DFL,
+                                    signal=set_handler, getsignal=lambda sig: handler,
+                                    getitimer=get_timer, setitimer=set_timer)
+            with patch.object(mod, 'signal', alarm), patch.object(mod, 'time', SimpleNamespace(monotonic=lambda: now)):
+                with mod.Limits(20, 5) as limits:
+                    if (due, interval) != (20, 0):
+                        failures.append((checker, 'run timer', due, interval))
+                    for start, finish, expected in ((3, 4, 8), (18, 19, 20)):
+                        now = start
+
+                        def check(*args):
+                            nonlocal now
+                            if (due, interval) != (expected, 0):
+                                failures.append((checker, 'nearest call deadline', due, interval, expected))
+                            now = finish
+                            return True
+
+                        if checker == 'bounded_check.py':
+                            limits.call(check)
+                        else:
+                            mod.attempt(SimpleNamespace(), check, 0, self.repo, limits)
+                        if (due, interval) != (20, 0):
+                            failures.append((checker, 'run timer after call', due, interval))
+                if handler is not previous or (due, interval) != (40, 2):
+                    failures.append((checker, 'previous handler/timer not restored', due, interval))
+                if any(repeat for _, _, repeat in calls[:-1]):
+                    failures.append((checker, 'periodic checker timer', calls))
+                # If the owner changed, cleanup must leave that owner's handler and timer alone.
+                with mod.Limits(20, 5):
+                    replacement = lambda *args: None
+                    set_handler(signal.SIGALRM, replacement)
+                    set_timer(signal.ITIMER_REAL, 7)
+                if handler is not replacement or (due, interval) != (now + 7, 0):
+                    failures.append((checker, 'cleared another owner timer', due, interval))
+                old_due = due
+                elapsed = mod.Limits(1, 5)
+                now += 2
+                try:
+                    with elapsed:
+                        failures.append((checker, 'entered after startup budget elapsed'))
+                except mod.Timeout as error:
+                    if error.scope != 'run':
+                        failures.append((checker, 'startup expiry used the call limit'))
+                if handler is not replacement or (due, interval) != (old_due, 0):
+                    failures.append((checker, 'startup timeout lost the previous signal state', due, interval))
+        self.ensure(not failures, f'checkers arm one-shot nearest deadlines and restore only their owned signal state: {failures}')
+
+    def review_disabled_limits(self):
+        target = self.repo / 'disabled_target.py'
+        target.write_text('def checked(x): return True\n')
+        failures = []
+        try:
+            for checker in ('gen_check.py', 'bounded_check.py'):
+                for run, call, end, code in ((0, 0, 1000, 0), (0, 1, 2, 3 if checker == 'gen_check.py' else 2),
+                                             (1, 0, 2, 3), (None, 0, 1000, 0)):
+                    body = ('import review_clock as clock\nCHECK_TIMEOUT = 0\n'
+                            'def check(x):\n    clock.advance(' + str(end) + ')\n    return True\n')
+                    if checker == 'gen_check.py':
+                        body += ('from gen_check import sampled_from\nfrom disabled_target import checked\n'
+                                 'TARGETS = ["disabled_target.py:checked"]\n'
+                                 'def covered(x):\n    check(x)\n    return checked(x)\n'
+                                 'properties = {"ok": (sampled_from([0]), covered)}\n')
+                    else:
+                        body += 'def init(): return 0\ndef actions(s): return []\ninvariants = {"ok": check}\n'
+                    result = self.clock_check(checker, body, run=run, call=call, flags=('--json',))
+                    if (result['code'] != code or not result['stdout']
+                            or json.loads(result['stdout']).get('ok') != (code == 0)):
+                        failures.append((checker, run, call, code, result))
+                mod = load_module(self.script('formal-verification', checker), 'disabled_' + checker[:-3])
+                # Fully disabled limits must not take over an embedding process's SIGALRM.
+                with patch.object(mod.signal, 'signal') as handler, patch.object(mod.signal, 'setitimer') as timer:
+                    with mod.Limits(0, 0):
+                        pass
+                    if handler.called or timer.called:
+                        failures.append((checker, 'disabled limits changed signal state'))
+                for value in (-1, float('nan'), float('inf'), True):
+                    try:
+                        mod.seconds(value, 'limit')
+                    except (ValueError, mod.PropsError if checker == 'gen_check.py' else mod.ModelError):
+                        pass
+                    else:
+                        failures.append((checker, 'invalid limit accepted', repr(value)))
+            self.ensure(not failures, f'zero disables each deadline independently while invalid limits remain errors: {failures}')
+        finally:
+            target.unlink()
+        text = (ROOT / 'skills/formal-verification/SKILL.md').read_text()
+        step4 = text.split('## 4. Leave a project-local skill')[1].split('## 5.')[0]
+        self.ensure(all(term in text and term in step4 for term in
+                        ('--seed N --expect-fail NAME', '90 s', '10 s', '--timeout 0', '--call-timeout 0', 'migration')),
+                    'skill and generated-skill instructions include replay and default-limit migration with opt-outs')
+
+    def review_synchronous_deadlines(self):
+        """Advance past deadlines without delivering SIGALRM, including the last covered call."""
+        target = self.repo / 'review_sync_target.py'
+        target.write_text('def checked(value): return True\n')
+        failures = []
+
+        def verify(label, result, code, events=None):
+            report = json.loads(result['stdout'])
+            if (result['code'] != code or report['ok'] != (code == 0)
+                    or (events is not None and result['events'] != events)):
+                failures.append((label, code, events, result))
+            return report
+
+        props = ('from gen_check import Generator, sampled_from, reject\n'
+                 'from review_sync_target import checked\nTARGETS = ["review_sync_target.py:checked"]\n')
+        model = 'def init(): return 0\ndef actions(s): return []\n'
+        try:
+            # Cover the last property, last invariant and last actions call. Exact equality expires too.
+            for checker, phase in (('gen_check.py', 'check'), ('bounded_check.py', 'invariant'),
+                                   ('bounded_check.py', 'actions')):
+                for run, call, start, end, code in ((5, 6, 0, 4.99, 0), (5, 6, 0, 5, 3),
+                                                   (5, 6, 0, 5.02, 3), (6, 5, 0, 5.02, 2),
+                                                   (6, 5, 0, 5, 2), (10, 2, 4, 6, 2),
+                                                   (5, 5, 0, 5.02, 3), (5, 2, 4, 5.02, 3),
+                                                   (6, 5, 0, 20, 2)):
+                    if checker == 'gen_check.py' and code == 2:
+                        code = 3
+                    body = ('import review_clock as clock\n' + (props if checker == 'gen_check.py' else model)
+                            + f'clock.advance({start}, tick=False)\n'
+                            'def check(x):\n    clock.events.append("checked")\n'
+                            + ('    checked(x)\n' if checker == 'gen_check.py' else '')
+                            + f'    clock.advance({end}, tick=False)\n'
+                            + ('    return []\n' if phase == 'actions' else '    return True\n'))
+                    body += ('properties = {"ok": (sampled_from([0]), check)}\n' if checker == 'gen_check.py' else
+                             'actions = check\ninvariants = {"ok": lambda s: True}\n' if phase == 'actions' else
+                             'invariants = {"ok": check}\nDEPTH = 0\n')
+                    result = self.clock_check(checker, body, run=run, call=call, flags=('--json',))
+                    report = verify((checker, phase, run, call, start, end), result, code, ['checked'])
+                    if checker == 'gen_check.py' and code:
+                        if report['called'] or report['properties']['ok']['accepted'] != 0:
+                            failures.append(('timed-out input counted as accepted coverage', result))
+            # Returning False, rejecting, or raising after a deadline cannot manufacture a counterexample.
+            for ending in ('return False', 'reject()', 'raise ValueError("late")'):
+                body = ('import review_clock as clock\n' + props + 'def check(x):\n    checked(x)\n'
+                        '    clock.advance(5.02, tick=False)\n    ' + ending + '\n'
+                        'properties = {"ok": (sampled_from([0]), check)}\n')
+                for run, call, code in ((5, 6, 3), (6, 5, 3)):
+                    verify(('late outcome', ending, code), self.clock_check('gen_check.py', body, run=run,
+                           call=call, flags=('--json',)), code)
+            for hook in ('setup', 'reset'):
+                body = ('import review_clock as clock\n' + props + f'def {hook}():\n'
+                        f'    clock.events.append("{hook}")\n    clock.advance(5.02, tick=False)\n'
+                        'def check(x):\n    clock.events.append("check")\n    return checked(x)\n'
+                        'properties = {"ok": (sampled_from([0]), check)}\n')
+                for run, call, code in ((5, 6, 3), (6, 5, 3)):
+                    verify((hook, code), self.clock_check('gen_check.py', body, run=run, call=call,
+                           flags=('--json',)), code, [hook])
+            # A call timeout may end one property, but it cannot start another after the total budget elapsed.
+            body = ('import review_clock as clock\n' + props + 'def first(x):\n'
+                    '    clock.events.append("first")\n    checked(x)\n    clock.advance(20, tick=False)\n'
+                    'def later(x):\n    clock.events.append("later")\n    return checked(x)\n'
+                    'properties = {"first": (sampled_from([0]), first), "later": (sampled_from([0]), later)}\n')
+            for run, call, code in ((5, 6, 3), (6, 5, 3)):
+                verify(('no later property', code), self.clock_check('gen_check.py', body, run=run, call=call,
+                       flags=('--json',)), code, ['first'])
+            body = ('import review_clock as clock\n' + props + 'def draw(rng):\n'
+                    '    clock.events.append("draw")\n    clock.advance(5.02, tick=False)\n    return 0\n'
+                    'def check(x):\n    clock.events.append("check")\n    return checked(x)\n'
+                    'properties = {"ok": (Generator(draw, lambda x: []), check)}\n')
+            verify('generation exhausts budget before input', self.clock_check('gen_check.py', body,
+                   flags=('--json',)), 3, ['draw'])
+            body = ('import review_clock as clock\n' + props + 'def check(x):\n    checked(x)\n'
+                    '    clock.events.append(x)\n    if x == 1: clock.advance(5.02, tick=False)\n'
+                    '    return False\nproperties = {"broken": (Generator(lambda rng: 2, lambda x: [1]), check)}\n')
+            for run, call, code in ((5, 6, 3), (6, 5, 3)):
+                report = verify(('shrink return', code), self.clock_check('gen_check.py', body, run=run, call=call,
+                                flags=('--expect-fail', 'broken', '--json')), code, [2, 1])
+                if report['properties']['broken']['counterexample'] != '2' or not report['incomplete']:
+                    failures.append(('late shrink discarded confirmed counterexample or incomplete status', report))
+            # A property iterator can consume the remaining budget between properties or at exhaustion.
+            for tail in ('yield "later", (sampled_from([0]), check)', 'return'):
+                body = ('import review_clock as clock\n' + props + 'def check(x):\n'
+                        '    clock.events.append("check")\n    return checked(x)\n'
+                        'class Properties(dict):\n    def items(self):\n'
+                        '        yield "first", self["first"]\n'
+                        '        if clock.events: clock.advance(5.02, tick=False)\n        ' + tail + '\n'
+                        'properties = Properties(first=(sampled_from([0]), check))\n')
+                verify(('property boundary', tail), self.clock_check('gen_check.py', body,
+                       flags=('--json',)), 3, ['check'])
+            # Initialization/terminal/description use the run budget, including returns between ticks.
+            for phase in ('init', 'terminal', 'describe'):
+                body = ('import review_clock as clock\n' + model
+                        + 'invariants = {"ok": lambda s: s >= 0}\n'
+                        'def broken(s): return [("bad", -1)]\n'
+                        'def later(s):\n    clock.events.append("later")\n    return []\n'
+                        'mutants = {"broken": broken, "later": later}\n'
+                        + f'def {phase}(' + ('' if phase == 'init' else 's') + '):\n'
+                        + f'    clock.events.append("{phase}")\n    clock.advance(5.02, tick=False)\n'
+                        + ('    return 0\n' if phase == 'init' else '    return True\n'))
+                flags = ('--mutants', '--json') if phase == 'describe' else ('--deadlock', '--json')
+                verify(phase, self.clock_check('bounded_check.py', body, flags=flags), 3, [phase])
+            body = ('import review_clock as clock\n' + model + 'invariants = {"ok": lambda s: s >= 0}\n'
+                    'def broken(s): return [("bad", -1)]\n'
+                    'class Mutants(dict):\n    def items(self):\n'
+                    '        yield "broken", self["broken"]\n        clock.advance(5.02, tick=False)\n'
+                    'mutants = Mutants(broken=broken)\n')
+            verify('final mutant result boundary', self.clock_check('bounded_check.py', body,
+                   flags=('--mutants', '--json')), 3)
+            body = ('import review_clock as clock\n' + model + 'invariants = {"ok": lambda s: True}\n'
+                    'def late(s):\n    clock.events.append("mutant")\n'
+                    '    clock.advance(20, tick=False)\n    return []\n'
+                    'def later(s):\n    clock.events.append("later")\n    return []\n'
+                    'mutants = {"late": late, "later": later}\n')
+            for run, call, code in ((5, 6, 3), (6, 5, 2)):
+                report = verify(('mutant return', code), self.clock_check('bounded_check.py', body, run=run, call=call,
+                                flags=('--mutants', '--json')), code, ['mutant'])
+                if report['not_run'] != ['later']:
+                    failures.append(('late mutant started pending search', report))
+            self.ensure(not failures, f'synchronous deadline checks honor earliest expiry without timer delivery: {failures}')
+        finally:
+            target.unlink()
+
+    def review_budget_namespace(self):
+        """Business TIMEOUT values never configure the runner; CHECK_TIMEOUT is explicit."""
+        target = self.repo / 'namespace_target.py'
+        target.write_text('def checked(value): return True\n')
+        failures = []
+        cases = [
+            ('business fraction', 'TIMEOUT = 0.3', 1, None, 0, 90),
+            ('business None', 'TIMEOUT = None', 1, None, 0, 90),
+            ('business ticks', 'TIMEOUT = 3', 4, None, 0, 90),
+            ('explicit module', 'TIMEOUT = None\nCHECK_TIMEOUT = 0.3', 1, None, 3, 0.3),
+            ('module disabled', 'TIMEOUT = 0.3\nCHECK_TIMEOUT = 0', 100, None, 0, 0),
+            ('CLI override', 'TIMEOUT = None\nCHECK_TIMEOUT = 0.3', 1, 2, 0, 2),
+            ('CLI disabled', 'TIMEOUT = None\nCHECK_TIMEOUT = 0.3', 100, 0, 0, 0),
+        ]
+        try:
+            for checker in ('bounded_check.py', 'gen_check.py'):
+                for label, constants, elapsed, override, code, budget in cases:
+                    body = ('import review_clock as clock\n' + constants + '\n'
+                            f'clock.advance({elapsed}, tick=False)\n'
+                            'def check(x):\n    clock.events.append("checked")\n    return True\n')
+                    if checker == 'gen_check.py':
+                        body += ('from gen_check import sampled_from\nfrom namespace_target import checked\n'
+                                 'TARGETS = ["namespace_target.py:checked"]\n'
+                                 'def covered(x):\n    check(x)\n    return checked(x)\n'
+                                 'properties = {"ok": (sampled_from([0]), covered)}\n')
+                    else:
+                        body += 'def init(): return 0\ndef actions(s): return []\ninvariants = {"ok": check}\n'
+                    result = self.clock_check(checker, body, run=override, call=0, flags=('--json',))
+                    report = json.loads(result['stdout']) if result['stdout'].strip() else {}
+                    self.log.write(json.dumps({'checker': checker, 'case': label, **result}) + '\n')
+                    if (result['code'] != code or report.get('ok') != (code == 0)
+                            or report.get('timeout') != budget
+                            or result['events'] != (['checked'] if code == 0 else [])):
+                        failures.append((checker, label, result))
+            self.ensure(not failures,
+                        f'business TIMEOUT is ignored (including None); CHECK_TIMEOUT and CLI budgets remain explicit: {failures}')
+        finally:
+            target.unlink()
+
+    def review_import_budget(self):
+        target = self.repo / 'review_budget_target.py'
+        target.write_text('def checked(value): return True\n')
+        failures = []
+        try:
+            for checker in ('bounded_check.py', 'gen_check.py'):
+                for elapsed, override, code in ((0.9, None, 0), (1, None, 3), (1.1, None, 3),
+                                                (1.1, 2, 0), (2.1, 2, 3)):
+                    body = ('import review_clock as clock\nCHECK_TIMEOUT = 1\n'
+                            f'clock.advance({elapsed}, tick=False)\n')
+                    body += ('from review_budget_target import checked\n' if checker == 'gen_check.py' else
+                             'def checked(value): return True\n')
+                    body += ('def check(x):\n    clock.events.append("checked")\n    return checked(x)\n')
+                    if checker == 'gen_check.py':
+                        body += ('from gen_check import sampled_from\nTARGETS = ["review_budget_target.py:checked"]\n'
+                                 'properties = {"ok": (sampled_from([0]), check)}\n')
+                    else:
+                        body += 'def init(): return 0\ndef actions(s): return []\ninvariants = {"ok": check}\n'
+                    result = self.clock_check(checker, body, run=override, flags=('--json',))
+                    report = json.loads(result['stdout'])
+                    valid = result['code'] == code and report['ok'] == (code == 0)
+                    if code == 3:
+                        valid = valid and not result['events'] and bool(report['incomplete'])
+                        if checker == 'gen_check.py':
+                            valid = valid and report['properties'] == {} and report['timeout'] == (override or 1)
+                    else:
+                        valid = valid and result['events'] == ['checked']
+                    if not valid:
+                        failures.append((checker, elapsed, override, code, result))
+            self.ensure(not failures,
+                        f'import time counts toward TIMEOUT, including equality; explicit overrides retain their budget: {failures}')
+        finally:
+            target.unlink()
+
+    def review_go_receivers(self):
+        root = self.scratch / 'review-go-receivers'
+        root.mkdir()
+        cases = [
+            ('mux alias', 'm := http.NewServeMux(); m.HandleFunc("GET /todos", h)', {('GET', '/todos')}),
+            ('struct field', 's.mux.HandleFunc("GET /todos", h)', {('GET', '/todos')}),
+            ('Handle alias', 'm.Handle("/todos/", h)', {('ANY', '/todos/<*>')}),
+            ('router alias', 'apiRoutes.Get("/todos", h)', {('GET', '/todos')}),
+            ('router field', 's.routes.POST("/todos", h)', {('POST', '/todos')}),
+            ('returned mux', 'newMux().HandleFunc("GET /todos", h)', {('GET', '/todos')}),
+            ('filesystem store', 'kv.Put("/var/lib/data", v)', set()),
+            ('untrusted field', 's.router.Put("/var/lib/data", v)', set()),
+            ('untrusted Handle', 'store.Handle("/var/lib/data", v)', set()),
+            ('known receivers', 'http.HandleFunc("/home", h); router.GET("/Users", h); r.Put("/var/routes", h)',
+             {('ANY', '/home'), ('GET', '/Users'), ('PUT', '/var/routes')}),
+        ]
+        failures = []
+        for name, source, expected in cases:
+            (root / 'main.go').write_text(f'package main\nfunc main() {{ {source} }}\n')
+            result = self.json(self.script('create-verification-skill', 'scan_repo.py'), root, '--json')
+            routes = {(r['method'], r['path']) for r in result['http_routes']}
+            kinds = {c['kind'] for c in result['launch_candidates']}
+            if routes != expected or kinds != ({'server'} if expected else {'cli'}):
+                failures.append((name, sorted(routes), sorted(expected), kinds))
+        self.ensure(not failures,
+                    f'Go aliases, fields and returned muxes retain routes and server launches; FS bypass needs a known receiver: {failures}')
+
+    def review_shrink_call_timeout(self):
+        target = self.repo / 'review_shrink_target.py'
+        target.write_text('def confirmed(value): return False\ndef timed_out(value): return True\n')
+        body = ('import review_clock as clock\nfrom gen_check import Generator, sampled_from\n'
+                'from review_shrink_target import confirmed, timed_out\n'
+                'TARGETS = ["review_shrink_target.py:confirmed"]\n'
+                'def check(x):\n    clock.events.append(f"check {x}")\n'
+                '    if x == 0:\n        timed_out(x)\n        clock.advance(2)\n'
+                '    return confirmed(x)\n'
+                'def shrink(x):\n    if x == 100: yield 60\n'
+                '    yield 0\n    yield 30\n'
+                'def later(x):\n    clock.events.append("later")\n    return True\n'
+                'properties = {"broken": (Generator(lambda rng: 100, shrink), check),\n'
+                '              "later": (sampled_from([1]), later)}\n')
+        try:
+            for flags, code in ((('--expect-fail', 'broken'), 3), ((), 1)):
+                result = self.clock_check('gen_check.py', body, run=20, call=1, flags=(*flags, '--json'))
+                report = json.loads(result['stdout'])
+                found = report['properties']['broken']
+                self.ensure(result['code'] == code and not report['ok'] and report['incomplete']
+                            and found['result'] == 'fail' and found['counterexample'] == '60'
+                            and found['detail'] == 'returned False' and found['shrink_attempts'] == 2
+                            and found.get('timeout_scope') == 'call' and found.get('timeout_phase') == 'shrink'
+                            and found.get('incomplete') and found.get('input') == '0',
+                            f'shrink call timeout preserves the best confirmed failure and reports incomplete reduction (exit {code})')
+                self.ensure(result['events'] == ['check 100', 'check 60', 'check 0', 'later']
+                            and report['properties']['later']['result'] == 'pass' and not report['missing_targets']
+                            and report['called'] == ['review_shrink_target.py:confirmed'],
+                            'a shrink call timeout ends only that property and keeps only accepted target coverage')
+            result = self.clock_check('gen_check.py', body, run=20, call=1, flags=('--expect-fail', 'broken'))
+            self.ensure(result['code'] == 3 and 'reduced counterexample: 60' in result['stdout']
+                        and 'incomplete:' in result['stdout'] and 'shrink' in result['stdout']
+                        and 'call timeout' in result['stdout'],
+                        'text mode exposes the retained counterexample and incomplete shrink instead of PASS')
+            result = self.clock_check('gen_check.py', body.replace('return True', 'return False'),
+                                      run=20, call=1, flags=('--expect-fail', 'broken', '--json'))
+            report = json.loads(result['stdout'])
+            self.ensure(result['code'] == 1 and report['incomplete'] and report['properties']['later']['result'] == 'fail',
+                        'an independent unexpected failure retains exit 1 alongside the expected failure and shrink timeout')
+            # Exercise the actual SIGALRM path too, with a second-scale call budget and an external deadline.
+            props = self.art / 'shrink_hang.py'
+            props.write_text('from gen_check import Generator\nfrom review_shrink_target import confirmed\n'
+                             'TARGETS = ["review_shrink_target.py:confirmed"]\n'
+                             'def check(x):\n    while x == 0: pass\n    return confirmed(x)\n'
+                             'properties = {"broken": (Generator(lambda rng: 100, lambda x: iter([0])), check)}\n')
+            report = self.json(self.script('formal-verification', 'gen_check.py'), props, '--repo', self.repo,
+                               '--examples', '1', '--timeout', '20', '--call-timeout', '2',
+                               '--expect-fail', 'broken', '--json', expected=3, timeout=30)
+            self.ensure(not report['ok'] and report['incomplete'] and not report['missing_targets']
+                        and report['properties']['broken']['counterexample'] == '100'
+                        and report['properties']['broken'].get('timeout_scope') == 'call'
+                        and report['properties']['broken'].get('timeout_phase') == 'shrink',
+                        'a genuinely hung shrink candidate is interrupted and cannot satisfy --expect-fail')
+        finally:
+            target.unlink()
+
+    def review_deadline_order(self):
+        for checker in ('bounded_check.py', 'gen_check.py'):
+            for run, call, code in ((5, 6, 3), (6, 5, 2), (5, 5, 3)):
+                if checker == 'gen_check.py' and code == 2:
+                    code = 3
+                body = ('import review_clock as clock\n'
+                        'def check(s):\n    clock.advance(20)\n    return True\n')
+                if checker == 'bounded_check.py':
+                    body += 'def init(): return 0\ndef actions(s): return []\ninvariants = {"ok": check}\n'
+                else:
+                    body += ('from gen_check import sampled_from\nTARGETS = ["todo/store.py:Store.add"]\n'
+                             'properties = {"ok": (sampled_from([0]), check)}\n')
+                result = self.clock_check(checker, body, run=run, call=call, flags=('--json',))
+                report = json.loads(result['stdout'])
+                self.ensure(result['code'] == code and not report['ok'],
+                            f'{checker}: simultaneous expiry uses the first absolute deadline ({run=}, {call=}, exit {code})')
+            # A later-started call has a later absolute deadline even when its duration is shorter.
+            result = self.clock_check(checker, body.replace('def check(s):', 'clock.advance(4, tick=False)\ndef check(s):'),
+                                      run=5, call=2, flags=('--json',))
+            self.ensure(result['code'] == 3, f'{checker}: deadline order includes the call start time')
+
+    def review_mutant_deadline(self):
+        body = ('import review_clock as clock\ndef init(): return 0\ndef actions(s): return []\n'
+                'invariants = {"nonnegative": lambda s: s >= 0}\n'
+                'def broken(s): return [("bad", -1)]\n'
+                'def later(s):\n    clock.events.append("later search started")\n    return []\n'
+                'def describe(s):\n    clock.events.append("describe")\n    clock.advance(20)\n'
+                'mutants = {"broken": broken, "later": later, "last": later}\n')
+        for flags in (('--json',), ()):
+            result = self.clock_check('bounded_check.py', body, flags=('--mutants', *flags))
+            self.ensure(result['events'] == ['describe'] and result['code'] == 3,
+                        'a timed-out mutant description retains its kill and starts no later search')
+            if flags:
+                report = json.loads(result['stdout'])
+                self.ensure(report['mutants']['broken']['killed'] and report['incomplete']
+                            and report['not_run'] == ['later', 'last']
+                            and [s['state'] for s in report['mutants']['broken']['trace']] == [0, -1],
+                            'confirmed mutant kill and raw trace survive the total deadline; pending names stay visible')
+            else:
+                self.ensure('SURVIVED' not in result['stdout'] and 'INCOMPLETE' in result['stdout']
+                            and 'later' in result['stdout'] and 'last' in result['stdout'],
+                            'unrun mutants print INCOMPLETE instead of SURVIVED')
+        # Deadline passes without a signal between searches: a preflight must prevent new work.
+        result = self.clock_check('bounded_check.py', body.replace('def actions(s): return []',
+                                  'def actions(s):\n    clock.advance(20, tick=False)\n    return []'),
+                                  flags=('--mutants', '--json'))
+        report = json.loads(result['stdout'])
+        self.ensure(not result['events'] and result['code'] == 3 and report['not_run'] == ['broken', 'later', 'last'],
+                    'an expired deadline between searches cannot start the first mutant')
+
+    def review_mutant_json(self):
+        body = ('import review_clock as clock\ndef init(): return 0\ndef actions(s): return []\n'
+                'invariants = {"ok": lambda s: s >= 0}\n'
+                'def killed(s): return [("bad", -1)]\n'
+                'def slow(s):\n    clock.advance(20)\n    return []\n'
+                'mutants = {"killed": killed, "slow": slow, "pending": actions}\n')
+        for run, call, code, status in ((5, 10, 3, 'timeout'), (30, 5, 2, 'error')):
+            result = self.clock_check('bounded_check.py', body, run=run, call=call, flags=('--mutants', '--json'))
+            report = json.loads(result['stdout'])
+            slow = report['mutants']['slow']
+            self.ensure(result['code'] == code and slow.get('result') == status and slow.get('stopped')
+                        and slow.get('detail') and slow.get('states') == 1 and report.get('incomplete'),
+                        f'mutant JSON preserves {status}, stop reason, detail, states and top-level incompleteness')
+            self.ensure(report['mutants']['killed']['killed']
+                        and all({'result', 'stopped', 'detail'} <= m.keys() for m in report['mutants'].values())
+                        and report['not_run'] == (['pending'] if status == 'timeout' else []),
+                        'every mutant has an explicit status and unrun names are separate from survivors')
+        result = self.clock_check('bounded_check.py', body.replace('def actions(s): return []',
+                                  'def actions(s):\n    clock.advance(20)\n    return []'),
+                                  flags=('--mutants', '--json'))
+        report = json.loads(result['stdout'])
+        self.ensure(result['code'] == 3 and report['not_run'] == ['killed', 'slow', 'pending']
+                    and all(m['result'] == 'timeout' and m['states'] == 0 for m in report['mutants'].values()),
+                    'a main-search timeout lists every unrun mutant as incomplete with zero explored states')
+
+    def review_mutant_errors(self):
+        body = ('import review_clock as clock\ndef init(): return 0\ndef actions(s): return []\n'
+                'invariants = {"ok": lambda s: True}\n'
+                'def crash(s): raise ValueError("broken mutant")\n'
+                'def slow(s):\n    clock.advance(20)\n    return []\n'
+                'mutants = {"crash": crash, "slow": slow}\n')
+        for suffix in ('', 'mutants = {"crash": crash}\n'):
+            result = self.clock_check('bounded_check.py', body + suffix, flags=('--mutants',))
+            self.ensure(result['code'] == 2 and 'ERROR' in result['stdout'] and 'broken mutant' in result['stdout']
+                        and 'SURVIVED' not in result['stdout'],
+                        'a crashing mutant reports model error exit 2, including before a later run timeout')
+
+    def review_sigint(self):
+        self.copy(ROOT / 'examples/fixtures/todo_props.py')
+        # A child interpreter inherits SIG_IGN in non-interactive/background execution.
+        previous = signal.signal(signal.SIGINT, signal.SIG_IGN)
+        try:
+            self.formal_shrink_interrupt()
+        finally:
+            signal.signal(signal.SIGINT, previous)
+
+    def review_docs(self):
+        text = (ROOT / 'CHANGELOG.md').read_text()
+        self.ensure('same `--seed`' in text and '90 s' in text and '10 s' in text
+                    and 'CHECK_TIMEOUT' in text and 'revalidate' in text and 'pinned' in text,
+                    'changelog documents changed seed sequences, added limits and replay migration')
+        readme = (ROOT / 'logs/review-fixes/README.md').read_text()
+        self.ensure('recheck-before' in readme and 'recheck-after' in readme
+                    and 'No commit or push was made in the working branch.' not in readme,
+                    'review evidence distinguishes this follow-up from the already committed first review fixes')
+
+    def review_fixture_limits(self):
+        import ast
+        tree = ast.parse(Path(__file__).read_text())
+        names = {'formal_trace_timeout', 'formal_property_seeds', 'formal_import_timeout_json'}
+        values = []
+        for fn in ast.walk(tree):
+            if isinstance(fn, ast.FunctionDef) and fn.name in names:
+                for node in ast.walk(fn):
+                    items = node.args if isinstance(node, ast.Call) else node.elts if isinstance(node, ast.List) else []
+                    for flag, value in zip(items, items[1:]):
+                        if isinstance(flag, ast.Constant) and flag.value in ('--timeout', '--call-timeout'):
+                            values.append(float(ast.literal_eval(value)))
+        self.ensure(len(values) == 4 and all(v >= 1 for v in values),
+                    'disk-using timeout fixtures use second-scale limits instead of subsecond scheduling assumptions')
+
+    def formal_trace_timeout(self):
+        checker = self.script('formal-verification', 'bounded_check.py')
+        model = self.art / 'slow_trace_model.py'
+        model.write_text('import time\ndef init(): return 0\n'
+                         'def actions(s): return [("inc", s + 1)]\n'
+                         'invariants = {"below_two": lambda s: s < 2}\n'
+                         'def describe(s):\n    if s == 1: time.sleep(10)\n    return f"state {s}"\n')
+        for flags, code in (((), 1), (('--expect-violation', 'below_two'), 0)):
+            result = self.json(checker, model, '--timeout', '2', '--json', *flags, expected=code)
+            violation = result['violation']
+            self.ensure(result['result'] == 'violation' and violation['name'] == 'below_two'
+                        and [s['state'] for s in violation['trace']] == [0, 1, 2]
+                        and violation['trace'][0]['describe'] == 'state 0' and violation.get('trace_incomplete'),
+                        f'a describe timeout retains the confirmed invariant violation and raw trace (exit {code})')
+        output = self.run(checker, model, '--timeout', '2', expected=1)
+        self.ensure('invariant "below_two" violated' in output and 'trace' in output,
+                    'text output retains the failure and explains incomplete trace descriptions')
+
+    def formal_shrink_interrupt(self):
+        checker = self.script('formal-verification', 'gen_check.py')
+        props = self.art / 'props_shrink_interrupt.py'
+        props.write_text('from gen_check import Generator\nimport signal\n'
+                         'from todo_props import reset, round_trip\n'
+                         'TARGETS = ["todo/store.py:Store.add"]\n'
+                         'def check(x):\n    round_trip("valid")\n    return x < 10\n'
+                         'def shrink(x):\n    if x == 100: yield 60\n'
+                         '    signal.signal(signal.SIGINT, signal.default_int_handler)\n    signal.raise_signal(signal.SIGINT)\n'
+                         'properties = {"broken": (Generator(lambda rng: 100, shrink), check)}\n')
+        result = self.json(checker, props, '--repo', self.repo, '--json', expected=1)
+        found = result['properties']['broken']
+        self.ensure(found['result'] == 'fail' and found['counterexample'] == '60' and found['shrink_attempts'] == 1
+                    and found['detail'] == 'returned False' and result['incomplete'] == 'interrupted'
+                    and not result['missing_targets'] and 'todo/store.py:Store.add' in result['called'],
+                    'SIGINT during shrinking preserves the best counterexample, accepted target calls and failure exit 1')
+        incomplete = self.json(checker, props, '--repo', self.repo, '--expect-fail', 'broken', '--json', expected=3)
+        self.ensure(not incomplete['ok'] and incomplete['properties']['broken']['counterexample'] == '60',
+                    'an interrupted shrink keeps its failure but cannot complete an --expect-fail proof')
+
+    def formal_property_seeds(self):
+        checker = self.script('formal-verification', 'gen_check.py')
+        props = self.art / 'props_independent_seeds.py'
+        body = ('from gen_check import Generator\nimport time\n'
+                'from todo_props import reset, round_trip\nTARGETS = ["todo/store.py:Store.add"]\n'
+                'calls = 0\nSTOP_AFTER = {stop}\n'
+                'def lead(x):\n    global calls\n    calls += 1\n'
+                '    if calls == STOP_AFTER: time.sleep(10)\n'
+                'def later(x):\n    round_trip("valid")\n    return False\n'
+                'gen = Generator(lambda rng: rng.randrange(2**60), lambda x: [])\n'
+                'properties = {{"lead": (gen, lead), "later": (gen, later)}}\n')
+        reports = []
+        for stop, seed in ((1, 42), (3, 42), (1, 43)):
+            props.write_text(body.format(stop=stop))
+            result = self.json(checker, props, '--repo', self.repo, '--seed', seed, '--examples', '5',
+                               '--call-timeout', '2', '--json', expected=1)
+            self.ensure(result['properties']['lead']['result'] == 'timeout'
+                        and result['properties']['lead']['generated'] == stop and not result['missing_targets'],
+                        f'leading property times out after {stop} draws with seed {seed}')
+            reports.append(result['properties']['later'])
+        self.ensure(reports[0] == reports[1] and reports[0]['counterexample'] != reports[2]['counterexample'],
+                    'each property has its own seeded stream: an earlier timeout cannot change later inputs or replay')
+
+    def formal_import_timeout_json(self):
+        checker = self.script('formal-verification', 'bounded_check.py')
+        model = self.art / 'slow_import_model.py'
+        model.write_text('import time\ntime.sleep(10)\n'
+                         'def init(): return 0\ndef actions(s): return []\ninvariants = {"ok": lambda s: True}\n')
+        argv = [str(checker), str(model), '--timeout', '2', '--json']
+        self.log.write('$ ' + shlex.join(argv) + '\n')
+        result = subprocess.run(argv, cwd=self.repo, env=self.env, capture_output=True, text=True, timeout=10)
+        self.log.write(result.stdout + result.stderr + f'\n[exit {result.returncode}; expected 3]\n')
+        self.ensure(result.returncode == 3, 'an import-time run limit exits 3')
+        report = json.loads(result.stdout)
+        self.ensure(report['result'] == 'timeout' and not report['ok'] and report['violation'] is None
+                    and report['model'] == str(model) and report['timeout'] == 2 and report['stopped'],
+                    '--json remains parseable on an import-time timeout and identifies an inconclusive run')
+
+    def formal_limit_support(self):
+        """Simulate missing interval timers and execution outside the main thread without hanging the runner."""
+        driver = self.art / 'unsupported_limits.py'
+        driver.write_text('''import contextlib, io, json, runpy, signal, sys, threading
+checker, scenario, *argv = sys.argv[1:]
+if scenario == "no_timer": del signal.setitimer
+sys.argv = [checker, *argv]
+out, err, codes = io.StringIO(), io.StringIO(), []
+def run():
+    try: runpy.run_path(checker, run_name="__main__")
+    except SystemExit as e: codes.append(e.code)
+with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+    if scenario == "worker":
+        thread = threading.Thread(target=run)
+        thread.start()
+        thread.join()
+    else: run()
+print(json.dumps({"code": codes[0], "report": json.loads(out.getvalue()), "stderr": err.getvalue()}))
+''')
+        model, props = self.art / 'unsupported_model.py', self.art / 'props_unsupported.py'
+        model.write_text('import time\ndef init():\n    time.sleep(0.1)\n    return 0\n'
+                         'def actions(s): return []\ninvariants = {"ok": lambda s: True}\n')
+        props.write_text('from gen_check import sampled_from\nimport time\n'
+                         'from todo_props import reset, round_trip\nTARGETS = ["todo/store.py:Store.add"]\n'
+                         'def check(x):\n    time.sleep(0.1)\n    round_trip("valid")\n'
+                         'properties = {"ok": (sampled_from([0]), check)}\n')
+        for file, fixture, flags in (('bounded_check.py', model, ()),
+                                     ('gen_check.py', props, ('--repo', self.repo, '--examples', '1'))):
+            for scenario in ('no_timer', 'worker'):
+                result = self.json(sys.executable, driver, self.script('formal-verification', file), scenario,
+                                   fixture, *flags, '--timeout', '0.02', '--call-timeout', '0.02', '--json')
+                warning = result['stderr']
+                self.ensure(result['code'] == 0 and result['report']['ok'] and 'WARNING' in warning
+                            and '--timeout' in warning and '--call-timeout' in warning and 'not enforced' in warning,
+                            f'{file} warns that both limits are not enforced for {scenario}, while stdout stays JSON')
+        text = (ROOT / 'skills/formal-verification/SKILL.md').read_text()
+        self.ensure(all(term in text for term in ('SIGALRM', 'main thread', 'native code', 'external')),
+                    'formal-verification documents timer/thread support, native-code limits and an external deadline')
 
     def generated_properties(self):
         checker = self.script(self.name, 'gen_check.py')
@@ -865,6 +2484,77 @@ properties = {"copy": (sampled_from([" title "]), check)}
                 value = gen.draw(random.Random(_))
                 list(gen.shrink(value))
         self.ensure(True, 'all seven combinators generate and shrink bounded nested inputs')
+
+    def formal_time_limits(self):
+        """Hung calls and slow runs end in a report, not a killed shell; filter_too_much never hides a result."""
+        bounded = self.script(self.name, 'bounded_check.py')
+        hang = self.art/'hang_model.py'
+        hang.write_text('def init(): return 0\n'
+                        'def actions(s):\n    while s == 1:\n        pass\n    return [("step", s + 1)] if s < 3 else []\n'
+                        'invariants = {"ok": lambda s: True}\n')
+        result = self.json(bounded, hang, '--call-timeout', '1', '--json', expected=2, timeout=30)
+        v = result['violation']
+        self.ensure(v['kind'] == 'error' and v['name'] == 'actions' and v['detail'] == 'no return within 1 s'
+                    and [step['state'] for step in v['trace']] == [0, 1],
+                    'an actions() call that never returns on the second state is a model error with the two-state trace to it')
+        counter = self.art/'counter_model.py'
+        # A 1 ms step keeps the 2 s search to about 2000 states instead of a million held in memory.
+        counter.write_text('import time\ndef init(): return 0\n'
+                           'def actions(s):\n    time.sleep(0.001)\n    return [("inc", s + 1)]\n'
+                           'invariants = {"nonnegative": lambda s: s >= 0}\nDEPTH = MAX_STATES = 10**9\n')
+        output = self.run(bounded, counter, '--timeout', '2', expected=3, timeout=30)
+        self.ensure(re.search(r'INCOMPLETE: stopped at the 2 s limit after [1-9]\d* states', output)
+                    and output.index('2 s run limit') < output.index('INCOMPLETE'),
+                    'a search over a billion-state bound stops at the 2 s run limit as inconclusive, after printing its bounds')
+
+        checker = self.script(self.name, 'gen_check.py')
+        source = self.repo/'todo/text.py'
+        self.ensure(not source.exists(), 'scratch looping module does not shadow a real todo module')
+        props = self.art/'props_strip_leading.py'
+        props.write_text('from gen_check import text\nfrom todo.text import strip_leading\n'
+                         'TARGETS = ["todo/text.py:strip_leading"]\n'
+                         'properties = {"strip_leading": (text(" ab", max_size=8), lambda t: strip_leading(t) == t.lstrip(" ")),\n'
+                         '              "no_leading_space": (text("ab", max_size=8), lambda t: strip_leading(t) == t)}\n')
+        try:
+            # The scratch break: the loop never advances i, so a leading space never returns.
+            source.write_text('def strip_leading(t):\n    i = 0\n    while i < len(t) and t[i] == " ":\n'
+                              '        pass\n    return t[i:]\n')
+            command = [checker, props, '--repo', self.repo, '--call-timeout', '1']
+            result = self.json(*command, '--json', expected=3, timeout=30)
+            hung = result['properties']['strip_leading']
+            import ast
+            self.ensure(hung['result'] == 'timeout' and ast.literal_eval(hung['input']).startswith(' ')
+                        and hung['detail'] == 'no return within 1 s' and result['seed'] == 0 and not result['ok'],
+                        'a check that never returns ends its property as timeout with the leading-space input and seed 0')
+            self.ensure(result['properties']['no_leading_space']['result'] == 'pass' and not result['missing_targets'],
+                        'the other property in the same file still runs and passes after the timeout')
+            result = self.json(*command, '--expect-fail', 'strip_leading', '--json', expected=3, timeout=30)
+            self.ensure(result['properties']['strip_leading']['result'] == 'timeout' and not result['ok'],
+                        '--expect-fail never accepts a timeout as the expected counterexample')
+            output = self.run(*command, expected=3, timeout=30)
+            self.ensure(output.startswith('gen_check: seed 0;') and f"input: {hung['input']}" in output
+                        and 'INCOMPLETE' in output,
+                        'text mode prints the seed before checking and the timed-out input in its report')
+        finally:
+            source.unlink(missing_ok=True)
+
+        # Two rejections, then a failing input: 2 x 2 > 3 must not turn the failure into filter_too_much.
+        rare = self.art/'props_filter_then_fail.py'
+        rare.write_text('from gen_check import *\nTARGETS = ["todo/store.py:Store.add"]\n'
+                        'from todo_props import reset, round_trip\n'
+                        '_values = [-1, -2, 60]\n'
+                        'def draw(rng):\n    return _values.pop(0) if _values else 0\n'
+                        'def check(x):\n    if x < 0:\n        reject()\n    round_trip("valid")\n    assert x <= 50, "above 50"\n'
+                        'properties = {"rare": (Generator(draw, lambda x: []), check)}\n')
+        result = self.json(checker, rare, '--repo', self.repo, '--json', expected=1, timeout=30)
+        found = result['properties']['rare']
+        self.ensure(found['result'] == 'fail' and found['counterexample'] == '60'
+                    and (found['rejected'], found['generated']) == (2, 3) and not result['missing_targets'],
+                    'a counterexample found after two rejected inputs reports fail with 60, not filter_too_much')
+        self.json(checker, rare, '--repo', self.repo, '--expect-fail', 'rare', '--json', timeout=30)
+        output = self.run(checker, rare, '--repo', self.repo, expected=1, timeout=30)
+        self.ensure('rare: fail (2 of 3 generated inputs rejected before the counterexample)' in output,
+                    '--expect-fail accepts that counterexample, and the report counts the rejections before it')
 
     def docs(self):
         """Mutate a disposable collection; keep doc checks under curator's key."""
@@ -1058,6 +2748,886 @@ properties = {"copy": (sampled_from([" title "]), check)}
                 shutil.rmtree(self.scratch)
         return 0 if all(s['status']=='pass' for s in self.summary.values()) else 1
 
+    def review_with_item_provenance(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'with_item_scan')
+        failures = []
+        for route in ('/var/www', '/Users/shared', '/opt/service'):
+            probe = f'if path == {route!r}: pass'
+            negatives = [
+                'path = filesystem\nwith suppress(PermissionError), denied(), nullcontext(path := self.path): pass\n' + probe,
+                'path = self.path\nwith suppress(PermissionError), denied(), nullcontext(path := filesystem): pass\n' + probe,
+                'path = filesystem\nasync with suppress_error(), denied(), context(path := self.path): pass\n' + probe,
+            ]
+            positives = [
+                'path = filesystem\nwith nullcontext(path := self.path): pass\n' + probe,
+                'path = filesystem\nwith suppress(PermissionError), nullcontext(path := self.path):\n    ' + probe,
+                'path = filesystem\nwith suppress(PermissionError), nullcontext(path := self.path), nullcontext(path == ' + repr(route) + '): pass',
+                'path = filesystem\nwith nullcontext(path := self.path), denied(): pass\n' + probe,
+                'path = filesystem\nwith suppress(PermissionError), denied(), nullcontext(path := self.path): pass\npath = self.path\n' + probe,
+            ]
+            for expected, sources in ((set(), negatives), ({('GET', route)}, positives)):
+                for source in sources:
+                    body = 'class Handler:\n    async def do_GET(self):\n' + ''.join(
+                        '        ' + line + '\n' for line in source.splitlines())
+                    info = scanner.analyze_python('server.py', body)
+                    routes = {(r['method'], r['path']) for r in info['routes']}
+                    if routes != expected or info['notes']:
+                        failures.append((source, sorted(routes), info['notes']))
+        root = self.scratch / 'with-item-route-map'
+        root.mkdir()
+        (root / 'server.py').write_text(
+            'from contextlib import suppress, nullcontext\n'
+            'def denied(): raise PermissionError("denied")\n'
+            'class Handler:\n    def do_GET(self):\n'
+            '        path = "/var/www"\n'
+            '        with suppress(PermissionError), denied(), nullcontext(path := self.path): pass\n'
+            '        if path == "/var/www": pass\n'
+            '        if self.path == "/api/items": pass\n'
+            '        return path\n')
+        self.run(sys.executable, '-c', 'from server import Handler; h = Handler(); h.path = "/api/items"; '
+                 'assert h.do_GET() == "/var/www"', cwd=root)
+        skill = root / '.agents/skills/verify-items'
+        (skill / 'features').mkdir(parents=True)
+        (skill / 'features/README.md').write_text('[Items](items.md)\n')
+        (skill / 'features/items.md').write_text('# Items\n\n## Sub-features\nGET /api/items\n\n'
+                                                '## How to get to it (user POV)\n\n'
+                                                '## Driving it with control.sh\n\n## Gotchas\n')
+        drift = self.json(self.script('maintain-verification-skill', 'drift_check.py'), skill, '--repo', root,
+                          '--json', expected=(0, 1))
+        if self.last_returncode != 0 or drift['drift'] or drift['routes']['source'] != 1:
+            failures.append(('unentered context item must not create a route or drift', self.last_returncode, drift))
+        self.ensure(not failures, f'with items establish path provenance only along an evaluated prefix: {failures}')
+
+    def review_exception_path_provenance(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'exception_path_scan')
+        prefix = 'class Handler:\n    def do_GET(self):\n'
+        probe = 'if path == "/var/www": pass'
+        negatives = [
+            'path = filesystem\ntry:\n    denied()\n    path = self.path\nexcept PermissionError:\n    ' + probe,
+            'path = self.path\ntry:\n    path = filesystem\n    denied()\nexcept PermissionError:\n    ' + probe,
+            'path = filesystem\ntry:\n    denied()\n    path = self.path\nexcept PermissionError: pass\n' + probe,
+            'path = filesystem\ntry:\n    denied()\n    path = self.path\nfinally:\n    ' + probe,
+            'path = filesystem\nfor item in []:\n    path = self.path\n' + probe,
+            'path = filesystem\nwhile ready:\n    path = self.path\n' + probe,
+            'path = filesystem\nwith suppress(PermissionError):\n    denied()\n    path = self.path\n' + probe,
+            'path = filesystem\n[(path := self.path) for item in []]\n' + probe,
+        ]
+        positives = [
+            'try:\n    path = self.path\n    ' + probe + '\nexcept PermissionError: pass',
+            'try:\n    denied()\nexcept PermissionError:\n    path = self.path\n    ' + probe,
+            'try:\n    path = self.path\nexcept PermissionError: pass\nelse:\n    ' + probe,
+            'try:\n    denied()\nfinally:\n    path = self.path\n' + probe,
+            'for item in values:\n    path = self.path\n    ' + probe,
+        ]
+        failures = []
+        for expected, sources in ((set(), negatives), ({('GET', '/var/www')}, positives)):
+            for source in sources:
+                body = prefix + ''.join('        ' + line + '\n' for line in source.splitlines())
+                info = scanner.analyze_python('server.py', body)
+                routes = {(r['method'], r['path']) for r in info['routes']}
+                if routes != expected or info['notes']:
+                    failures.append((source, sorted(routes), info['notes']))
+        root = self.scratch / 'exception-route-map'
+        root.mkdir()
+        source = ('def denied(): raise PermissionError("denied")\n' + prefix
+                  + '        path = "/var/www"\n        try:\n            denied()\n            path = self.path\n'
+                  + '        except PermissionError:\n            if path == "/var/www": pass\n'
+                  + '        if self.path == "/api/items": pass\n')
+        (root / 'server.py').write_text(source)
+        skill = root / '.agents/skills/verify-items'
+        (skill / 'features').mkdir(parents=True)
+        (skill / 'features/README.md').write_text('[Items](items.md)\n')
+        (skill / 'features/items.md').write_text('# Items\n\n## Sub-features\nGET /api/items\n\n'
+                                                '## How to get to it (user POV)\n\n'
+                                                '## Driving it with control.sh\n\n## Gotchas\n')
+        self.run(sys.executable, '-c', 'from server import Handler; h = Handler(); h.path = "/api/items"; h.do_GET()', cwd=root)
+        drift = self.json(self.script('maintain-verification-skill', 'drift_check.py'), skill, '--repo', root,
+                          '--json', expected=(0, 1))
+        if self.last_returncode != 0 or drift['drift'] or drift['routes']['source'] != 1:
+            failures.append(('correct feature map must exit 0 with only /api/items', self.last_returncode, drift))
+        self.ensure(not failures, f'only proven executed assignments establish path provenance across exceptional and optional control flow: {failures}')
+
+    def review_parser_action_bindings(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'parser_binding_scan')
+        root = self.scratch / 'parser-binding-map'
+        (root / 'app').mkdir(parents=True)
+        (root / 'app/__init__.py').write_text('')
+        skill = root / '.agents/skills/verify-app'
+        (skill / 'features').mkdir(parents=True)
+        (skill / 'features/README.md').write_text('[List](list.md)\n')
+        (skill / 'features/list.md').write_text('# List\n\n## Sub-features\n\n'
+                                               '## How to get to it (user POV)\n\n'
+                                               '## Driving it with control.sh\n`python3 -m app --json list`\n\n## Gotchas\n')
+        registration = 'parser.register("action", "boolean", argparse.BooleanOptionalAction)\n'
+        option = 'parser.add_argument("--json", action="boolean")\n'
+        commands = ('parser.add_argument("--output", action="store", default=False)\n'
+                    'parser.add_argument("--label", default=False)\n'
+                    'commands = parser.add_subparsers(dest="command", required=True)\n'
+                    'commands.add_parser("list")\n')
+        finish = 'if __name__ == "__main__":\n    print(parser.parse_args())\n'
+        prefix = 'import argparse\nparser = argparse.ArgumentParser()\n'
+        variants = {
+            'global parser': prefix + registration + 'def main():\n    ' + option
+                             + 'main()\n' + commands + finish,
+            'argument group': prefix + registration + 'out = parser.add_argument_group("output")\n'
+                              + option.replace('parser.add_argument', 'out.add_argument') + commands + finish,
+            'mutually exclusive group': prefix + 'out = parser.add_mutually_exclusive_group()\n'
+                                       + registration.replace('parser.register', 'out.register')
+                                       + option + commands + finish,
+            'helper argument': 'import argparse\ndef configure(out):\n    '
+                               + option.replace('parser.add_argument', 'out.add_argument')
+                               + 'parser = argparse.ArgumentParser()\n' + registration
+                               + 'configure(parser)\n' + commands + finish,
+            'subclass and helper': ('import argparse\nclass Parser(argparse.ArgumentParser):\n'
+                                   '    def __init__(self, **kwargs):\n        super().__init__(**kwargs)\n'
+                                   '        self.register("action", "boolean", argparse.BooleanOptionalAction)\n'
+                                   'def configure(out):\n    ' + option.replace('parser.add_argument', 'out.add_argument')
+                                   + 'parser = Parser()\nconfigure(parser)\n' + commands + finish),
+            'subclass method helper': ('import argparse\nclass Parser(argparse.ArgumentParser):\n'
+                                      '    def __init__(self, **kwargs):\n        super().__init__(**kwargs)\n'
+                                      '        self.register("action", "boolean", argparse.BooleanOptionalAction)\n'
+                                      '        self.configure()\n'
+                                      '    def configure(self):\n        self.add_argument("--json", action="boolean")\n'
+                                      'parser = Parser()\n' + commands.replace('parser.add_subparsers(',
+                                          'parser.add_subparsers(parser_class=argparse.ArgumentParser, ') + finish),
+            'parser alias': prefix + 'out = parser\n' + registration.replace('parser.register', 'out.register')
+                            + option + commands + finish,
+        }
+        failures = []
+        for label, source in variants.items():
+            (root / 'app/__main__.py').write_text(source)
+            self.run(sys.executable, '-m', 'app', '--json', 'list', cwd=root)
+            options = scanner.analyze_python('app/__main__.py', source)['parser_options']
+            actual = {o['names'][0]: o['takes_value'] for group in options.values() for o in group}
+            if actual != {'--json': False, '--output': True, '--label': True}:
+                failures.append((label, 'known registered action without bool-default fallback', actual))
+            drift = self.json(self.script('maintain-verification-skill', 'drift_check.py'), skill, '--repo', root,
+                              '--json', expected=(0, 1))
+            if self.last_returncode != 0 or drift['drift'] or drift['commands']['source'] != 1:
+                failures.append((label, 'actual --json list must remain mapped', self.last_returncode, drift))
+        # A bool default is only the fallback for opaque actions, never for built-in store.
+        opaque = ('import argparse\nclass Toggle(argparse.Action):\n'
+                  '    def __init__(self, option_strings, dest, **kwargs):\n'
+                  '        super().__init__(option_strings, dest, nargs=0, **kwargs)\n'
+                  '    def __call__(self, parser, namespace, values, option_string=None):\n'
+                  '        setattr(namespace, self.dest, True)\n'
+                  'parser = argparse.ArgumentParser()\n'
+                  'parser.register("action", "toggle", Toggle)\n'
+                  'parser.add_argument("--direct", action=Toggle, default=False)\n'
+                  'parser.add_argument("--alias", action="toggle", default=False)\n'
+                  'parser.add_argument("--unknown", action="external", default=False)\n'
+                  'parser.add_argument("--custom-value", action="external", default="text")\n'
+                  'parser.add_argument("--store", action="store", default=False)\n'
+                  'parser.add_argument("--append", action="append", default=False)\n'
+                  'parser.add_argument("--none", action=None, default=False)\n')
+        (root / 'app/__main__.py').write_text(
+            ''.join(line + '\n' for line in opaque.splitlines() if 'action="external"' not in line)
+            + commands + finish)
+        self.run(sys.executable, '-m', 'app', '--direct', '--alias', 'list', cwd=root)
+        actual = {o['names'][0]: o['takes_value'] for o in scanner.analyze_python('cli.py', opaque)['parser_options']['parser']}
+        if actual != {'--direct': False, '--alias': False, '--unknown': False,
+                      '--custom-value': True, '--store': True, '--append': True, '--none': True}:
+            failures.append(('direct and registered opaque classes use the same fallback', actual))
+        # Preserve the existing inventory of registrations inside ordinary compound suites.
+        for label, suite in {
+            'try': 'try:\n    REGISTER\nexcept ValueError:\n    pass\n',
+            'with': 'from contextlib import nullcontext\nwith nullcontext():\n    REGISTER\n',
+            'for': 'for _ in range(1):\n    REGISTER\n',
+            'match': 'match \"text\":\n    case \"text\":\n        REGISTER\n',
+        }.items():
+            source = (prefix + suite.replace('REGISTER', 'parser.register("action", "text", argparse._StoreAction)')
+                      + 'parser.add_argument("--payload", action="text", default=False)\n' + finish)
+            (root / 'app/__main__.py').write_text(source)
+            self.run(sys.executable, '-m', 'app', '--payload', 'list', cwd=root)
+            option_info = scanner.analyze_python('cli.py', source)['parser_options']['parser'][0]
+            if not option_info['takes_value']:
+                failures.append((label, 'registered store in compound suite must still take a value', option_info))
+        child = (prefix + 'commands = parser.add_subparsers()\nsub = commands.add_parser("list")\n'
+                 + registration.replace('parser.register', 'sub.register')
+                 + option.replace('parser.add_argument', 'sub.add_argument')
+                 + 'parser.add_argument("--root", action="boolean", default="text")\n')
+        options = scanner.analyze_python('cli.py', child)['parser_options']
+        actual = {o['names'][0]: o['takes_value'] for group in options.values() for o in group}
+        if actual != {'--json': False, '--root': True}:
+            failures.append(('subparser has an independent registry', actual))
+        # Lexical name matches must not leak a different parser's registry, even with a bool default.
+        store = 'parser.register("action", "boolean", argparse._StoreAction)\n'
+        checks = {
+            'local shadow': prefix + registration + 'def main():\n    parser = argparse.ArgumentParser()\n'
+                            + '    ' + store + '    ' + option.replace(')', ', default=False)') + 'main()\n',
+            'reassignment': prefix + registration + 'parser = argparse.ArgumentParser()\n' + store
+                            + option.replace(')', ', default=False)'),
+            'old alias after reassignment': prefix + registration + 'out = parser\n'
+                                            + 'parser = argparse.ArgumentParser()\n' + store
+                                            + option.replace(')', ', default=False)')
+                                            + 'out.add_argument("--old", action="boolean")\n',
+            'global reassignment': prefix + registration + 'def reset():\n    global parser\n'
+                                   '    parser = argparse.ArgumentParser()\n    ' + store
+                                   + 'reset()\n' + option.replace(')', ', default=False)'),
+            'lexical shadow before assignment': prefix + registration + 'def main():\n    ' + option
+                                                + '    parser = argparse.ArgumentParser()\n',
+            'local import shadow': prefix + 'def main():\n    argparse = replacement\n'
+                                   '    ' + registration + '    ' + option + 'main()\n',
+        }
+        for label, source in checks.items():
+            options = scanner.analyze_python('cli.py', source)['parser_options']
+            actual = {o['names'][0]: o['takes_value'] for group in options.values() for o in group}
+            expected = {'--json': True, '--old': False} if label == 'old alias after reassignment' else {'--json': True}
+            if actual != expected:
+                failures.append((label, actual, expected))
+        self.ensure(not failures, f'argparse action registries follow parser bindings across scopes, groups, constructors and helpers: {failures}')
+
+    def parser_call_variants(self, name, variants):
+        """Cross-check authored fixtures against real argparse and the complete drift CLI."""
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), name)
+        root = self.scratch / name
+        (root / 'app').mkdir(parents=True)
+        (root / 'app/__init__.py').write_text('')
+        skill = root / '.agents/skills/verify-app'
+        (skill / 'features').mkdir(parents=True)
+        (skill / 'features/README.md').write_text('[List](list.md)\n')
+        (skill / 'features/list.md').write_text('# List\n\n## Sub-features\n\n'
+                                               '## How to get to it (user POV)\n\n'
+                                               '## Driving it with control.sh\n`python3 -m app --json list`\n\n## Gotchas\n')
+        finish = ('parser.add_argument("--output", action="store", default=False)\n'
+                  'parser.add_argument("--label", default=False)\n'
+                  'commands = parser.add_subparsers(dest="command", required=True,\n'
+                  '                                 parser_class=argparse.ArgumentParser)\n'
+                  'commands.add_parser("list")\n'
+                  'if __name__ == "__main__":\n'
+                  '    args = parser.parse_args()\n'
+                  '    assert args.json is True and args.command == "list"\n')
+        failures = []
+        for label, body in variants.items():
+            self.log.write(f'parser binding variant: {label}\n')
+            source = 'import argparse\n' + body + finish
+            (root / 'app/__main__.py').write_text(source)
+            self.run(sys.executable, '-m', 'app', '--json', 'list', cwd=root)
+            # A scan must never import/execute the target, even when following default expressions.
+            static_source = 'raise RuntimeError("scanner executed repository code")\n' + source
+            options = scanner.analyze_python('app/__main__.py', static_source)['parser_options']
+            actual = {o['names'][0]: o['takes_value'] for group in options.values() for o in group}
+            if actual != {'--json': False, '--output': True, '--label': True}:
+                failures.append((label, 'token consumption', actual))
+            (root / 'app/__main__.py').write_text(static_source)
+            drift = self.json(self.script('maintain-verification-skill', 'drift_check.py'), skill, '--repo', root,
+                              '--json', expected=(0, 1))
+            if self.last_returncode != 0 or drift['drift'] or drift['commands']['source'] != 1:
+                failures.append((label, 'real --json list must remain mapped', self.last_returncode, drift))
+        return failures
+
+    def review_parser_helper_defaults(self):
+        prefix = ('parser = argparse.ArgumentParser()\n'
+                  'parser.register("action", "boolean", argparse.BooleanOptionalAction)\n')
+        option = 'out.add_argument("--json", action="boolean")\n'
+        variants = {
+            'positional default': prefix + 'def configure(out=parser):\n    ' + option + 'configure()\n',
+            'keyword-only default': prefix + 'def configure(*, out=parser):\n    ' + option + 'configure()\n',
+            'positional-only default after required arg': prefix
+                + 'def configure(required, out=parser, /):\n    ' + option + 'configure(None)\n',
+            'default evaluated before local shadow': prefix + 'def configure(out=parser):\n'
+                + '    parser = argparse.ArgumentParser()\n    ' + option + 'configure()\n',
+            'default captures parser before reassignment': prefix + 'original = parser\n'
+                + 'def configure(out=parser):\n    ' + option
+                + 'parser = argparse.ArgumentParser()\n'
+                + 'parser.register("action", "boolean", argparse._StoreAction)\n'
+                + 'configure()\nparser = original\n',
+            'explicit positional overrides default': prefix
+                + 'def configure(out=None):\n    ' + option + 'configure(parser)\n',
+            'explicit keyword overrides default': prefix
+                + 'def configure(*, out=None):\n    ' + option + 'configure(out=parser)\n',
+            'method positional and keyword-only defaults': prefix
+                + 'class Parser(argparse.ArgumentParser):\n'
+                + '    def configure(self, action=argparse.BooleanOptionalAction, *, out=parser):\n'
+                + '        out.register("action", "boolean", action)\n        ' + option
+                + 'helper = Parser()\nhelper.configure()\n',
+        }
+        failures = self.parser_call_variants('parser-helper-defaults', variants)
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'default_override_scan')
+        # An explicitly supplied but statically unknown argument must not fall back to the default parser.
+        source = prefix + 'def configure(out=parser):\n    ' + option + 'configure(external_parser)\n'
+        options = scanner.analyze_python('cli.py', source)['parser_options']
+        if not all(o['takes_value'] for group in options.values() for o in group):
+            failures.append(('unknown explicit argument incorrectly reused default', options))
+        self.ensure(not failures, f'helper and method defaults retain definition-time parser bindings with explicit overrides: {failures}')
+
+    def review_parser_constructor_arguments(self):
+        variants = {}
+        for label, signature, call in [
+            ('explicit positional', 'self, action', 'argparse.BooleanOptionalAction'),
+            ('explicit keyword', 'self, action', 'action=argparse.BooleanOptionalAction'),
+            ('keyword-only explicit', 'self, *, action', 'action=argparse.BooleanOptionalAction'),
+            ('positional-only self and action', 'self, action, /', 'argparse.BooleanOptionalAction'),
+            ('positional default', 'self, action=argparse.BooleanOptionalAction', ''),
+            ('keyword-only default', 'self, *, action=argparse.BooleanOptionalAction', ''),
+            ('explicit overrides default', 'self, action=argparse._StoreAction', 'argparse.BooleanOptionalAction'),
+        ]:
+            variants[label] = ('class Parser(argparse.ArgumentParser):\n'
+                               f'    def __init__({signature}):\n'
+                               '        super().__init__()\n'
+                               '        self.register("action", "boolean", action)\n'
+                               f'parser = Parser({call})\n'
+                               'parser.add_argument("--json", action="boolean")\n')
+        variants['constructor default captures action before reassignment'] = (
+            'action = argparse.BooleanOptionalAction\n'
+            'class Parser(argparse.ArgumentParser):\n'
+            '    def __init__(self, action=action):\n'
+            '        super().__init__()\n'
+            '        self.register("action", "boolean", action)\n'
+            'action = argparse._StoreAction\n'
+            'parser = Parser()\nparser.add_argument("--json", action="boolean")\n')
+        failures = self.parser_call_variants('parser-constructor-arguments', variants)
+        self.ensure(not failures, f'direct parser constructors share helper binding for explicit arguments and captured defaults: {failures}')
+
+    def review_registered_boolean_actions(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'registered_action_scan')
+        root = self.scratch / 'registered-action-map'
+        (root / 'app').mkdir(parents=True)
+        (root / 'app/__init__.py').write_text('')
+        source = ('import argparse\nparser = argparse.ArgumentParser()\n'
+                  'parser.register("action", "boolean", argparse.BooleanOptionalAction)\n'
+                  'parser.add_argument("--json", action="boolean", default=False)\n'
+                  'parser.add_argument("--output", action="store", default=False)\n'
+                  'parser.add_argument("--label", default=False)\n'
+                  'commands = parser.add_subparsers(dest="command", required=True)\n'
+                  'commands.add_parser("list")\n'
+                  'if __name__ == "__main__":\n    print(parser.parse_args())\n')
+        (root / 'app/__main__.py').write_text(source)
+        skill = root / '.agents/skills/verify-app'
+        (skill / 'features').mkdir(parents=True)
+        (skill / 'features/README.md').write_text('[List](list.md)\n')
+        (skill / 'features/list.md').write_text('# List\n\n## Sub-features\n\n'
+                                               '## How to get to it (user POV)\n\n'
+                                               '## Driving it with control.sh\n`python3 -m app --json list`\n\n## Gotchas\n')
+        self.run(sys.executable, '-m', 'app', '--json', 'list', cwd=root)
+        failures = []
+        variants = [source,
+                    source.replace('import argparse', 'import argparse as ap').replace('argparse.', 'ap.'),
+                    source.replace('import argparse', 'import argparse\nfrom argparse import BooleanOptionalAction as Toggle')
+                          .replace('argparse.BooleanOptionalAction', 'Toggle'),
+                    source.replace('"boolean"', '"toggle"').replace(', default=False)\nparser.add_argument("--output"',
+                                                                      ')\nparser.add_argument("--output"')]
+        for body in variants:
+            options = scanner.analyze_python('app/__main__.py', body)['parser_options']['parser']
+            actual = {o['names'][0]: o['takes_value'] for o in options}
+            if actual != {'--json': False, '--output': True, '--label': True}:
+                failures.append(('registered boolean and ordinary value options', body, actual))
+        # An existing value-action registration must not be replaced by another parser's or a later registration.
+        for body in (source.replace('parser.register(', 'other.register('),
+                     source.replace('parser.register("action", "boolean", argparse.BooleanOptionalAction)\n', '')
+                           + 'parser.register("action", "boolean", argparse.BooleanOptionalAction)\n'):
+            body = body.replace('parser = argparse.ArgumentParser()\n',
+                                'parser = argparse.ArgumentParser()\n'
+                                'other = argparse.ArgumentParser()\n'
+                                'parser.register("action", "boolean", argparse._StoreAction)\n')
+            option = scanner.analyze_python('app/__main__.py', body)['parser_options']['parser'][0]
+            if not option['takes_value']:
+                failures.append(('registration must precede the option on the same parser', body, option))
+        drift = self.json(self.script('maintain-verification-skill', 'drift_check.py'), skill, '--repo', root,
+                          '--json', expected=(0, 1))
+        if self.last_returncode != 0 or drift['drift'] or drift['commands']['source'] != 1:
+            failures.append(('registered boolean leaves list mapped and exits 0', self.last_returncode, drift))
+        self.ensure(not failures, f'registered no-value argparse actions retain their token consumption and clean feature maps: {failures}')
+
+    def review_expression_paths(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'expression_path_scan')
+        prefix = 'class Handler:\n    def do_GET(self):\n'
+        probe = 'if path.startswith("/var/www/"): pass'
+        negatives = [
+            'path = self.translate_path(self.path)\nif api_mode and (path := self.path): return\n' + probe,
+            'path = filesystem\napi_mode or (path := self.path)\n' + probe,
+            'path = filesystem\n(path := self.path) if api_mode else None\n' + probe,
+            'path = filesystem\nNone if api_mode else (path := self.path)\n' + probe,
+            'path = self.path\napi_mode and (path := filesystem)\n' + probe,
+            'path = self.path\napi_mode or (path := filesystem)\n' + probe,
+            'path = self.path\n(path := filesystem) if api_mode else None\n' + probe,
+            'path = self.path\nNone if api_mode else (path := filesystem)\n' + probe,
+            '(path := self.path) if api_mode else path.startswith("/var/www/")',
+            'api_mode and ((path := self.path) if alternate else None)\n' + probe,
+            'path = filesystem\n(path := filesystem) if (path := self.path) else None\n' + probe,
+            'path = filesystem\nNone if (path := self.path) else (path := filesystem)\n' + probe,
+        ]
+        positives = [
+            '(path := self.path) and api_mode\n' + probe,
+            '(path := self.path) or api_mode\n' + probe,
+            'None if (path := self.path) else None\n' + probe,
+            'api_mode and (path := self.path) and path.startswith("/var/www/")',
+            'api_mode or (path := self.path) or path.startswith("/var/www/")',
+            '((path := self.path) and path.startswith("/var/www/")) if api_mode else None',
+            'None if api_mode else ((path := self.path) and path.startswith("/var/www/"))',
+            'api_mode and (path := filesystem)\npath = self.path\n' + probe,
+            'path = filesystem\nif api_mode and (path := self.path):\n    ' + probe,
+            'path = filesystem\nif api_mode or (path := self.path): pass\nelse:\n    ' + probe,
+            'path = filesystem\nif not (api_mode or (path := self.path)):\n    ' + probe,
+            'path = filesystem\npath.startswith("/var/www/") if (path := self.path) else None',
+            'path = filesystem\npath.startswith("/var/www/") if api_mode and (path := self.path) else None',
+            'path = filesystem\nNone if api_mode or (path := self.path) else path.startswith("/var/www/")',
+            'path = self.path\n(path := filesystem) if path.startswith("/var/www/") else None',
+            'path = filesystem\nmatch mode:\n    case "url" if api_mode and (path := self.path):\n        ' + probe,
+        ]
+        failures = []
+        for expected, sources in ((set(), negatives), ({('GET', '/var/www/<*>')}, positives)):
+            for source in sources:
+                body = prefix + ''.join('        ' + line + '\n' for line in source.splitlines())
+                info = scanner.analyze_python('server.py', body)
+                routes = {(r['method'], r['path']) for r in info['routes']}
+                if routes != expected or info['notes']:
+                    failures.append((source, sorted(routes), info['notes']))
+        self.ensure(not failures, f'short-circuit and conditional assignments revoke uncertain joins but preserve evaluated aliases: {failures}')
+
+    def review_query_path_aliases(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'query_path_scan')
+        prefix = 'class Handler:\n    def do_GET(self):\n'
+        positives = [
+            "path = self.path.split('?')[0]",
+            "path = self.path.split('?', 1)[0]",
+            "path = self.path.partition('?')[0]",
+            "path, query = self.path.split('?', 1)",
+            "path, query = self.path.split('?')",
+            "path, sep, query = self.path.partition('?')",
+            "[path, sep, query] = self.path.partition('?')",
+            "raw = self.path\npath, sep, query = raw.partition('?')",
+            "path = request.path_info.split('?', 1)[0]",
+            "path = self.path.partition('#')[0]",
+            "path = self.path.split('?')[0]\nparts = path.strip('/').split('/')",
+        ]
+        negatives = [
+            "path = self.translate_path(self.path).split('?')[0]",
+            "path, sep, query = self.translate_path(self.path).partition('?')",
+            "path = self.path.partition('?')[2]",
+            "path = self.path.split('?', 1)[1]",
+            "path = self.path.split('/')[0]",
+            "path = self.path.split(separator)[0]",
+            "path = self.path.rsplit('?', 1)[0]",
+            "query, sep, path = self.path.partition('?')",
+        ]
+        failures = []
+        for expected, sources in (({('GET', '/home'), ('GET', '/Users')}, positives), (set(), negatives)):
+            for source in sources:
+                body = prefix + ''.join('        ' + line + '\n' for line in source.splitlines())
+                body += '        if path == "/home": pass\n        if path == "/Users": pass\n'
+                info = scanner.analyze_python('server.py', body)
+                routes = {(r['method'], r['path']) for r in info['routes']}
+                if routes != expected or info['notes']:
+                    failures.append((source, sorted(routes), info['notes']))
+        self.ensure(not failures, f'query and fragment stripping retain request-path aliases, including unpacking, without blessing disk paths or query elements: {failures}')
+
+    def review_go_receiver_workload(self):
+        scanner = load_module(self.script('create-verification-skill', 'scan_repo.py'), 'go_receiver_work_scan')
+        original_search = scanner.re.search
+        samples, failures = [], []
+        for count in (100, 200, 400, 800):
+            source = 'package main\nfunc main() {\n' + ''.join(
+                f'router.GET("/home/{i}", handler)\n' for i in range(count)) + '}\n'
+            metrics = {'n': count, 'receiver_searches': 0, 'searched_characters': 0}
+
+            def search(pattern, text, *args, **kwargs):
+                if pattern == r'\b(\w+)\s*$':
+                    metrics['receiver_searches'] += 1
+                    metrics['searched_characters'] += len(text)
+                return original_search(pattern, text, *args, **kwargs)
+
+            started = time.monotonic()
+            with patch.object(scanner.re, 'search', search):
+                retained = [match.group(2) for match in scanner.GO_ROUTER.finditer(source)
+                            if scanner.go_route_receiver(source, match.start(), scanner.GO_ROUTER_RECEIVERS)]
+            metrics['seconds'] = round(time.monotonic() - started, 6)
+            samples.append(metrics)
+            if retained != [f'/home/{i}' for i in range(count)]:
+                failures.append(('route inventory', count, len(retained)))
+            if metrics['searched_characters'] > count * 512:
+                failures.append(('unbounded receiver work', metrics))
+        # Long unrelated prefixes must not turn field or identifier suffixes into trusted receivers.
+        for source, expected in [('router.GET', True), ('s.router.GET', False),
+                                 ('x' * 300 + 'router.GET', False),
+                                 ('s.' + ' ' * 300 + 'router.GET', False),
+                                 ('x' * 300 + '\nrouter.GET', True)]:
+            actual = scanner.go_route_receiver(source, source.rindex('.'), scanner.GO_ROUTER_RECEIVERS)
+            if actual != expected:
+                failures.append(('receiver boundary', source[-40:], expected, actual))
+        self.log.write('GO RECEIVER WORKLOAD ' + json.dumps(samples) + '\n')
+        self.log.flush()
+        if samples[-1]['searched_characters'] > samples[0]['searched_characters'] * 10:
+            failures.append(('eightfold routes exceed near-linear receiver work', samples))
+        self.ensure(not failures, f'Go receiver lookup uses bounded work per route and preserves conventional receivers: {failures}')
+
+    def review_net_change_docs(self):
+        """The public budget API is new; branch-only names are not a main migration."""
+        public = {
+            'CHANGELOG.md': (ROOT / 'CHANGELOG.md').read_text().split('## [0.1.0]', 1)[0],
+            'MAPPING.md': (ROOT / 'MAPPING.md').read_text(),
+            'formal SKILL.md': (ROOT / 'skills/formal-verification/SKILL.md').read_text().split('## Sources', 1)[0],
+        }
+        for checker in ('gen_check.py', 'bounded_check.py'):
+            public[checker + ' --help'] = self.run(sys.executable, self.script('formal-verification', checker), '--help')
+        failures = [name for name, text in public.items()
+                    if not all(api in text for api in ('--timeout', '--call-timeout', 'CHECK_TIMEOUT'))
+                    or re.search(r'\bTIMEOUT\b', text)]
+        self.ensure(not failures,
+                    f'public docs/help describe CHECK_TIMEOUT and the added limits without a nonexistent TIMEOUT migration: {failures}')
+        changelog = public['CHANGELOG.md']
+        self.ensure(not re.search(r'(?im)^- (?:Round \d|(?:Final )?[Rr]e-review|Follow-up review|Curator review fixes)', changelog)
+                    and all(word in changelog for word in ('overhead', 'main', '90 s', 'exit 3', 'mutant', 'exit 2', 'untracked', 'empty')),
+                    'Unreleased records net behavior, default-limit overhead and incompatible exits rather than branch review rounds')
+
+
+    def review_infrastructure_exception_format(self):
+        """Import/hook failures stay errors when formatting exceeds the run deadline."""
+        failures = []
+        def fixture(checker, phase, error):
+            if phase == 'import':
+                return error + 'raise SlowInfrastructureError()\n'
+            body = ('from gen_check import Generator\n' + error +
+                    'TARGETS = ["todo/store.py:Store.add"]\n'
+                    'def broken(*args): raise SlowInfrastructureError()\n')
+            if phase == 'profiling':
+                body += ('import gen_check\n'
+                         'class BrokenPath:\n    def __init__(self, *args): pass\n'
+                         '    def resolve(self): raise SlowInfrastructureError()\n'
+                         'def setup(): gen_check.Path = BrokenPath\n')
+            if phase in ('setup', 'reset'):
+                body += phase + ' = broken\n'
+            draw = 'broken' if phase == 'generation' else 'lambda rng: 7'
+            shrink = 'broken' if phase == 'shrink' else 'lambda value: []'
+            check = 'lambda value: False' if phase == 'shrink' else 'lambda value: True'
+            return body + f'properties = {{"probe": (Generator({draw}, {shrink}), {check})}}\n'
+
+        for checker, phases in (('gen_check.py', ('import', 'setup', 'reset', 'generation', 'shrink', 'profiling')),
+                                ('bounded_check.py', ('import',))):
+            for phase in phases:
+                for tick in (True, False):
+                    error = ('import review_clock as clock\n'
+                             'class SlowInfrastructureError(Exception):\n    def __str__(self):\n'
+                             '        clock.events.append([clock.limits.recording, clock.limits.started])\n'
+                             f'        clock.advance(20, tick={tick})\n        return "slow diagnostic"\n')
+                    try:
+                        result = self.clock_check(checker, fixture(checker, phase, error), run=10, call=0,
+                                                  flags=('--json',))
+                    except AssertionError as error:
+                        failures.append((checker, phase, tick, str(error)))
+                        continue
+                    diagnostic = result['stdout'] + result['stderr']
+                    valid = (result['code'] == 2 and 'SlowInfrastructureError' in diagnostic
+                             and result['events'] == [[0, None]])
+                    if checker == 'gen_check.py':
+                        report = json.loads(result['stdout'])
+                        valid = valid and report.get('result') == 'error' and not report['ok']
+                    if not valid:
+                        failures.append((checker, phase, tick, result))
+            # Infinite messages exercise real SIGALRM as well as the manual-clock paths.
+            for phase in (('import', 'setup') if checker == 'gen_check.py' else ('import',)):
+                error = ('class SlowInfrastructureError(Exception):\n    def __str__(self):\n'
+                         '        while True: pass\n')
+                source = self.art / (phase + '_' + checker)
+                source.write_text(fixture(checker, phase, error))
+                args = ('--repo', self.repo, '--examples', '1') if checker == 'gen_check.py' else ()
+                try:
+                    diagnostic = self.run(sys.executable, self.script('formal-verification', checker), source,
+                                          *args, '--timeout', '.05', '--call-timeout', '0', '--json',
+                                          expected=(0, 1, 2, 3), timeout=1.2)
+                except subprocess.TimeoutExpired:
+                    failures.append((checker, phase, 'infinite message exceeded the external 1.2 s guard'))
+                    continue
+                if self.last_returncode != 2 or 'SlowInfrastructureError' not in diagnostic:
+                    failures.append((checker, phase, self.last_returncode, diagnostic))
+        # Deliver a pending alarm exactly after recording the import error's safe detail.
+        body = ('import review_clock as clock\nfrom contextlib import contextmanager\n'
+                'original_record = clock.limits.record_result\n'
+                '@contextmanager\ndef record():\n    with original_record():\n'
+                '        yield\n        clock.advance(20)\n'
+                'clock.limits.record_result = record\n'
+                'class RecordedImportError(Exception): pass\nraise RecordedImportError("known failure")\n')
+        result = self.clock_check('bounded_check.py', body, run=10, call=0, flags=('--json',))
+        if result['code'] != 2 or 'RecordedImportError' not in result['stdout'] + result['stderr']:
+            failures.append(('bounded import record-to-format alarm', result))
+        self.ensure(not failures, f'import and infrastructure errors retain exit 2 and safe diagnostics during interrupted formatting: {failures}')
+
+    def review_exception_format_timeout(self):
+        """An exception is a confirmed finding before its user-defined message is rendered."""
+        target = self.repo / 'exception_format_target.py'
+        target.write_text('def checked(value): return False\n')
+        failures = []
+        error = ('class SlowError(Exception):\n    def __str__(self):\n'
+                 '        clock.events.append([clock.limits.recording, clock.limits.started])\n'
+                 '        clock.advance(20)\n        return "slow message"\n')
+        try:
+            for phase in ('initial', 'shrink'):
+                body = ('import review_clock as clock\nfrom gen_check import Generator\n'
+                        'from exception_format_target import checked\n' + error +
+                        'TARGETS = ["exception_format_target.py:checked"]\n'
+                        'def check(value):\n    checked(value)\n'
+                        '    if value == 42: return False\n    raise SlowError()\n'
+                        'properties = {"broken": (Generator(lambda rng: ' + ('42' if phase == 'shrink' else '7') +
+                        ', lambda value: [7] if value == 42 else []), check)}\n')
+                result = self.clock_check('gen_check.py', body, run=10, call=0, flags=('--json',))
+                report = json.loads(result['stdout'])
+                found = report['properties']['broken']
+                if not (result['code'] == 1 and result['events'] == [[0, None]]
+                        and found['result'] == 'fail' and found['counterexample'] == '7'
+                        and found['accepted'] == 1 and 'SlowError' in (found['detail'] or '')
+                        and found.get('output_incomplete') and report['incomplete']
+                        and report['called'] == ['exception_format_target.py:checked'] and not report['missing_targets']):
+                    failures.append(('property', phase, result))
+            for phase in ('invariant', 'actions', 'mutant'):
+                body = ('import review_clock as clock\n' + error +
+                        'def init(): return 7\ndef broken(s): raise SlowError()\n' +
+                        ('def actions(s): return []\ninvariants = {"broken": broken}\n' if phase == 'invariant' else
+                         'actions = broken\ninvariants = {"ok": lambda s: True}\n' if phase == 'actions' else
+                         'def actions(s): return []\ninvariants = {"ok": lambda s: True}\n'
+                         'mutants = {"crashed": broken, "later": lambda s: []}\n'))
+                flags = ('--mutants', '--json') if phase == 'mutant' else ('--json',)
+                result = self.clock_check('bounded_check.py', body, run=10, call=0, flags=flags)
+                report = json.loads(result['stdout'])
+                found = report['mutants']['crashed'] if phase == 'mutant' else report
+                trace = found.get('trace') if phase == 'mutant' else (found['violation'] or {}).get('trace')
+                if not (result['code'] == 2 and result['events'] == [[0, None]] and found['result'] == 'error'
+                        and 'SlowError' in (found['detail'] or '') and found['states'] == 1
+                        and trace and trace[0]['state'] == 7 and report['incomplete']
+                        and (phase != 'mutant' or report['not_run'] == ['later'])):
+                    failures.append(('model', phase, result))
+            # Real SIGALRM proves that an infinite __str__ cannot block the checker indefinitely.
+            for checker in ('gen_check.py', 'bounded_check.py'):
+                fixture = self.art / ('exception_' + checker)
+                body = 'class SlowError(Exception):\n    def __str__(self):\n        while True: pass\n'
+                if checker == 'gen_check.py':
+                    body += ('from gen_check import Generator\nfrom exception_format_target import checked\n'
+                             'TARGETS = ["exception_format_target.py:checked"]\n'
+                             'def broken(value):\n    checked(value)\n    raise SlowError()\n'
+                             'properties = {"broken": (Generator(lambda rng: 7, lambda value: []), broken)}\n')
+                    flags, expected = ('--repo', self.repo, '--examples', '1'), 1
+                else:
+                    body += 'def init(): return 7\ndef actions(s): raise SlowError()\ninvariants = {"ok": lambda s: True}\n'
+                    flags, expected = (), 2
+                fixture.write_text(body)
+                try:
+                    report = self.json(sys.executable, self.script('formal-verification', checker), fixture, *flags,
+                                       '--timeout', '0.5', '--call-timeout', '0', '--json', expected=(expected, 3), timeout=8)
+                except subprocess.TimeoutExpired:
+                    failures.append((checker, 'infinite exception formatting exceeded the external guard'))
+                    continue
+                found = report['properties']['broken'] if checker == 'gen_check.py' else report
+                if not (self.last_returncode == expected and found['result'] == ('fail' if expected == 1 else 'error')
+                        and 'SlowError' in (found['detail'] or '') and report['incomplete']):
+                    failures.append((checker, self.last_returncode, report))
+            self.ensure(not failures, f'exception formatting preserves confirmed failures, coverage and diagnostics outside recording: {failures}')
+        finally:
+            target.unlink()
+
+    def review_timeout_format_handoff(self):
+        body = ('import review_clock as clock\nfrom gen_check import Generator\n'
+                'TARGETS = ["todo/store.py:Store.add"]\n'
+                'class Value:\n    def __repr__(self):\n        clock.advance(20)\n        return "value"\n'
+                'def check(x): clock.advance(2)\n'
+                'properties = {"slow": (Generator(lambda rng: Value(), lambda x: []), check)}\n')
+        failures = []
+        for flags in ((), ('--expect-fail', 'slow')):
+            result = self.clock_check('gen_check.py', body, run=10, call=1, flags=(*flags, '--json'))
+            report = json.loads(result['stdout'])
+            found = report['properties']['slow']
+            if result['code'] != 3 or found['result'] != 'timeout' or found['accepted'] != 0 or report['ok']:
+                failures.append(result)
+        self.ensure(not failures, f'a run timeout while rendering a call timeout remains inconclusive with no accepted input: {failures}')
+
+    def review_interruptible_result_format(self):
+        target = self.repo / 'format_target.py'
+        target.write_text('def checked(value): return False\n')
+        failures = []
+        # A manual signal verifies that no user representation runs with alarms deferred.
+        for checker in ('gen_check.py', 'bounded_check.py'):
+            body = ('import review_clock as clock\n'
+                    'class Value:\n    def __repr__(self):\n'
+                    '        clock.events.append(clock.limits.recording)\n'
+                    '        clock.advance(20)\n        return "value"\n')
+            if checker == 'gen_check.py':
+                body += ('from gen_check import Generator\nfrom format_target import checked\n'
+                         'TARGETS = ["format_target.py:checked"]\n'
+                         'properties = {"broken": (Generator(lambda rng: Value(), lambda x: []), checked)}\n')
+            else:
+                body += 'def init(): return Value()\ndef actions(s): return []\ninvariants = {"broken": lambda s: False}\n'
+            result = self.clock_check(checker, body, run=10, call=0, flags=('--json',))
+            if result['code'] != 1 or result['events'] != [0]:
+                failures.append((checker, 'formatting ran with deferred alarms', result))
+        try:
+            for checker in ('gen_check.py', 'bounded_check.py'):
+                fixture = self.art / ('format_' + checker)
+                body = ('class Value:\n    def __repr__(self):\n        while True: pass\n')
+                if checker == 'gen_check.py':
+                    body += ('from gen_check import Generator\nfrom format_target import checked\n'
+                             'TARGETS = ["format_target.py:checked"]\n'
+                             'properties = {"broken": (Generator(lambda rng: Value(), lambda x: []), checked)}\n')
+                    flags = ('--repo', self.repo, '--examples', '1')
+                else:
+                    body += 'def init(): return Value()\ndef actions(s): return []\ninvariants = {"broken": lambda s: False}\n'
+                    flags = ()
+                fixture.write_text(body)
+                try:
+                    report = self.json(sys.executable, self.script('formal-verification', checker), fixture, *flags,
+                                       '--timeout', '0.5', '--call-timeout', '0', '--json', expected=1, timeout=8)
+                except subprocess.TimeoutExpired:
+                    failures.append((checker, 'result formatting ignored the internal timeout'))
+                    continue
+                if checker == 'gen_check.py':
+                    found = report['properties']['broken']
+                    valid = (found['result'] == 'fail' and found['accepted'] == 1 and found.get('output_incomplete')
+                             and report['called'] == ['format_target.py:checked'] and not report['missing_targets'])
+                else:
+                    found = report['violation']
+                    valid = (report['result'] == 'violation' and found and found['name'] == 'broken'
+                             and found.get('trace_incomplete'))
+                if not valid or not report['incomplete']:
+                    failures.append((checker, report))
+            self.ensure(not failures, f'unbounded user repr during result formatting remains interruptible and retains confirmed failures: {failures}')
+        finally:
+            target.unlink()
+
+    def review_bounded_limit_workload(self):
+        from types import SimpleNamespace
+        checker = load_module(self.script('formal-verification', 'bounded_check.py'), 'workload_bounded')
+        failures, measurements = [], []
+        for size in (100, 1000):
+            for enabled in (False, True):
+                now = 0.0
+                handler = signal.SIG_DFL
+                counters = dict(timers=0, wrappers=0, records=0, invariants=0, actions=0)
+                def set_handler(sig, value):
+                    nonlocal handler
+                    old, handler = handler, value
+                    return old
+                def set_timer(*args):
+                    counters['timers'] += 1
+                    return (0.0, 0.0)
+                alarm = SimpleNamespace(SIGALRM=signal.SIGALRM, ITIMER_REAL=signal.ITIMER_REAL, SIG_DFL=signal.SIG_DFL,
+                                        signal=set_handler, getsignal=lambda sig: handler,
+                                        getitimer=lambda which: (0.0, 0.0), setitimer=set_timer)
+                class CountedLimits(checker.Limits):
+                    def call(self, *args, **kwargs):
+                        counters['wrappers'] += 1
+                        return super().call(*args, **kwargs)
+                    def record_result(self):
+                        counters['records'] += 1
+                        return super().record_result()
+                def inv(state):
+                    counters['invariants'] += 1
+                    return True
+                def actions(state):
+                    counters['actions'] += 1
+                    return [('next', state + 1)] if state + 1 < size else []
+                model = SimpleNamespace(init=lambda: 0, actions=actions)
+                with patch.object(checker, 'signal', alarm), patch.object(checker, 'time', SimpleNamespace(monotonic=lambda: now)):
+                    with CountedLimits(90 if enabled else 0, 10 if enabled else 0) as limits:
+                        report = checker.explore(model, actions, dict(a=inv, b=inv, c=inv), size + 1, size + 1, False, limits)
+                measurements.append(dict(size=size, enabled=enabled, **counters))
+                valid = (report['result'] == 'pass' and report['states'] == size
+                         and counters['invariants'] == 3 * size and counters['actions'] == size)
+                if enabled:
+                    valid = valid and counters['timers'] <= 4 and counters['records'] == 0
+                else:
+                    valid = valid and counters['timers'] == counters['wrappers'] == counters['records'] == 0
+                if not valid:
+                    failures.append(measurements[-1])
+        # Reusing an earlier alarm must neither expire a newer call early nor lose its deadline.
+        for run, expected_scope, expected_due in ((40, 'call', 15), (12, 'run', 12)):
+            now, due = 0.0, 0.0
+            handler = signal.SIG_DFL
+            def set_handler(sig, value):
+                nonlocal handler
+                old, handler = handler, value
+                return old
+            def set_timer(which, delay, repeat=0.0):
+                nonlocal due
+                due = now + delay if delay else 0.0
+                if repeat:
+                    failures.append(('periodic timer', repeat))
+                return (0.0, 0.0)
+            alarm = SimpleNamespace(SIGALRM=signal.SIGALRM, ITIMER_REAL=signal.ITIMER_REAL, SIG_DFL=signal.SIG_DFL,
+                                    signal=set_handler, getsignal=lambda sig: handler,
+                                    getitimer=lambda which: (0.0, 0.0), setitimer=set_timer)
+            with patch.object(checker, 'signal', alarm), patch.object(checker, 'time', SimpleNamespace(monotonic=lambda: now)):
+                with checker.Limits(run, 10) as limits:
+                    kwargs = {'coalesce': True} if 'coalesce' in checker.Limits.call.__code__.co_varnames else {}
+                    limits.call(lambda: True, **kwargs)
+                    now = 5
+                    def delayed():
+                        nonlocal now
+                        now = 10
+                        limits.tick(None, None)  # An earlier call's alarm is now obsolete.
+                        if due != expected_due:
+                            failures.append(('early alarm was not rearmed', run, due, expected_due))
+                        now = expected_due
+                        limits.tick(None, None)
+                        failures.append(('actual deadline was lost', run))
+                    try:
+                        limits.call(delayed, **kwargs)
+                    except checker.Timeout as error:
+                        if error.scope != expected_scope:
+                            failures.append(('wrong deadline scope', run, error.scope))
+                    else:
+                        failures.append(('overdue call returned', run))
+        self.log.write('bounded deterministic work: ' + json.dumps(measurements) + '\n')
+        self.ensure(not failures, f'bounded search coalesces one-shot timers and bypasses all call/record wrappers with both limits disabled: {failures}')
+
+    def review_acceptance_record_scope(self):
+        history = (ROOT / 'logs/review-fixes/README.md').read_text().split(
+            '## Authorized fixes for HEAD 40dae9c, 2026-11-15\n', 1)[1].split('\n## ', 1)[0]
+        self.ensure('9/9 twice' in history and
+                    'No out-of-sandbox or Linux acceptance was performed for this pass.' not in history,
+                    'the historical Linux acceptance and Mac sandbox limitation do not contradict each other')
+
+    def review_supplemental_acceptance_scope(self):
+        history = (ROOT / 'logs/review-fixes/README.md').read_text().partition(
+            '## Authorized supplemental fixes for HEAD 400b062, 2026-11-15\n')[2].split('\n## ', 1)[0]
+        self.ensure('43/43' in history and '9/9 twice' in history and '7 PASS / 2 FAIL' in history
+                    and 'head-400b062-linux/verify-box.log' in history
+                    and 'head-400b062-verification/verify.log' in history
+                    and 'No new Linux acceptance was performed for this supplemental pass.' not in history,
+                    'supplemental acceptance retains Linux and Mac evidence without denying the recorded Linux runs')
+
+    def review_regressions(self, output):
+        """Run follow-up regressions independently so every pre-fix failure is recorded."""
+        output.mkdir(parents=True, exist_ok=True)
+        methods = [self.review_deadline_order, self.review_mutant_deadline, self.review_mutant_json,
+                   self.review_mutant_errors, self.review_sigint, self.review_fixture_limits, self.review_phantom_routes,
+                   self.review_baseline_retry, self.review_git_warning, self.review_docs,
+                   self.review_import_budget, self.review_go_receivers, self.review_shrink_call_timeout]
+        methods += [self.review_synchronous_deadlines, self.review_path_rebindings]
+        methods += [self.review_property_handoff, self.review_path_branches, self.review_git_fail_closed,
+                    self.review_call_timeout_exit, self.review_oneshot_timers, self.review_disabled_limits]
+        methods += [self.review_confirmed_signal_boundary, self.review_match_case_paths,
+                    self.review_git_locale, self.review_swallowed_alarm,
+                    self.review_route_workload, self.review_budget_namespace]
+        methods += [self.review_expression_paths, self.review_query_path_aliases, self.review_go_receiver_workload]
+        methods += [self.review_net_change_docs, self.review_timeout_format_handoff,
+                    self.review_interruptible_result_format, self.review_bounded_limit_workload]
+        methods += [self.review_exception_format_timeout, self.review_exception_path_provenance,
+                    self.review_registered_boolean_actions, self.review_git_inherited_environment]
+        methods += [self.review_infrastructure_exception_format, self.review_with_item_provenance,
+                    self.review_parser_action_bindings, self.review_git_case_aliases,
+                    self.review_acceptance_record_scope]
+        methods += [self.review_parser_helper_defaults, self.review_parser_constructor_arguments,
+                    self.review_supplemental_acceptance_scope]
+        results = {}
+        try:
+            with (output / 'run.log').open('w') as self.log:
+                self.run(ROOT / 'examples/build-todo-app.sh', self.repo, cwd=ROOT)
+                for method in methods:
+                    self.name = method.__name__
+                    self.summary[self.name] = {'checks': []}
+                    self.art = self.scratch / 'review-artifacts' / self.name
+                    self.art.mkdir(parents=True)
+                    try:
+                        method()
+                    except Exception as error:
+                        results[self.name] = {'status': 'fail', 'error': f'{type(error).__name__}: {error}'}
+                        traceback.print_exc(file=self.log)
+                    else:
+                        results[self.name] = {'status': 'pass', 'assertions': len(self.summary[self.name]['checks'])}
+                    print(f"{results[self.name]['status'].upper()} {self.name}", flush=True)
+                (output / 'summary.json').write_text(json.dumps(results, indent=2) + '\n')
+        finally:
+            if not self.keep:
+                shutil.rmtree(self.scratch)
+        return int(any(r['status'] != 'pass' for r in results.values()))
+
 
 def load_module(path, name):
     spec = importlib.util.spec_from_file_location(name,path)
@@ -1070,8 +3640,11 @@ def load_module(path, name):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--keep-scratch',action='store_true',help='keep the isolated scratch directory for diagnosis')
+    ap.add_argument('--review-regressions', type=Path, metavar='OUT', help='run follow-up review regressions and save independent results in OUT')
     args = ap.parse_args()
-    return Examples(args.keep_scratch).execute()
+    examples = Examples(args.keep_scratch)
+    return (examples.review_regressions(args.review_regressions.resolve()) if args.review_regressions
+            else examples.execute())
 
 
 if __name__=='__main__':

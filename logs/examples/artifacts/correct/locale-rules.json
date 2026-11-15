@@ -1,0 +1,12 @@
+{
+  "rules": [
+    {
+      "id": "probe",
+      "regex": "BAD",
+      "include": [
+        "*.py"
+      ],
+      "message": "Use good() instead."
+    }
+  ]
+}

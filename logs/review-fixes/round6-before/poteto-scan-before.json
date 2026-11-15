@@ -1,0 +1,10 @@
+{
+  "review_match_case_paths": {
+    "status": "fail",
+    "error": "match cases keep exclusive bindings separate and revoke uncertain joins: [('path = filesystem\\nmatch mode:\\n    case \"url\":\\n        path = self.path\\n    case \"disk\":\\n        if path.startswith(\"/var/www/\"): pass', [('GET', '/var/www/<*>')], []), ('path = filesystem\\nmatch mode:\\n    case \"url\" if allowed:\\n        path = self.path\\n    case _:\\n        if path.startswith(\"/var/www/\"): pass', [('GET', '/var/www/<*>')], []), ('path = filesystem\\nmatch mode:\\n    case \"url\":\\n        path = self.path\\nif path.startswith(\"/var/www/\"): pass', [('GET', '/var/www/<*>')], []), ('path = filesystem\\nmatch mode:\\n    case \"url\":\\n        path = self.path\\n    case \"disk\":\\n        match detail:\\n            case _:\\n                if path.startswith(\"/var/www/\"): pass', [('GET', '/var/www/<*>')], []), ('path = self.path\\nmatch mode:\\n    case \"disk\":\\n        path = filesystem\\n    case \"url\":\\n        if path.startswith(\"/var/www/\"): pass', [], []), ('path = self.path\\nmatch mode:\\n    case {\"disk\": path}: pass\\n    case \"url\":\\n        if path.startswith(\"/var/www/\"): pass', [], [])]"
+  },
+  "review_route_workload": {
+    "status": "fail",
+    "error": "ordinary and filesystem-like routes retain exact inventory with near-linear AST work: [('sixfold route growth exceeds near-linear AST work', {'prefix': '/r', 'n': 20, 'ast_edges': 4715, 'compares_path': 20, 'seconds': 0.008358}, {'prefix': '/r', 'n': 120, 'ast_edges': 111715, 'compares_path': 120, 'seconds': 0.225084}), ('sixfold route growth exceeds near-linear AST work', {'prefix': '/var/r', 'n': 20, 'ast_edges': 4715, 'compares_path': 20, 'seconds': 0.009822}, {'prefix': '/var/r', 'n': 120, 'ast_edges': 111715, 'compares_path': 120, 'seconds': 0.254879})]"
+  }
+}

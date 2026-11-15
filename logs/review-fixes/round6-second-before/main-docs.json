@@ -1,0 +1,53 @@
+{
+  "head": "31c8c5a20f3caf447da276571ea5d9aca4ddf8eb",
+  "main": "98c3efb3ad5879ca38faa5879c5fcc523e8dccc5",
+  "main_apis": {
+    "skills/formal-verification/scripts/gen_check.py": {
+      "--timeout": false,
+      "--call-timeout": false,
+      "CHECK_TIMEOUT": false,
+      "TIMEOUT": false
+    },
+    "skills/formal-verification/scripts/bounded_check.py": {
+      "--timeout": false,
+      "--call-timeout": false,
+      "CHECK_TIMEOUT": false,
+      "TIMEOUT": false
+    }
+  },
+  "head_docs": {
+    "CHANGELOG.md": {
+      "sha256": "3d0d852561abf2b332507ac28ccaa69aed4f9b80b72f74cfc7bdd82f6452d710",
+      "misleading_lines": [
+        "- Module-budget migration: generic `TIMEOUT` (including `None`) is now a business constant and no longer sets the checker time limit. Rename an old runner budget to `CHECK_TIMEOUT` or use `--timeout`; CLI overrides and independent zero-limit opt-outs are unchanged. Imports initially use the CLI budget or 90 s, and the module budget is measured from startup after loading.",
+        "- Re-review of `curator/2026-11-09`: `gen_check.py` checks the run deadline immediately after applying `PROPS.CHECK_TIMEOUT` (formerly `PROPS.TIMEOUT`), including import time, so an exhausted budget exits 3 instead of reporting success. A shrink candidate's call timeout stops reduction, preserves the best confirmed counterexample and target coverage, and reports incomplete work; `--expect-fail` exits 3, while an unexpected confirmed failure retains exit 1. Other properties still run after a call timeout."
+      ],
+      "round_lines": [
+        "- Round 6: both checkers defer SIGALRM across confirmed-result recording, retaining counterexamples and accepted target coverage. An expired deadline rearms a short one-shot retry before raising, so swallowing a timeout cannot turn off subsequent signals; there is no polling before the deadline.",
+        "- Round 5: `gen_check.py` registers property results and coverage before execution so SIGALRM at return cannot discard a confirmed counterexample (exit 1). Call timeouts are inconclusive (exit 3), including incomplete expected-failure reductions; text no longer labels them ERROR.",
+        "- Final re-review of `curator/2026-11-09`: both checkers synchronously check deadlines when calls return, before new inputs/properties/mutants, and before final results. A delayed timer cannot turn expired work into success; the earlier run/call deadline still determines the timeout scope (ties use the run limit; gen_check exits 3 for either, bounded_check exits 3/2), and an exhausted run starts no later property. Manual-clock regressions cover returns without timer delivery, hooks, generation, shrinking and final results.",
+        "- Re-review of `curator/2026-11-09`: `gen_check.py` checks the run deadline immediately after applying `PROPS.CHECK_TIMEOUT` (formerly `PROPS.TIMEOUT`), including import time, so an exhausted budget exits 3 instead of reporting success. A shrink candidate's call timeout stops reduction, preserves the best confirmed counterexample and target coverage, and reports incomplete work; `--expect-fail` exits 3, while an unexpected confirmed failure retains exit 1. Other properties still run after a call timeout.",
+        "- Restore Go route detection for ordinary paths through variable aliases, struct fields and returned routers, including their `server` launch classification. Known receiver names are required only to bypass filesystem-prefix filtering; `kv.Put(\"/var/lib/data\", v)` remains excluded. Added failing-before regressions for all three re-review findings. Focused regression fixtures now live in temporary scratch space, leaving only evidence logs and summaries in the output directory.",
+        "- Follow-up review: `bounded_check.py` starts no new mutant after the run deadline, preserves confirmed results, and reports each mutant's result, stop reason, detail and state counts in JSON. Top-level `incomplete` and `not_run` distinguish unfinished checks from survivors; crashing mutants consistently report model errors (exit 2).",
+        "- Curator review fixes (2026-11-13): request-path equality, prefix, regex and match/case declarations keep filesystem-like route names without promoting filesystem or environment checks to routes. Explicit argparse `nargs=0` takes precedence over registered string actions; `default=False` alone still consumes an option value, as argparse does."
+      ]
+    },
+    "MAPPING.md": {
+      "sha256": "0ef5df81bc3ee986e12930532882d90bb121f4a4565d99dc496322544916f7db",
+      "misleading_lines": [
+        "| formal-verification | `bounded_check.py MODEL.py [--mutants] [--timeout S] [--call-timeout S]` | BFS model check, shortest counterexample, mutant kill table; the run limit exits 3 (inconclusive), and a call past its limit is a model error (exit 2) with its trace; 0 disables either limit; module budget is `CHECK_TIMEOUT`, overridden by `--timeout`; business `TIMEOUT` is ignored |",
+        "| formal-verification | `gen_check.py PROPS.py --repo DIR [--seed N] [--examples N] [--expect-fail NAME] [--timeout S] [--call-timeout S] [--json]` | Python-only property checks on declared TARGETS, reduced counterexamples, repo call report, per-call and per-run time limits (run/call timeout exits 3 unless an unexpected property failure retains exit 1; 0 disables either limit; module budget is `CHECK_TIMEOUT`, overridden by `--timeout`; business `TIMEOUT` is ignored; reports input and seed; `filter_too_much` never replaces a failure); no harness mode |"
+      ],
+      "round_lines": []
+    },
+    "skills/formal-verification/SKILL.md": {
+      "sha256": "c5bd41e427015c2278811694a95dd5d69384528cb6255b0b854906942065303f",
+      "misleading_lines": [
+        "**Replay and timeout migration:** Independent per-property random streams can change old sample sequences, so an old `--seed N --expect-fail NAME` may no longer reproduce. Keep the old checker for exact replays, revalidate recorded commands, and pin known counterexamples in `examples`. Both checkers now default to 90 s per run / 10 s per call: previously completing long checks can become inconclusive (exit 3); a `bounded_check.py` model-call timeout remains exit 2. Both accept `--timeout 0` and `--call-timeout 0` to disable the respective limit independently (`CHECK_TIMEOUT = 0` also disables the run limit after import). Module-level `TIMEOUT` is now an ordinary business constant, including `None`; it no longer sets a checker budget. Rename a previous checker budget to `CHECK_TIMEOUT`, or pass `--timeout`; explicit CLI budgets take precedence.",
+        "Include a migration note in the generated skill: independent per-property random streams mean old `--seed N --expect-fail NAME` commands may no longer reproduce; revalidate them and preserve pinned counterexamples or the old checker. Document the 90 s per run / 10 s per call defaults and that long checks may now exit 3 (`bounded_check.py` model-call timeouts remain exit 2). Record explicit budgets and explain `--timeout 0` / `--call-timeout 0` as independent opt-outs. Document `CHECK_TIMEOUT` as the module-level run budget, overridden by `--timeout`; imports initially use the CLI budget or 90 s. State the migration: old module-level `TIMEOUT` no longer sets a checking limit and must be renamed to `CHECK_TIMEOUT` if it was intended as a runner budget."
+      ],
+      "round_lines": []
+    }
+  },
+  "reproduced": true
+}

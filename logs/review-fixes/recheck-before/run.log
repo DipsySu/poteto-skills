@@ -1,0 +1,318 @@
+$ /Users/dipsy/Developer/poteto-skills-review/examples/build-todo-app.sh /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-8aictwie/todo-app
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-8aictwie/todo-app",
+  "head": "4242a5ae43587ea1ed392b15775e2e3e3acc2aa4",
+  "direct_write_commits": [
+    "570c1e91c25878c9550969a1ba4072a0e1790d27",
+    "dbd44008685859312aee6a60154fd0258c1c063b"
+  ],
+  "direct_write_fix": "2fd7988731eb03a000207e269b441daeb22d2a3e",
+  "status_bug_commits": [
+    "41967033e461ea9fc00af5a5bb985a7bcb6149e0",
+    "2c383ecc2ce27c62d73d049228c0b2542683a1b9"
+  ]
+}
+
+[exit 0; expected 0]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/recheck-before/review_deadline_order/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/recheck-before/review_deadline_order/clock_fixture.py --timeout 5 --call-timeout 6 --json
+{"code": 2, "stdout": "{\n  \"model\": \"/Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/recheck-before/review_deadline_order/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 6.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"error\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": {\n    \"kind\": \"error\",\n    \"name\": \"ok\",\n    \"detail\": \"no return within 6 s\",\n    \"trace\": [\n      {\n        \"step\": 0,\n        \"action\": \"init\",\n        \"state\": 0,\n        \"describe\": null\n      }\n    ],\n    \"timeout\": true\n  },\n  \"seconds\": 20.0,\n  \"mutants\": {},\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+Traceback (most recent call last):
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1723, in review_regressions
+    method()
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1111, in review_deadline_order
+    self.ensure(result['code'] == code and not report['ok'],
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 43, in ensure
+    raise AssertionError(description)
+AssertionError: bounded_check.py: simultaneous expiry uses the first absolute deadline (run=5, call=6, exit 3)
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/recheck-before/review_mutant_deadline/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/recheck-before/review_mutant_deadline/clock_fixture.py --timeout 5 --call-timeout 10 --mutants --json
+{"code": 1, "stdout": "{\n  \"model\": \"/Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/recheck-before/review_mutant_deadline/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"nonnegative\"\n  ],\n  \"ok\": false,\n  \"result\": \"pass\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"exhaustive\": true,\n  \"seconds\": 0.0,\n  \"mutants\": {\n    \"broken\": {\n      \"killed\": true,\n      \"by\": \"nonnegative\",\n      \"steps\": 1,\n      \"trace\": [\n        {\n          \"step\": 0,\n          \"action\": \"init\",\n          \"state\": 0,\n          \"describe\": null\n        },\n        {\n          \"step\": 1,\n          \"action\": \"bad\",\n          \"state\": -1,\n          \"describe\": null\n        }\n      ]\n    },\n    \"later\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"trace\": null\n    },\n    \"last\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"trace\": null\n    }\n  },\n  \"expect_violation\": null\n}\n", "stderr": "", "events": ["describe", "later search started", "later search started"]}
+
+[exit 0; expected 0]
+Traceback (most recent call last):
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1723, in review_regressions
+    method()
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1127, in review_mutant_deadline
+    self.ensure(result['events'] == ['describe'] and result['code'] == 3,
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 43, in ensure
+    raise AssertionError(description)
+AssertionError: a timed-out mutant description retains its kill and starts no later search
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/recheck-before/review_mutant_json/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/recheck-before/review_mutant_json/clock_fixture.py --timeout 5 --call-timeout 10 --mutants --json
+{"code": 2, "stdout": "{\n  \"model\": \"/Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/recheck-before/review_mutant_json/clock_fixture.py\",\n  \"depth\": 25,\n  \"max_states\": 200000,\n  \"timeout\": 5.0,\n  \"call_timeout\": 10.0,\n  \"invariants\": [\n    \"ok\"\n  ],\n  \"ok\": false,\n  \"result\": \"pass\",\n  \"states\": 1,\n  \"transitions\": 0,\n  \"max_depth\": 0,\n  \"hit_depth_bound\": false,\n  \"hit_state_bound\": false,\n  \"violation\": null,\n  \"exhaustive\": true,\n  \"seconds\": 0.0,\n  \"mutants\": {\n    \"killed\": {\n      \"killed\": true,\n      \"by\": \"ok\",\n      \"steps\": 1,\n      \"trace\": [\n        {\n          \"step\": 0,\n          \"action\": \"init\",\n          \"state\": 0,\n          \"describe\": null\n        },\n        {\n          \"step\": 1,\n          \"action\": \"bad\",\n          \"state\": -1,\n          \"describe\": null\n        }\n      ]\n    },\n    \"slow\": {\n      \"killed\": false,\n      \"by\": \"actions\",\n      \"steps\": 0,\n      \"trace\": [\n        {\n          \"step\": 0,\n          \"action\": \"init\",\n          \"state\": 0,\n          \"describe\": null\n        }\n      ]\n    },\n    \"pending\": {\n      \"killed\": false,\n      \"by\": null,\n      \"steps\": null,\n      \"trace\": null\n    }\n  },\n  \"expect_violation\": null\n}\n", "stderr": "", "events": []}
+
+[exit 0; expected 0]
+Traceback (most recent call last):
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1723, in review_regressions
+    method()
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1157, in review_mutant_json
+    self.ensure(result['code'] == code and slow.get('result') == status and slow.get('stopped')
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 43, in ensure
+    raise AssertionError(description)
+AssertionError: mutant JSON preserves timeout, stop reason, detail, states and top-level incompleteness
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/recheck-before/review_mutant_errors/clock_driver.py /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/bounded_check.py /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/recheck-before/review_mutant_errors/clock_fixture.py --timeout 5 --call-timeout 10 --mutants
+{"code": 2, "stdout": "bounded_check: /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/recheck-before/review_mutant_errors/clock_fixture.py (depth <= 25, 1 invariant(s): ok)\nPASS: invariants hold on 1 states (0 transitions, max depth 0); state space exhausted: complete for this model\nmutants (each broken variant must be caught, or the check proves nothing):\n  crash                    SURVIVED: no invariant catches this broken variant; strengthen the property or the model\n  slow                     ERROR: model error in actions: no return within 10 s after 0 step(s)\ntrace to the state where mutant slow did not return:\n    0  init                                 0\n", "stderr": "bounded_check: /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/recheck-before/review_mutant_errors/clock_fixture.py: depth <= 25, max 200000 states, 5 s run limit, 10 s per call\n", "events": []}
+
+[exit 0; expected 0]
+Traceback (most recent call last):
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1723, in review_regressions
+    method()
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1180, in review_mutant_errors
+    self.ensure(result['code'] == 2 and 'ERROR' in result['stdout'] and 'broken mutant' in result['stdout']
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 43, in ensure
+    raise AssertionError(description)
+AssertionError: a crashing mutant reports model error exit 2, including before a later run timeout
+$ /Users/dipsy/Developer/poteto-skills-review/skills/formal-verification/scripts/gen_check.py /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/recheck-before/review_sigint/props_shrink_interrupt.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-8aictwie/todo-app --json
+{
+  "seed": 0,
+  "ok": false,
+  "properties": {
+    "broken": {
+      "result": "fail",
+      "accepted": 1,
+      "generated": 1,
+      "rejected": 0,
+      "counterexample": "60",
+      "detail": "returned False",
+      "shrink_attempts": 1
+    }
+  },
+  "called": [
+    "todo/store.py:Store.__init__",
+    "todo/store.py:Store._transaction",
+    "todo/store.py:Store.add",
+    "todo/store.py:Store.add.<locals>.change",
+    "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
+    "todo/store.py:Store.list_all"
+  ],
+  "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": null
+}
+
+[exit 1; expected 1]
+Traceback (most recent call last):
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1723, in review_regressions
+    method()
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1189, in review_sigint
+    self.formal_shrink_interrupt()
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1247, in formal_shrink_interrupt
+    self.ensure(found['result'] == 'fail' and found['counterexample'] == '60' and found['shrink_attempts'] == 1
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 43, in ensure
+    raise AssertionError(description)
+AssertionError: SIGINT during shrinking preserves the best counterexample, accepted target calls and failure exit 1
+Traceback (most recent call last):
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1723, in review_regressions
+    method()
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1215, in review_fixture_limits
+    self.ensure(len(values) == 4 and all(v >= 1 for v in values),
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 43, in ensure
+    raise AssertionError(description)
+AssertionError: disk-using timeout fixtures use second-scale limits instead of subsecond scheduling assumptions
+$ /Users/dipsy/Developer/poteto-skills-review/skills/create-verification-skill/scripts/scan_repo.py /Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/recheck-before/review_phantom_routes/go-routes --json
+{
+  "repo": "/Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/recheck-before/review_phantom_routes/go-routes",
+  "languages": [
+    {
+      "name": "go",
+      "files": 1
+    }
+  ],
+  "markers": [],
+  "build_commands": [
+    {
+      "cmd": "go build ./...",
+      "source": "go.mod"
+    }
+  ],
+  "test_commands": [],
+  "launch_candidates": [
+    {
+      "kind": "server",
+      "cmd": "go run .",
+      "source": "./ (package main)",
+      "port": null,
+      "port_flag": null,
+      "data_flag": null
+    }
+  ],
+  "http_routes": [
+    {
+      "method": "GET",
+      "path": "/Users",
+      "source": "main.go:5",
+      "how": "go router",
+      "health": false
+    },
+    {
+      "method": "PUT",
+      "path": "/var/lib/data",
+      "source": "main.go:3",
+      "how": "go router",
+      "health": false
+    },
+    {
+      "method": "PUT",
+      "path": "/var/routes",
+      "source": "main.go:4",
+      "how": "go router",
+      "health": false
+    }
+  ],
+  "health_routes": [],
+  "cli_commands": [],
+  "env_vars": [],
+  "skill_dirs": [],
+  "features": [
+    {
+      "id": "list-users",
+      "title": "List Users",
+      "action": "list",
+      "resource": "Users",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/Users",
+          "source": "main.go:5",
+          "how": "go router",
+          "health": false
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "update-var",
+      "title": "Update a var",
+      "action": "update",
+      "resource": "var",
+      "routes": [
+        {
+          "method": "PUT",
+          "path": "/var/routes",
+          "source": "main.go:4",
+          "how": "go router",
+          "health": false
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "data-var",
+      "title": "Data a var",
+      "action": "data",
+      "resource": "var",
+      "routes": [
+        {
+          "method": "PUT",
+          "path": "/var/lib/data",
+          "source": "main.go:3",
+          "how": "go router",
+          "health": false
+        }
+      ],
+      "commands": []
+    }
+  ],
+  "notes": [],
+  "ports": []
+}
+
+[exit 0; expected 0]
+Traceback (most recent call last):
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1723, in review_regressions
+    method()
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 650, in review_phantom_routes
+    self.ensure(not unexpected, f'filesystem, curl, args, folders and non-router Go calls create no phantom routes: {unexpected}')
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 43, in ensure
+    raise AssertionError(description)
+AssertionError: filesystem, curl, args, folders and non-router Go calls create no phantom routes: {'path = self.translate_path(self.path)\nif path.startswith("/var/www/"): pass': [{'method': 'GET', 'path': '/var/www/<*>', 'source': 'server.py:5', 'how': 'startswith'}], 'cmd = ["curl","-X","POST","-o","/tmp/out",url]': [{'method': 'POST', 'path': '/tmp/out', 'source': 'server.py:4', 'how': 'route table'}], 'if args[0] == "dev": pass': [{'method': 'GET', 'path': '/dev', 'source': 'server.py:4', 'how': 'path segments'}], 'if tokens[0] == "var": pass': [{'method': 'GET', 'path': '/var', 'source': 'server.py:4', 'how': 'path segments'}], 'if folders == ["tmp", "cache"]: pass': [{'method': 'GET', 'path': '/tmp/cache', 'source': 'server.py:4', 'how': 'path segments'}], 'if path.startswith("/var/www/"): pass': [{'method': 'GET', 'path': '/var/www/<*>', 'source': 'server.py:4', 'how': 'startswith'}], 'cross-function path': [{'method': 'GET', 'path': '/var/files', 'source': 'server.py:6', 'how': 'eq'}], 'kv.Put("/var/lib/data", v)': [{'method': 'GET', 'path': '/Users', 'source': 'main.go:5', 'how': 'go router', 'health': False}, {'method': 'PUT', 'path': '/var/lib/data', 'source': 'main.go:3', 'how': 'go router', 'health': False}, {'method': 'PUT', 'path': '/var/routes', 'source': 'main.go:4', 'how': 'go router', 'health': False}]}
+$ git init -q
+
+[exit 0; expected 0]
+$ git add tracked.py
+
+[exit 0; expected 0]
+{
+  "ok": false,
+  "rules": [
+    "probe",
+    "clean"
+  ],
+  "files_scanned": 2,
+  "untracked": [
+    "new.py"
+  ],
+  "rev": null,
+  "root": "/Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/recheck-before/review_baseline_retry/adoption",
+  "failing": [
+    {
+      "rule": "probe",
+      "path": "new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "probe",
+      "path": "new.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    },
+    {
+      "rule": "probe",
+      "path": "tracked.py",
+      "line": 1,
+      "col": 1,
+      "message": "Use good() instead.",
+      "text": "BAD"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": "/Users/dipsy/Developer/poteto-skills-review/logs/review-fixes/recheck-before/review_baseline_retry/adoption/baseline.json",
+    "over": [
+      {
+        "rule": "probe",
+        "path": "new.py",
+        "count": 1,
+        "baseline": 0
+      }
+    ],
+    "improved": [],
+    "refused": [],
+    "updated": true
+  }
+}
+Traceback (most recent call last):
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1723, in review_regressions
+    method()
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 681, in review_baseline_retry
+    self.ensure(result.returncode == 1 and 'probe' not in counts and counts.get('clean') == {}
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 43, in ensure
+    raise AssertionError(description)
+AssertionError: failed first adoption leaves no rule key, preserves other rules and explains how to retry
+Traceback (most recent call last):
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1723, in review_regressions
+    method()
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 706, in review_git_warning
+    self.ensure([f[0] for f in files] == ['hit.py'] and top is None
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 43, in ensure
+    raise AssertionError(description)
+AssertionError: git failure retains disk fallback but warns on stderr: git unavailable
+Traceback (most recent call last):
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1723, in review_regressions
+    method()
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 1195, in review_docs
+    self.ensure('same `--seed`' in text and '90 s' in text and '10 s' in text
+  File "/Users/dipsy/Developer/poteto-skills-review/scripts/run_examples.py", line 43, in ensure
+    raise AssertionError(description)
+AssertionError: changelog documents changed seed sequences, default limits and replay/timeout migration

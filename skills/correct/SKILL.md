@@ -11,6 +11,10 @@ Design for the worst-case contributor: an agent that sees only the files it open
 
 `$SKILL_DIR` is the directory holding this file. All scripts: Python 3 stdlib, `--help`, `--json`.
 
+A new rule with untracked hits is not adopted by `--update-baseline`: its rule key stays absent, and stderr explains how to track or ignore the files and rerun. Other rules may still be updated. Git lookup failures inside a worktree exit 2 without updating the baseline; ordinary non-git directories fall back quietly to filesystem traversal regardless of the locale or git diagnostic language. Checkout detection uses `.git` markers (including worktree files), not translated error text.
+
+The repository is resolved from `--root` or the current directory. Git queries ignore inherited `GIT_DIR` / `GIT_WORK_TREE`, so hooks and linked worktrees use that repository's index and ignore rules for both file and directory arguments. Alternate casing of the repository root or its directories on a case-insensitive filesystem preserves relative file names and baseline eligibility. A file explicitly named inside a nested checkout is still linted as given, but that nested index cannot make it eligible for the outer repository's baseline.
+
 ## 1. Mine the classes
 
 ```bash
@@ -55,6 +59,7 @@ $P --baseline .patlint-baseline.json .                     # the command CI runs
 - Every new check must fail on a real past mistake: a reverted commit, the parent of a fix commit, or the line a reviewer flagged. A check you never saw fail proves nothing.
 - Types and architecture: show the old code no longer type-checks, imports, or passes its test.
 - Run the same command locally and in CI. CI has no skills dir, so vendor the linter (one stdlib file): `cp $SKILL_DIR/scripts/patlint.py tools/patlint.py`, commit `lint-rules.json`, and call `python3 tools/patlint.py ...` from the existing test/CI entry point.
+- Inside a git checkout, a directory argument means the files git would commit: tracked files plus untracked ones `.gitignore` doesn't exclude. Nested checkouts are left out (a leftover `.claude/worktrees/<name>/` has its own `.git`), and so are ignored dirs such as `env/`, so `.` lints what the CI clone has. A directory argument expanding to no files is a usage error (exit 2); name an ignored file explicitly to lint it as given. `--update-baseline` adopts and lowers counts only for tracked files. Committing a file only makes its hits eligible for adoption when a rule is first adopted via `--update-baseline`; an existing rule still requires fixing hits above its baseline. A file named on the command line is linted as given; outside git, directories are walked.
 - Exceptions live on the offending line (or a comment line directly above), with a reason, an expiry, and a human approver. Expired or incomplete ones fail:
   `# patlint: allow <rule-id> reason=<why> expires=YYYY-MM-DD approved-by=<human>`
 
@@ -84,3 +89,6 @@ Adapted from pstack by Lauren Tan (MIT, © 2026 Lauren Tan; see `research/upstre
 - S15 Guide 09, make it yours: https://github.com/cursor/plugins/blob/main/pstack/docs/guide/09-make-it-yours.md
 - S16 principle-encode-lessons-in-structure: https://github.com/cursor/plugins/blob/main/pstack/skills/principle-encode-lessons-in-structure/SKILL.md
 - S1 inverted pyramid post: https://x.com/poteto/status/2111133080526495985
+- A CI check that "walked the file system, so on persistent self-hosted runners it scanned untracked leftovers" and now "lists files with git ls-files and falls back to the glob outside a git checkout" (Morrison-Lab/gha#1384): https://github.com/Morrison-Lab/gha/pull/1384
+- Claude Code puts a `--worktree` checkout "under `.claude/worktrees/<name>/` at your repository root", and a subagent worktree with changes "stays on disk until the periodic sweep below can remove it without losing work": https://code.claude.com/docs/en/worktrees
+- pstack `correct` @ `6b03002`: "Run the same command locally and in CI.": https://github.com/cursor/plugins/blob/6b0300214a09fd6029cfb7077043125758cd1fd2/pstack/skills/correct/SKILL.md

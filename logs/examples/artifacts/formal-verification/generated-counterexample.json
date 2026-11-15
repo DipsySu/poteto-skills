@@ -20,5 +20,8 @@
     "todo/store.py:Store.add.<locals>.change.<locals>.<genexpr>",
     "todo/store.py:Store.list_all"
   ],
-  "missing_targets": []
+  "missing_targets": [],
+  "timeout": 90.0,
+  "call_timeout": 10.0,
+  "incomplete": null
 }

@@ -1,0 +1,186 @@
+{
+  "review_deadline_order": {
+    "status": "pass",
+    "assertions": 8
+  },
+  "review_mutant_deadline": {
+    "status": "pass",
+    "assertions": 5
+  },
+  "review_mutant_json": {
+    "status": "pass",
+    "assertions": 5
+  },
+  "review_mutant_errors": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_sigint": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_fixture_limits": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_phantom_routes": {
+    "status": "pass",
+    "assertions": 3
+  },
+  "review_baseline_retry": {
+    "status": "pass",
+    "assertions": 3
+  },
+  "review_git_warning": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_docs": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_import_budget": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_go_receivers": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_shrink_call_timeout": {
+    "status": "pass",
+    "assertions": 7
+  },
+  "review_synchronous_deadlines": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_path_rebindings": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_property_handoff": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_path_branches": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_git_fail_closed": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_call_timeout_exit": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_oneshot_timers": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_disabled_limits": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_confirmed_signal_boundary": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_match_case_paths": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_git_locale": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_swallowed_alarm": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_route_workload": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_budget_namespace": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_expression_paths": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_query_path_aliases": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_go_receiver_workload": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_net_change_docs": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_timeout_format_handoff": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_interruptible_result_format": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_bounded_limit_workload": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_exception_format_timeout": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_exception_path_provenance": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_registered_boolean_actions": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_git_inherited_environment": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_infrastructure_exception_format": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_with_item_provenance": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_parser_action_bindings": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_git_case_aliases": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_acceptance_record_scope": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_parser_helper_defaults": {
+    "status": "fail",
+    "error": "AssertionError: helper and method defaults retain definition-time parser bindings with explicit overrides: [('positional default', 'token consumption', {'--output': True, '--label': True, '--json': True}), ('positional default', 'real --json list must remain mapped', 1, {'skill_dir': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-helper-defaults/.agents/skills/verify-app', 'repo': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-helper-defaults', 'index': {'missing': [], 'dead': [], 'duplicate': [], 'extra': []}, 'contract': [], 'routes': {'source': 0, 'missing': [], 'dead': []}, 'commands': {'source': 1, 'missing': [{'prog': 'python3 -m app', 'name': 'list', 'source': 'app/__main__.py:12', 'launch': False}], 'dead': []}, 'unanchored_features': ['features/list.md'], 'notes': [], 'drift': True}), ('keyword-only default', 'token consumption', {'--output': True, '--label': True, '--json': True}), ('keyword-only default', 'real --json list must remain mapped', 1, {'skill_dir': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-helper-defaults/.agents/skills/verify-app', 'repo': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-helper-defaults', 'index': {'missing': [], 'dead': [], 'duplicate': [], 'extra': []}, 'contract': [], 'routes': {'source': 0, 'missing': [], 'dead': []}, 'commands': {'source': 1, 'missing': [{'prog': 'python3 -m app', 'name': 'list', 'source': 'app/__main__.py:12', 'launch': False}], 'dead': []}, 'unanchored_features': ['features/list.md'], 'notes': [], 'drift': True}), ('positional-only default after required arg', 'token consumption', {'--output': True, '--label': True, '--json': True}), ('positional-only default after required arg', 'real --json list must remain mapped', 1, {'skill_dir': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-helper-defaults/.agents/skills/verify-app', 'repo': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-helper-defaults', 'index': {'missing': [], 'dead': [], 'duplicate': [], 'extra': []}, 'contract': [], 'routes': {'source': 0, 'missing': [], 'dead': []}, 'commands': {'source': 1, 'missing': [{'prog': 'python3 -m app', 'name': 'list', 'source': 'app/__main__.py:12', 'launch': False}], 'dead': []}, 'unanchored_features': ['features/list.md'], 'notes': [], 'drift': True}), ('default evaluated before local shadow', 'token consumption', {'--output': True, '--label': True, '--json': True}), ('default evaluated before local shadow', 'real --json list must remain mapped', 1, {'skill_dir': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-helper-defaults/.agents/skills/verify-app', 'repo': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-helper-defaults', 'index': {'missing': [], 'dead': [], 'duplicate': [], 'extra': []}, 'contract': [], 'routes': {'source': 0, 'missing': [], 'dead': []}, 'commands': {'source': 1, 'missing': [{'prog': 'python3 -m app', 'name': 'list', 'source': 'app/__main__.py:13', 'launch': False}], 'dead': []}, 'unanchored_features': ['features/list.md'], 'notes': [], 'drift': True}), ('default captures parser before reassignment', 'token consumption', {'--output': True, '--label': True, '--json': True}), ('default captures parser before reassignment', 'real --json list must remain mapped', 1, {'skill_dir': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-helper-defaults/.agents/skills/verify-app', 'repo': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-helper-defaults', 'index': {'missing': [], 'dead': [], 'duplicate': [], 'extra': []}, 'contract': [], 'routes': {'source': 0, 'missing': [], 'dead': []}, 'commands': {'source': 1, 'missing': [{'prog': 'python3 -m app', 'name': 'list', 'source': 'app/__main__.py:16', 'launch': False}], 'dead': []}, 'unanchored_features': ['features/list.md'], 'notes': [], 'drift': True}), ('method positional and keyword-only defaults', 'token consumption', {'--output': True, '--label': True, '--json': True}), ('method positional and keyword-only defaults', 'real --json list must remain mapped', 1, {'skill_dir': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-helper-defaults/.agents/skills/verify-app', 'repo': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-helper-defaults', 'index': {'missing': [], 'dead': [], 'duplicate': [], 'extra': []}, 'contract': [], 'routes': {'source': 0, 'missing': [], 'dead': []}, 'commands': {'source': 1, 'missing': [{'prog': 'python3 -m app', 'name': 'list', 'source': 'app/__main__.py:15', 'launch': False}], 'dead': []}, 'unanchored_features': ['features/list.md'], 'notes': [], 'drift': True})]"
+  },
+  "review_parser_constructor_arguments": {
+    "status": "fail",
+    "error": "AssertionError: direct parser constructors share helper binding for explicit arguments and captured defaults: [('explicit positional', 'token consumption', {'--json': True, '--output': True, '--label': True}), ('explicit positional', 'real --json list must remain mapped', 1, {'skill_dir': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-constructor-arguments/.agents/skills/verify-app', 'repo': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-constructor-arguments', 'index': {'missing': [], 'dead': [], 'duplicate': [], 'extra': []}, 'contract': [], 'routes': {'source': 0, 'missing': [], 'dead': []}, 'commands': {'source': 1, 'missing': [{'prog': 'python3 -m app', 'name': 'list', 'source': 'app/__main__.py:13', 'launch': False}], 'dead': []}, 'unanchored_features': ['features/list.md'], 'notes': [], 'drift': True}), ('explicit keyword', 'token consumption', {'--json': True, '--output': True, '--label': True}), ('explicit keyword', 'real --json list must remain mapped', 1, {'skill_dir': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-constructor-arguments/.agents/skills/verify-app', 'repo': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-constructor-arguments', 'index': {'missing': [], 'dead': [], 'duplicate': [], 'extra': []}, 'contract': [], 'routes': {'source': 0, 'missing': [], 'dead': []}, 'commands': {'source': 1, 'missing': [{'prog': 'python3 -m app', 'name': 'list', 'source': 'app/__main__.py:13', 'launch': False}], 'dead': []}, 'unanchored_features': ['features/list.md'], 'notes': [], 'drift': True}), ('keyword-only explicit', 'token consumption', {'--json': True, '--output': True, '--label': True}), ('keyword-only explicit', 'real --json list must remain mapped', 1, {'skill_dir': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-constructor-arguments/.agents/skills/verify-app', 'repo': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-constructor-arguments', 'index': {'missing': [], 'dead': [], 'duplicate': [], 'extra': []}, 'contract': [], 'routes': {'source': 0, 'missing': [], 'dead': []}, 'commands': {'source': 1, 'missing': [{'prog': 'python3 -m app', 'name': 'list', 'source': 'app/__main__.py:13', 'launch': False}], 'dead': []}, 'unanchored_features': ['features/list.md'], 'notes': [], 'drift': True}), ('positional-only self and action', 'token consumption', {'--json': True, '--output': True, '--label': True}), ('positional-only self and action', 'real --json list must remain mapped', 1, {'skill_dir': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-constructor-arguments/.agents/skills/verify-app', 'repo': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-constructor-arguments', 'index': {'missing': [], 'dead': [], 'duplicate': [], 'extra': []}, 'contract': [], 'routes': {'source': 0, 'missing': [], 'dead': []}, 'commands': {'source': 1, 'missing': [{'prog': 'python3 -m app', 'name': 'list', 'source': 'app/__main__.py:13', 'launch': False}], 'dead': []}, 'unanchored_features': ['features/list.md'], 'notes': [], 'drift': True}), ('positional default', 'token consumption', {'--json': True, '--output': True, '--label': True}), ('positional default', 'real --json list must remain mapped', 1, {'skill_dir': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-constructor-arguments/.agents/skills/verify-app', 'repo': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-constructor-arguments', 'index': {'missing': [], 'dead': [], 'duplicate': [], 'extra': []}, 'contract': [], 'routes': {'source': 0, 'missing': [], 'dead': []}, 'commands': {'source': 1, 'missing': [{'prog': 'python3 -m app', 'name': 'list', 'source': 'app/__main__.py:13', 'launch': False}], 'dead': []}, 'unanchored_features': ['features/list.md'], 'notes': [], 'drift': True}), ('keyword-only default', 'token consumption', {'--json': True, '--output': True, '--label': True}), ('keyword-only default', 'real --json list must remain mapped', 1, {'skill_dir': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-constructor-arguments/.agents/skills/verify-app', 'repo': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-constructor-arguments', 'index': {'missing': [], 'dead': [], 'duplicate': [], 'extra': []}, 'contract': [], 'routes': {'source': 0, 'missing': [], 'dead': []}, 'commands': {'source': 1, 'missing': [{'prog': 'python3 -m app', 'name': 'list', 'source': 'app/__main__.py:13', 'launch': False}], 'dead': []}, 'unanchored_features': ['features/list.md'], 'notes': [], 'drift': True}), ('explicit overrides default', 'token consumption', {'--json': True, '--output': True, '--label': True}), ('explicit overrides default', 'real --json list must remain mapped', 1, {'skill_dir': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-constructor-arguments/.agents/skills/verify-app', 'repo': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-constructor-arguments', 'index': {'missing': [], 'dead': [], 'duplicate': [], 'extra': []}, 'contract': [], 'routes': {'source': 0, 'missing': [], 'dead': []}, 'commands': {'source': 1, 'missing': [{'prog': 'python3 -m app', 'name': 'list', 'source': 'app/__main__.py:13', 'launch': False}], 'dead': []}, 'unanchored_features': ['features/list.md'], 'notes': [], 'drift': True}), ('constructor default captures action before reassignment', 'token consumption', {'--json': True, '--output': True, '--label': True}), ('constructor default captures action before reassignment', 'real --json list must remain mapped', 1, {'skill_dir': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-constructor-arguments/.agents/skills/verify-app', 'repo': '/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-ihtjc3nv/parser-constructor-arguments', 'index': {'missing': [], 'dead': [], 'duplicate': [], 'extra': []}, 'contract': [], 'routes': {'source': 0, 'missing': [], 'dead': []}, 'commands': {'source': 1, 'missing': [{'prog': 'python3 -m app', 'name': 'list', 'source': 'app/__main__.py:15', 'launch': False}], 'dead': []}, 'unanchored_features': ['features/list.md'], 'notes': [], 'drift': True})]"
+  },
+  "review_supplemental_acceptance_scope": {
+    "status": "fail",
+    "error": "AssertionError: supplemental acceptance retains Linux and Mac evidence without denying the recorded Linux runs"
+  }
+}

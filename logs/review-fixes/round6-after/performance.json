@@ -1,0 +1,129 @@
+{
+  "wall_before": [
+    {
+      "n": 100,
+      "seconds": 0.142635,
+      "routes": 100
+    },
+    {
+      "n": 300,
+      "seconds": 1.270054,
+      "routes": 300
+    },
+    {
+      "n": 600,
+      "seconds": 5.068269,
+      "routes": 600
+    }
+  ],
+  "wall_after": [
+    {
+      "n": 100,
+      "seconds": 0.008969,
+      "routes": 100
+    },
+    {
+      "n": 300,
+      "seconds": 0.023027,
+      "routes": 300
+    },
+    {
+      "n": 600,
+      "seconds": 0.049679,
+      "routes": 600
+    }
+  ],
+  "independent_work": [
+    {
+      "prefix": "/r",
+      "n": 100,
+      "scanner_lines": 36855,
+      "seconds_with_trace": 0.0354,
+      "routes": 100
+    },
+    {
+      "prefix": "/r",
+      "n": 300,
+      "scanner_lines": 109655,
+      "seconds_with_trace": 0.1009,
+      "routes": 300
+    },
+    {
+      "prefix": "/r",
+      "n": 600,
+      "scanner_lines": 218855,
+      "seconds_with_trace": 0.2042,
+      "routes": 600
+    },
+    {
+      "prefix": "/var/r",
+      "n": 100,
+      "scanner_lines": 58192,
+      "seconds_with_trace": 0.0448,
+      "routes": 100
+    },
+    {
+      "prefix": "/var/r",
+      "n": 300,
+      "scanner_lines": 167744,
+      "seconds_with_trace": 0.1316,
+      "routes": 300
+    },
+    {
+      "prefix": "/var/r",
+      "n": 600,
+      "scanner_lines": 334844,
+      "seconds_with_trace": 0.2605,
+      "routes": 600
+    }
+  ],
+  "wall_after_final": [
+    {
+      "n": 100,
+      "seconds": 0.008416,
+      "routes": 100
+    },
+    {
+      "n": 300,
+      "seconds": 0.023403,
+      "routes": 300
+    },
+    {
+      "n": 600,
+      "seconds": 0.047314,
+      "routes": 600
+    }
+  ],
+  "independent_work_final": [
+    {
+      "prefix": "/r",
+      "n": 100,
+      "executed_lines": 36855
+    },
+    {
+      "prefix": "/r",
+      "n": 300,
+      "executed_lines": 109655
+    },
+    {
+      "prefix": "/r",
+      "n": 600,
+      "executed_lines": 218855
+    },
+    {
+      "prefix": "/var/r",
+      "n": 100,
+      "executed_lines": 56545
+    },
+    {
+      "prefix": "/var/r",
+      "n": 300,
+      "executed_lines": 168345
+    },
+    {
+      "prefix": "/var/r",
+      "n": 600,
+      "executed_lines": 336045
+    }
+  ]
+}

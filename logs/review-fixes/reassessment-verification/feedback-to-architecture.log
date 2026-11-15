@@ -1,0 +1,152 @@
+scratch: /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z
+$ /private/tmp/poteto-reassessment-verify-62_gvwd1/collection/skills/feedback-to-architecture/scripts/collect_feedback.py --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/todo-app --pr-comments /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/todo-app/review-comments.json --chat /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/todo-app/chat-feedback.md --out /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/feedback.json
+collect_feedback: wrote /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/feedback.json (3 chat, 6 commit, 4 review)
+
+[exit 0; expected 0]
+ASSERT PASS: every normalized feedback item has source provenance
+ASSERT PASS: collection includes commit, review and chat evidence
+$ /private/tmp/poteto-reassessment-verify-62_gvwd1/collection/skills/feedback-to-architecture/scripts/plan.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/feedback.json --out-dir /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/plan
+{
+  "out_dir": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/plan",
+  "themes": 2,
+  "rules": [
+    "no-rows-append-outside-store"
+  ],
+  "proven": [
+    "no-rows-append-outside-store"
+  ],
+  "levels": {
+    "T1": "architecture",
+    "T2": "types"
+  },
+  "files": [
+    "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/plan/REFACTOR_PLAN.md",
+    "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/plan/lint-rules.json",
+    "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/plan/plan.json"
+  ]
+}
+
+[exit 0; expected 0]
+ASSERT PASS: generated lint is proven against history
+ASSERT PASS: planner writes refactor plan and machine-readable lint rules
+$ /private/tmp/poteto-reassessment-verify-62_gvwd1/collection/skills/correct/scripts/patlint.py --rules /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/plan/lint-rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/todo-app --json --rev dbd44008685859312aee6a60154fd0258c1c063b /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/todo-app/todo
+{
+  "ok": false,
+  "rules": [
+    "no-rows-append-outside-store"
+  ],
+  "files_scanned": 3,
+  "untracked": [],
+  "rev": "dbd44008685859312aee6a60154fd0258c1c063b",
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/todo-app",
+  "failing": [
+    {
+      "rule": "no-rows-append-outside-store",
+      "path": "todo/api.py",
+      "line": 42,
+      "col": 17,
+      "message": "Use `Store.add` instead of `rows.append`, `store.path.write_text` (todo/store.py owns this). Theme T1: store.py / bypassing / direct.",
+      "text": "rows.append(row)"
+    },
+    {
+      "rule": "no-rows-append-outside-store",
+      "path": "todo/api.py",
+      "line": 43,
+      "col": 17,
+      "message": "Use `Store.add` instead of `rows.append`, `store.path.write_text` (todo/store.py owns this). Theme T1: store.py / bypassing / direct.",
+      "text": "store.path.write_text(json.dumps(rows))"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "no-rows-append-outside-store",
+      "path": "todo/api.py",
+      "line": 42,
+      "col": 17,
+      "message": "Use `Store.add` instead of `rows.append`, `store.path.write_text` (todo/store.py owns this). Theme T1: store.py / bypassing / direct.",
+      "text": "rows.append(row)"
+    },
+    {
+      "rule": "no-rows-append-outside-store",
+      "path": "todo/api.py",
+      "line": 43,
+      "col": 17,
+      "message": "Use `Store.add` instead of `rows.append`, `store.path.write_text` (todo/store.py owns this). Theme T1: store.py / bypassing / direct.",
+      "text": "store.path.write_text(json.dumps(rows))"
+    }
+  ],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+
+[exit 1; expected 1]
+ASSERT PASS: generated lint fires on the real direct-write mistake
+$ /private/tmp/poteto-reassessment-verify-62_gvwd1/collection/skills/correct/scripts/patlint.py --rules /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/plan/lint-rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/todo-app --json /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/todo-app/todo
+{
+  "ok": true,
+  "rules": [
+    "no-rows-append-outside-store"
+  ],
+  "files_scanned": 3,
+  "untracked": [],
+  "rev": null,
+  "root": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/todo-app",
+  "failing": [],
+  "violations": [],
+  "allowed": [],
+  "expired": [],
+  "invalid_exceptions": [],
+  "stale_exceptions": [],
+  "baseline": {
+    "path": null,
+    "over": [],
+    "improved": [],
+    "refused": [],
+    "deferred": [],
+    "updated": false
+  }
+}
+
+[exit 0; expected 0]
+ASSERT PASS: generated lint also passes the fixed HEAD
+$ /private/tmp/poteto-reassessment-verify-62_gvwd1/collection/skills/correct/scripts/patlint.py --rules /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/plan/lint-rules.json --root /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/todo-app --test --json
+{
+  "ok": true,
+  "tests": 21,
+  "failures": []
+}
+
+[exit 0; expected 0]
+ASSERT PASS: planner retains executable bad and quiet cases from successful whole-file proofs
+$ /private/tmp/poteto-reassessment-verify-62_gvwd1/collection/skills/feedback-to-architecture/scripts/plan.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/feedback.json --out-dir /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/unproved-plan --no-prove
+{
+  "out_dir": "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/unproved-plan",
+  "themes": 2,
+  "rules": [
+    "no-json-dumps-outside-store"
+  ],
+  "proven": [],
+  "levels": {
+    "T1": "architecture",
+    "T2": "types"
+  },
+  "files": [
+    "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/unproved-plan/REFACTOR_PLAN.md",
+    "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/unproved-plan/lint-rules.json",
+    "/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-y_979c_z/unproved-plan/plan.json"
+  ]
+}
+
+[exit 0; expected 0]
+ASSERT PASS: --no-prove never labels unverified cases as proven or records proof tests
+ASSERT PASS: a failed fixed-revision replay never counts as proof

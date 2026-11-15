@@ -1,0 +1,1737 @@
+scratch: /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 0; expected 0]
+ASSERT PASS: complete good feature map has no drift
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 5,
+    "missing": [
+      {
+        "method": "POST",
+        "path": "/todos/<id>/done",
+        "source": "todo/api.py:40"
+      }
+    ],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": true
+}
+
+[exit 1; expected 1]
+ASSERT PASS: deleting a route from the map reports it missing
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 6,
+    "missing": [
+      {
+        "method": "GET",
+        "path": "/metrics",
+        "source": "todo/api.py:24"
+      }
+    ],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": true
+}
+
+[exit 1; expected 1]
+ASSERT PASS: adding an application route reports it unmapped
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 0,
+    "missing": [],
+    "dead": [
+      {
+        "method": "POST",
+        "path": "/todos",
+        "where": "features/create-todo.md:7"
+      },
+      {
+        "method": "POST",
+        "path": "/todos",
+        "where": "features/create-todo.md:16"
+      },
+      {
+        "method": "GET",
+        "path": "/todos",
+        "where": "features/create-todo.md:17"
+      },
+      {
+        "method": "DELETE",
+        "path": "/todos/<id>",
+        "where": "features/delete-todo.md:7"
+      },
+      {
+        "method": "DELETE",
+        "path": "/todos/1",
+        "where": "features/delete-todo.md:16"
+      },
+      {
+        "method": "GET",
+        "path": "/todos",
+        "where": "features/delete-todo.md:17"
+      },
+      {
+        "method": "POST",
+        "path": "/todos/<id>/done",
+        "where": "features/done-todo.md:7"
+      },
+      {
+        "method": "POST",
+        "path": "/todos/1/done",
+        "where": "features/done-todo.md:16"
+      },
+      {
+        "method": "GET",
+        "path": "/todos",
+        "where": "features/done-todo.md:17"
+      },
+      {
+        "method": "POST",
+        "path": "/todos/1/done",
+        "where": "features/done-todo.md:18"
+      },
+      {
+        "method": "GET",
+        "path": "/todos",
+        "where": "features/done-todo.md:19"
+      },
+      {
+        "method": "GET",
+        "path": "/todos",
+        "where": "features/list-todos.md:7"
+      },
+      {
+        "method": "GET",
+        "path": "/todos",
+        "where": "features/list-todos.md:16"
+      },
+      {
+        "method": "POST",
+        "path": "/todos",
+        "where": "features/README.md:35"
+      },
+      {
+        "method": "GET",
+        "path": "/todos",
+        "where": "features/README.md:36"
+      },
+      {
+        "method": "POST",
+        "path": "/todos/<id>/done",
+        "where": "features/README.md:37"
+      },
+      {
+        "method": "DELETE",
+        "path": "/todos/<id>",
+        "where": "features/README.md:38"
+      }
+    ]
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": true
+}
+
+[exit 1; expected 1]
+ASSERT PASS: removing the last source route still reports dead mapped routes
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 0,
+    "missing": [],
+    "dead": [
+      {
+        "prog": "python3 -m todo",
+        "name": "add",
+        "where": "features/create-todo.md:8"
+      },
+      {
+        "prog": "python3 -m todo",
+        "name": "add",
+        "where": "features/create-todo.md:18"
+      },
+      {
+        "prog": "python3 -m todo",
+        "name": "list",
+        "where": "features/create-todo.md:19"
+      },
+      {
+        "prog": "python3 -m todo",
+        "name": "rm",
+        "where": "features/delete-todo.md:8"
+      },
+      {
+        "prog": "python3 -m todo",
+        "name": "rm",
+        "where": "features/delete-todo.md:18"
+      },
+      {
+        "prog": "python3 -m todo",
+        "name": "list",
+        "where": "features/delete-todo.md:19"
+      },
+      {
+        "prog": "python3 -m todo",
+        "name": "done",
+        "where": "features/done-todo.md:8"
+      },
+      {
+        "prog": "python3 -m todo",
+        "name": "done",
+        "where": "features/done-todo.md:20"
+      },
+      {
+        "prog": "python3 -m todo",
+        "name": "list",
+        "where": "features/done-todo.md:21"
+      },
+      {
+        "prog": "python3 -m todo",
+        "name": "list",
+        "where": "features/list-todos.md:8"
+      },
+      {
+        "prog": "python3 -m todo",
+        "name": "list",
+        "where": "features/list-todos.md:17"
+      },
+      {
+        "prog": "python3 -m todo",
+        "name": "add",
+        "where": "features/README.md:35"
+      },
+      {
+        "prog": "python3 -m todo",
+        "name": "list",
+        "where": "features/README.md:36"
+      },
+      {
+        "prog": "python3 -m todo",
+        "name": "done",
+        "where": "features/README.md:37"
+      },
+      {
+        "prog": "python3 -m todo",
+        "name": "rm",
+        "where": "features/README.md:38"
+      }
+    ]
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": true
+}
+
+[exit 1; expected 1]
+ASSERT PASS: removing the entire CLI still reports dead mapped commands
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 0; expected 0]
+ASSERT PASS: an incidental python command in a recipe is not a dead app command
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 6,
+    "missing": [
+      {
+        "method": "GET",
+        "path": "/home",
+        "source": "todo/api.py:24"
+      }
+    ],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": true
+}
+
+[exit 1; expected 1]
+ASSERT PASS: a GET /home branch is reported missing from the map, though /home is also a filesystem root
+ASSERT PASS: a /tmp path passed only to a generic call is still not a route
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 6,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 0; expected 0]
+ASSERT PASS: a feature file that maps GET /home is not reported dead
+ASSERT PASS: scratch CLI declares a top-level store_true --json and every list recipe passes it before the subcommand
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 0; expected 0]
+ASSERT PASS: a store_true flag does not take the subcommand as its value: python3 -m todo --json list maps list
+ASSERT PASS: python3 -m todo --json add milk maps add instead of reporting milk as a dead command
+ASSERT PASS: the map stays clean when its recipes pass the store_true --json before the subcommand
+ASSERT PASS: only request-path comparisons bypass filesystem filtering, including equality, prefix, regex and match/case
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 0; expected 0]
+ASSERT PASS: filesystem equality and startswith checks introduce no phantom routes or drift
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/create-verification-skill/scripts/scan_repo.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-go-routes --json
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-go-routes",
+  "languages": [
+    {
+      "name": "go",
+      "files": 1
+    }
+  ],
+  "markers": [],
+  "build_commands": [
+    {
+      "cmd": "go build ./...",
+      "source": "go.mod"
+    }
+  ],
+  "test_commands": [],
+  "launch_candidates": [
+    {
+      "kind": "server",
+      "cmd": "go run .",
+      "source": "./ (package main)",
+      "port": null,
+      "port_flag": null,
+      "data_flag": null
+    }
+  ],
+  "http_routes": [
+    {
+      "method": "GET",
+      "path": "/Users",
+      "source": "main.go:5",
+      "how": "go router",
+      "health": false
+    },
+    {
+      "method": "PUT",
+      "path": "/var/routes",
+      "source": "main.go:4",
+      "how": "go router",
+      "health": false
+    }
+  ],
+  "health_routes": [],
+  "cli_commands": [],
+  "env_vars": [],
+  "skill_dirs": [],
+  "features": [
+    {
+      "id": "list-users",
+      "title": "List Users",
+      "action": "list",
+      "resource": "Users",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/Users",
+          "source": "main.go:5",
+          "how": "go router",
+          "health": false
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "update-var",
+      "title": "Update a var",
+      "action": "update",
+      "resource": "var",
+      "routes": [
+        {
+          "method": "PUT",
+          "path": "/var/routes",
+          "source": "main.go:4",
+          "how": "go router",
+          "health": false
+        }
+      ],
+      "commands": []
+    }
+  ],
+  "notes": [],
+  "ports": []
+}
+
+[exit 0; expected 0]
+ASSERT PASS: filesystem, curl, args, folders and non-router Go calls create no phantom routes: {}
+ASSERT PASS: known Go route receivers retain filesystem-like route names
+ASSERT PASS: same-function request-path aliases and split segments keep real routes; reassignment revokes provenance
+ASSERT PASS: rebindings revoke unknown path/segment sources and retain proven request aliases: []
+ASSERT PASS: exclusive branches cannot lend path provenance; uncertain joins revoke it: []
+ASSERT PASS: match cases keep exclusive bindings separate and revoke uncertain joins: []
+ASSERT PASS: short-circuit and conditional assignments revoke uncertain joins but preserve evaluated aliases: []
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 -c 'from server import Handler; h = Handler(); h.path = "/api/items"; h.do_GET()'
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/exception-route-map/.agents/skills/verify-items --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/exception-route-map --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/exception-route-map/.agents/skills/verify-items",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/exception-route-map",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 1,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 0,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 0; expected (0, 1)]
+ASSERT PASS: only proven executed assignments establish path provenance across exceptional and optional control flow: []
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 -c 'from server import Handler; h = Handler(); h.path = "/api/items"; assert h.do_GET() == "/var/www"'
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/with-item-route-map/.agents/skills/verify-items --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/with-item-route-map --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/with-item-route-map/.agents/skills/verify-items",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/with-item-route-map",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 1,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 0,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 0; expected (0, 1)]
+ASSERT PASS: with items establish path provenance only along an evaluated prefix: []
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 -m app --json list
+Namespace(json=True, output=False, label=False, command='list')
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/registered-action-map/.agents/skills/verify-app --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/registered-action-map --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/registered-action-map/.agents/skills/verify-app",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/registered-action-map",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 0,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 1,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 0; expected (0, 1)]
+ASSERT PASS: registered no-value argparse actions retain their token consumption and clean feature maps: []
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 -m app --json list
+Namespace(json=True, output=False, label=False, command='list')
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map/.agents/skills/verify-app --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map/.agents/skills/verify-app",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 0,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 1,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 0; expected (0, 1)]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 -m app --json list
+Namespace(json=True, output=False, label=False, command='list')
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map/.agents/skills/verify-app --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map/.agents/skills/verify-app",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 0,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 1,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 0; expected (0, 1)]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 -m app --json list
+Namespace(json=True, output=False, label=False, command='list')
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map/.agents/skills/verify-app --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map/.agents/skills/verify-app",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 0,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 1,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 0; expected (0, 1)]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 -m app --json list
+Namespace(json=True, output=False, label=False, command='list')
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map/.agents/skills/verify-app --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map/.agents/skills/verify-app",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 0,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 1,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 0; expected (0, 1)]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 -m app --json list
+Namespace(json=True, output=False, label=False, command='list')
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map/.agents/skills/verify-app --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map/.agents/skills/verify-app",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 0,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 1,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 0; expected (0, 1)]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 -m app --json list
+Namespace(json=True, output=False, label=False, command='list')
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map/.agents/skills/verify-app --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map/.agents/skills/verify-app",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 0,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 1,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 0; expected (0, 1)]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 -m app --json list
+Namespace(json=True, output=False, label=False, command='list')
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map/.agents/skills/verify-app --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map/.agents/skills/verify-app",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/parser-binding-map",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 0,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 1,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 0; expected (0, 1)]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 -m app --direct --alias list
+Namespace(direct=True, alias=True, store=False, append=False, none=False, output=False, label=False, command='list')
+
+[exit 0; expected 0]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 -m app --payload list
+Namespace(payload='list')
+
+[exit 0; expected 0]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 -m app --payload list
+Namespace(payload='list')
+
+[exit 0; expected 0]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 -m app --payload list
+Namespace(payload='list')
+
+[exit 0; expected 0]
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 -m app --payload list
+Namespace(payload='list')
+
+[exit 0; expected 0]
+ASSERT PASS: argparse action registries follow parser bindings across scopes, groups, constructors and helpers: []
+ASSERT PASS: query and fragment stripping retain request-path aliases, including unpacking, without blessing disk paths or query elements: []
+GO RECEIVER WORKLOAD [{"n": 100, "receiver_searches": 100, "searched_characters": 24684, "seconds": 0.001376}, {"n": 200, "receiver_searches": 200, "searched_characters": 50284, "seconds": 0.002481}, {"n": 400, "receiver_searches": 400, "searched_characters": 101484, "seconds": 0.005299}, {"n": 800, "receiver_searches": 800, "searched_characters": 203884, "seconds": 0.011894}]
+ASSERT PASS: Go receiver lookup uses bounded work per route and preserves conventional receivers: []
+ROUTE WORKLOAD [{"prefix": "/r", "n": 20, "ast_edges": 1886, "compares_path": 0, "seconds": 0.002701}, {"prefix": "/r", "n": 60, "ast_edges": 5406, "compares_path": 0, "seconds": 0.006876}, {"prefix": "/r", "n": 120, "ast_edges": 10686, "compares_path": 0, "seconds": 0.012524}, {"prefix": "/var/r", "n": 20, "ast_edges": 2035, "compares_path": 20, "seconds": 0.002682}, {"prefix": "/var/r", "n": 60, "ast_edges": 5835, "compares_path": 60, "seconds": 0.007757}, {"prefix": "/var/r", "n": 120, "ast_edges": 11535, "compares_path": 120, "seconds": 0.016699}]
+ASSERT PASS: ordinary and filesystem-like routes retain exact inventory with near-linear AST work: []
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/create-verification-skill/scripts/scan_repo.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-go-receivers --json
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-go-receivers",
+  "languages": [
+    {
+      "name": "go",
+      "files": 1
+    }
+  ],
+  "markers": [],
+  "build_commands": [
+    {
+      "cmd": "go build ./...",
+      "source": "go.mod"
+    }
+  ],
+  "test_commands": [],
+  "launch_candidates": [
+    {
+      "kind": "server",
+      "cmd": "go run .",
+      "source": "./ (package main)",
+      "port": null,
+      "port_flag": null,
+      "data_flag": null
+    }
+  ],
+  "http_routes": [
+    {
+      "method": "GET",
+      "path": "/todos",
+      "source": "main.go:2",
+      "how": "net/http",
+      "health": false
+    }
+  ],
+  "health_routes": [],
+  "cli_commands": [],
+  "env_vars": [],
+  "skill_dirs": [],
+  "features": [
+    {
+      "id": "list-todos",
+      "title": "List todos",
+      "action": "list",
+      "resource": "todos",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/todos",
+          "source": "main.go:2",
+          "how": "net/http",
+          "health": false
+        }
+      ],
+      "commands": []
+    }
+  ],
+  "notes": [],
+  "ports": []
+}
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/create-verification-skill/scripts/scan_repo.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-go-receivers --json
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-go-receivers",
+  "languages": [
+    {
+      "name": "go",
+      "files": 1
+    }
+  ],
+  "markers": [],
+  "build_commands": [
+    {
+      "cmd": "go build ./...",
+      "source": "go.mod"
+    }
+  ],
+  "test_commands": [],
+  "launch_candidates": [
+    {
+      "kind": "server",
+      "cmd": "go run .",
+      "source": "./ (package main)",
+      "port": null,
+      "port_flag": null,
+      "data_flag": null
+    }
+  ],
+  "http_routes": [
+    {
+      "method": "GET",
+      "path": "/todos",
+      "source": "main.go:2",
+      "how": "net/http",
+      "health": false
+    }
+  ],
+  "health_routes": [],
+  "cli_commands": [],
+  "env_vars": [],
+  "skill_dirs": [],
+  "features": [
+    {
+      "id": "list-todos",
+      "title": "List todos",
+      "action": "list",
+      "resource": "todos",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/todos",
+          "source": "main.go:2",
+          "how": "net/http",
+          "health": false
+        }
+      ],
+      "commands": []
+    }
+  ],
+  "notes": [],
+  "ports": []
+}
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/create-verification-skill/scripts/scan_repo.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-go-receivers --json
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-go-receivers",
+  "languages": [
+    {
+      "name": "go",
+      "files": 1
+    }
+  ],
+  "markers": [],
+  "build_commands": [
+    {
+      "cmd": "go build ./...",
+      "source": "go.mod"
+    }
+  ],
+  "test_commands": [],
+  "launch_candidates": [
+    {
+      "kind": "server",
+      "cmd": "go run .",
+      "source": "./ (package main)",
+      "port": null,
+      "port_flag": null,
+      "data_flag": null
+    }
+  ],
+  "http_routes": [
+    {
+      "method": "ANY",
+      "path": "/todos/<*>",
+      "source": "main.go:2",
+      "how": "net/http",
+      "health": false
+    }
+  ],
+  "health_routes": [],
+  "cli_commands": [],
+  "env_vars": [],
+  "skill_dirs": [],
+  "features": [
+    {
+      "id": "show-todo",
+      "title": "Show a todo",
+      "action": "show",
+      "resource": "todos",
+      "routes": [
+        {
+          "method": "ANY",
+          "path": "/todos/<*>",
+          "source": "main.go:2",
+          "how": "net/http",
+          "health": false
+        }
+      ],
+      "commands": []
+    }
+  ],
+  "notes": [],
+  "ports": []
+}
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/create-verification-skill/scripts/scan_repo.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-go-receivers --json
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-go-receivers",
+  "languages": [
+    {
+      "name": "go",
+      "files": 1
+    }
+  ],
+  "markers": [],
+  "build_commands": [
+    {
+      "cmd": "go build ./...",
+      "source": "go.mod"
+    }
+  ],
+  "test_commands": [],
+  "launch_candidates": [
+    {
+      "kind": "server",
+      "cmd": "go run .",
+      "source": "./ (package main)",
+      "port": null,
+      "port_flag": null,
+      "data_flag": null
+    }
+  ],
+  "http_routes": [
+    {
+      "method": "GET",
+      "path": "/todos",
+      "source": "main.go:2",
+      "how": "go router",
+      "health": false
+    }
+  ],
+  "health_routes": [],
+  "cli_commands": [],
+  "env_vars": [],
+  "skill_dirs": [],
+  "features": [
+    {
+      "id": "list-todos",
+      "title": "List todos",
+      "action": "list",
+      "resource": "todos",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/todos",
+          "source": "main.go:2",
+          "how": "go router",
+          "health": false
+        }
+      ],
+      "commands": []
+    }
+  ],
+  "notes": [],
+  "ports": []
+}
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/create-verification-skill/scripts/scan_repo.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-go-receivers --json
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-go-receivers",
+  "languages": [
+    {
+      "name": "go",
+      "files": 1
+    }
+  ],
+  "markers": [],
+  "build_commands": [
+    {
+      "cmd": "go build ./...",
+      "source": "go.mod"
+    }
+  ],
+  "test_commands": [],
+  "launch_candidates": [
+    {
+      "kind": "server",
+      "cmd": "go run .",
+      "source": "./ (package main)",
+      "port": null,
+      "port_flag": null,
+      "data_flag": null
+    }
+  ],
+  "http_routes": [
+    {
+      "method": "POST",
+      "path": "/todos",
+      "source": "main.go:2",
+      "how": "go router",
+      "health": false
+    }
+  ],
+  "health_routes": [],
+  "cli_commands": [],
+  "env_vars": [],
+  "skill_dirs": [],
+  "features": [
+    {
+      "id": "create-todo",
+      "title": "Create a todo",
+      "action": "create",
+      "resource": "todos",
+      "routes": [
+        {
+          "method": "POST",
+          "path": "/todos",
+          "source": "main.go:2",
+          "how": "go router",
+          "health": false
+        }
+      ],
+      "commands": []
+    }
+  ],
+  "notes": [],
+  "ports": []
+}
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/create-verification-skill/scripts/scan_repo.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-go-receivers --json
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-go-receivers",
+  "languages": [
+    {
+      "name": "go",
+      "files": 1
+    }
+  ],
+  "markers": [],
+  "build_commands": [
+    {
+      "cmd": "go build ./...",
+      "source": "go.mod"
+    }
+  ],
+  "test_commands": [],
+  "launch_candidates": [
+    {
+      "kind": "server",
+      "cmd": "go run .",
+      "source": "./ (package main)",
+      "port": null,
+      "port_flag": null,
+      "data_flag": null
+    }
+  ],
+  "http_routes": [
+    {
+      "method": "GET",
+      "path": "/todos",
+      "source": "main.go:2",
+      "how": "net/http",
+      "health": false
+    }
+  ],
+  "health_routes": [],
+  "cli_commands": [],
+  "env_vars": [],
+  "skill_dirs": [],
+  "features": [
+    {
+      "id": "list-todos",
+      "title": "List todos",
+      "action": "list",
+      "resource": "todos",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/todos",
+          "source": "main.go:2",
+          "how": "net/http",
+          "health": false
+        }
+      ],
+      "commands": []
+    }
+  ],
+  "notes": [],
+  "ports": []
+}
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/create-verification-skill/scripts/scan_repo.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-go-receivers --json
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-go-receivers",
+  "languages": [
+    {
+      "name": "go",
+      "files": 1
+    }
+  ],
+  "markers": [],
+  "build_commands": [
+    {
+      "cmd": "go build ./...",
+      "source": "go.mod"
+    }
+  ],
+  "test_commands": [],
+  "launch_candidates": [
+    {
+      "kind": "cli",
+      "cmd": "go run .",
+      "source": "./ (package main)",
+      "port": null,
+      "port_flag": null,
+      "data_flag": null
+    }
+  ],
+  "http_routes": [],
+  "health_routes": [],
+  "cli_commands": [],
+  "env_vars": [],
+  "skill_dirs": [],
+  "features": [],
+  "notes": [],
+  "ports": []
+}
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/create-verification-skill/scripts/scan_repo.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-go-receivers --json
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-go-receivers",
+  "languages": [
+    {
+      "name": "go",
+      "files": 1
+    }
+  ],
+  "markers": [],
+  "build_commands": [
+    {
+      "cmd": "go build ./...",
+      "source": "go.mod"
+    }
+  ],
+  "test_commands": [],
+  "launch_candidates": [
+    {
+      "kind": "cli",
+      "cmd": "go run .",
+      "source": "./ (package main)",
+      "port": null,
+      "port_flag": null,
+      "data_flag": null
+    }
+  ],
+  "http_routes": [],
+  "health_routes": [],
+  "cli_commands": [],
+  "env_vars": [],
+  "skill_dirs": [],
+  "features": [],
+  "notes": [],
+  "ports": []
+}
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/create-verification-skill/scripts/scan_repo.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-go-receivers --json
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-go-receivers",
+  "languages": [
+    {
+      "name": "go",
+      "files": 1
+    }
+  ],
+  "markers": [],
+  "build_commands": [
+    {
+      "cmd": "go build ./...",
+      "source": "go.mod"
+    }
+  ],
+  "test_commands": [],
+  "launch_candidates": [
+    {
+      "kind": "cli",
+      "cmd": "go run .",
+      "source": "./ (package main)",
+      "port": null,
+      "port_flag": null,
+      "data_flag": null
+    }
+  ],
+  "http_routes": [],
+  "health_routes": [],
+  "cli_commands": [],
+  "env_vars": [],
+  "skill_dirs": [],
+  "features": [],
+  "notes": [],
+  "ports": []
+}
+
+[exit 0; expected 0]
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/create-verification-skill/scripts/scan_repo.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-go-receivers --json
+{
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/review-go-receivers",
+  "languages": [
+    {
+      "name": "go",
+      "files": 1
+    }
+  ],
+  "markers": [],
+  "build_commands": [
+    {
+      "cmd": "go build ./...",
+      "source": "go.mod"
+    }
+  ],
+  "test_commands": [],
+  "launch_candidates": [
+    {
+      "kind": "server",
+      "cmd": "go run .",
+      "source": "./ (package main)",
+      "port": null,
+      "port_flag": null,
+      "data_flag": null
+    }
+  ],
+  "http_routes": [
+    {
+      "method": "GET",
+      "path": "/Users",
+      "source": "main.go:2",
+      "how": "go router",
+      "health": false
+    },
+    {
+      "method": "ANY",
+      "path": "/home",
+      "source": "main.go:2",
+      "how": "net/http",
+      "health": false
+    },
+    {
+      "method": "PUT",
+      "path": "/var/routes",
+      "source": "main.go:2",
+      "how": "go router",
+      "health": false
+    }
+  ],
+  "health_routes": [],
+  "cli_commands": [],
+  "env_vars": [],
+  "skill_dirs": [],
+  "features": [
+    {
+      "id": "list-users",
+      "title": "List Users",
+      "action": "list",
+      "resource": "Users",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/Users",
+          "source": "main.go:2",
+          "how": "go router",
+          "health": false
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "list-home",
+      "title": "List home",
+      "action": "list",
+      "resource": "home",
+      "routes": [
+        {
+          "method": "ANY",
+          "path": "/home",
+          "source": "main.go:2",
+          "how": "net/http",
+          "health": false
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "update-var",
+      "title": "Update a var",
+      "action": "update",
+      "resource": "var",
+      "routes": [
+        {
+          "method": "PUT",
+          "path": "/var/routes",
+          "source": "main.go:2",
+          "how": "go router",
+          "health": false
+        }
+      ],
+      "commands": []
+    }
+  ],
+  "notes": [],
+  "ports": []
+}
+
+[exit 0; expected 0]
+ASSERT PASS: Go aliases, fields and returned muxes retain routes and server launches; FS bypass needs a known receiver: []
+$ /Users/dipsy/.local/share/mise/installs/python/3.11/bin/python3 -m todo --zero list --data /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/zero-data
+[]
+
+[exit 0; expected 0]
+ASSERT PASS: registered string argparse actions with explicit nargs=0 consume no value
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 0; expected 0]
+ASSERT PASS: a registered nargs=0 action before list keeps its command mapped and exits 0
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 6,
+    "missing": [
+      {
+        "method": "GET",
+        "path": "/home",
+        "source": "todo/api.py:24"
+      }
+    ],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": true
+}
+
+[exit 1; expected 1]
+ASSERT PASS: a GET /home branch is reported missing from the map, though /home is also a filesystem root
+ASSERT PASS: a /tmp path passed only to a generic call is still not a route
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 6,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 1; expected 0]
+ASSERT PASS: clean drift regression 1 rejects exit 1 even when its JSON reports no drift
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 6,
+    "missing": [
+      {
+        "method": "GET",
+        "path": "/home",
+        "source": "todo/api.py:24"
+      }
+    ],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": true
+}
+
+[exit 1; expected 1]
+ASSERT PASS: a GET /home branch is reported missing from the map, though /home is also a filesystem root
+ASSERT PASS: a /tmp path passed only to a generic call is still not a route
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 6,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 0; expected 0]
+ASSERT PASS: a feature file that maps GET /home is not reported dead
+ASSERT PASS: scratch CLI declares a top-level store_true --json and every list recipe passes it before the subcommand
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 1; expected 0]
+ASSERT PASS: clean drift regression 2 rejects exit 1 even when its JSON reports no drift
+$ /private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/skills/maintain-verification-skill/scripts/drift_check.py /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo --repo /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app --json
+{
+  "skill_dir": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo",
+  "repo": "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app",
+  "index": {
+    "missing": [],
+    "dead": [],
+    "duplicate": [],
+    "extra": []
+  },
+  "contract": [],
+  "routes": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "commands": {
+    "source": 5,
+    "missing": [],
+    "dead": []
+  },
+  "unanchored_features": [],
+  "notes": [],
+  "drift": false
+}
+
+[exit 0; expected 0]
+$ /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo/scripts/control.sh launch
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+PermissionError: [Errno 1] Operation not permitted
+
+[exit 1; expected 0]
+$ /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo/scripts/control.sh cleanup
+{"cleaned": false, "reason": "no active run"}
+
+[exit 0; expected 0]
+Traceback (most recent call last):
+  File "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/scripts/run_examples.py", line 94, in case
+    yield
+  File "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/scripts/run_examples.py", line 526, in maintain
+    self.live_pass('maintain')
+  File "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/scripts/run_examples.py", line 386, in live_pass
+    launch = self.json(control, 'launch', env=env)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/scripts/run_examples.py", line 65, in json
+    return json.loads(self.run(*argv, json_stdout=True, **kwargs))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-400b062-verify-m4hzm8sn/scripts/run_examples.py", line 61, in run
+    raise AssertionError(f"{shlex.join(args)}: exit {result.returncode}, expected {expected}; see {self.name}.log")
+AssertionError: /var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-abzy0p1q/todo-app/.claude/skills/verify-todo/scripts/control.sh launch: exit 1, expected 0; see maintain-verification-skill.log

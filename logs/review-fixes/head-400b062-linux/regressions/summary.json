@@ -1,0 +1,174 @@
+{
+  "review_deadline_order": {
+    "status": "pass",
+    "assertions": 8
+  },
+  "review_mutant_deadline": {
+    "status": "pass",
+    "assertions": 5
+  },
+  "review_mutant_json": {
+    "status": "pass",
+    "assertions": 5
+  },
+  "review_mutant_errors": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_sigint": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_fixture_limits": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_phantom_routes": {
+    "status": "pass",
+    "assertions": 3
+  },
+  "review_baseline_retry": {
+    "status": "pass",
+    "assertions": 3
+  },
+  "review_git_warning": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_docs": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_import_budget": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_go_receivers": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_shrink_call_timeout": {
+    "status": "pass",
+    "assertions": 7
+  },
+  "review_synchronous_deadlines": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_path_rebindings": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_property_handoff": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_path_branches": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_git_fail_closed": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_call_timeout_exit": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_oneshot_timers": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_disabled_limits": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_confirmed_signal_boundary": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_match_case_paths": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_git_locale": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_swallowed_alarm": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_route_workload": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_budget_namespace": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_expression_paths": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_query_path_aliases": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_go_receiver_workload": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_net_change_docs": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_timeout_format_handoff": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_interruptible_result_format": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_bounded_limit_workload": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_exception_format_timeout": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_exception_path_provenance": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_registered_boolean_actions": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_git_inherited_environment": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_infrastructure_exception_format": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_with_item_provenance": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_parser_action_bindings": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_git_case_aliases": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_acceptance_record_scope": {
+    "status": "pass",
+    "assertions": 1
+  }
+}

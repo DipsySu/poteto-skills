@@ -1,0 +1,45 @@
+{
+  "base_commit": "14880b7069089191e3a5bd19f7513570cb3ca4fd",
+  "production_diff_before_initial_regressions": "",
+  "production_sha256": {
+    "skills/formal-verification/scripts/gen_check.py": {
+      "before": "4e086a4367a871076bb90d9275dd59c6fb8c72614597a74fed535ac673bf20f1",
+      "after": "cebd6740297fde6b7d7a8324bd8f629db780a7d945a615c85c56e48b98fdaf8f"
+    },
+    "skills/formal-verification/scripts/bounded_check.py": {
+      "before": "75b0c50c8ae35b196939cfd5212db37cb2b3074a6bd76f3d84b618144c0a4535",
+      "after": "e2d73e5aa313b7d07653025df30b757ed12ddc1595b3a0c89733d9c7d777fb1d"
+    },
+    "skills/create-verification-skill/scripts/scan_repo.py": {
+      "before": "f490a903f48de246c87e3b3fa369b565d72ddc8377af84dc7567ae4a6be58c93",
+      "after": "879c9523ab3f32aa0db0032d3bdbe529d513a4941aa608580dd250c6143c7b47"
+    }
+  },
+  "focused_before": {
+    "passed_groups": 13,
+    "failed_groups": [
+      "review_synchronous_deadlines",
+      "review_path_rebindings"
+    ]
+  },
+  "focused_after": {
+    "passed_groups": 15,
+    "assertions": 44
+  },
+  "unchanged_existing_ensure_assertions": 213,
+  "full_verification": {
+    "command": "bash scripts/verify.sh --run-examples",
+    "isolated_copy_removed": true,
+    "exit": 1,
+    "passed_gates": 7,
+    "failed_gates": [
+      "regenerate examples",
+      "example skill results"
+    ],
+    "formal_verification_assertions": 87,
+    "environment_failures": [
+      "create/maintain: loopback bind PermissionError (Operation not permitted)",
+      "curator: /dev/fd/63: Operation not permitted"
+    ]
+  }
+}

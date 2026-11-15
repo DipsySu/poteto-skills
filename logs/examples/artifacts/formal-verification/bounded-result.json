@@ -1,7 +1,9 @@
 {
-  "model": "/home/box/developer/poteto-skills/logs/examples/artifacts/formal-verification/todo_model.py",
+  "model": "/workspace/pr-fix/logs/examples/artifacts/formal-verification/todo_model.py",
   "depth": 20,
   "max_states": 10000,
+  "timeout": 90.0,
+  "call_timeout": 10.0,
   "invariants": [
     "no_lost_todo",
     "legal_status"
@@ -14,13 +16,23 @@
   "hit_depth_bound": false,
   "hit_state_bound": false,
   "violation": null,
+  "stopped": null,
+  "detail": null,
   "exhaustive": true,
-  "seconds": 0.0,
+  "seconds": 0.001,
+  "incomplete": null,
+  "not_run": [],
   "mutants": {
     "unlocked_writers": {
       "killed": true,
       "by": "no_lost_todo",
       "steps": 4,
+      "result": "violation",
+      "stopped": null,
+      "detail": null,
+      "states": 23,
+      "transitions": 32,
+      "max_depth": 4,
       "trace": [
         {
           "step": 0,
@@ -149,6 +161,12 @@
       "killed": true,
       "by": "legal_status",
       "steps": 1,
+      "result": "violation",
+      "stopped": null,
+      "detail": null,
+      "states": 5,
+      "transitions": 4,
+      "max_depth": 1,
       "trace": [
         {
           "step": 0,
@@ -203,6 +221,12 @@
       "killed": true,
       "by": "legal_status",
       "steps": 2,
+      "result": "violation",
+      "stopped": null,
+      "detail": null,
+      "states": 10,
+      "transitions": 11,
+      "max_depth": 2,
       "trace": [
         {
           "step": 0,

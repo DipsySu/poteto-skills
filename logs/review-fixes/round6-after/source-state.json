@@ -1,0 +1,13 @@
+{
+  "head": "f6e20f19858c039fab63bd4319717d0170c824c7",
+  "sources": {
+    "scripts/run_examples.py": "8142096e5700a71158c57b13fd0ff51a6b3f3f107a8e82483b1e16a86912e3ac",
+    "skills/formal-verification/scripts/gen_check.py": "4c02187da02cb720273c243b7b2ab7d003b97c67669509ff89342a538ed844ed",
+    "skills/formal-verification/scripts/bounded_check.py": "d9fc7223d45cb5abd871b4d09fea7e7abb7217a4af293b397ffacbe172943bc6",
+    "skills/create-verification-skill/scripts/scan_repo.py": "e8803ce1870fbe0f2b202bcdb9226766ce75af9e8f35e0d46da12089276bb1b0",
+    "skills/correct/scripts/patlint.py": "5d34ec4057f6ec03f05d335a54a7ce55a3ec51cab69b2c9a6eb76bd1e7fd7268"
+  },
+  "original_ensure_assertions": 224,
+  "preserved_ensure_assertions": 224,
+  "added_ensure_assertions": 6
+}

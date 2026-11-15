@@ -1,15 +1,15 @@
 {
   "upstream": {
-    "url": "/tmp/poteto-examples-4dfshnbm/cache/cursor-plugins",
+    "url": "/tmp/poteto-examples-45v208z6/cache/cursor-plugins",
     "branch": "main",
-    "head": "1915047511fd266d83538bcf7036538193af5596",
-    "head_date": "2026-10-21T03:10:24Z",
+    "head": "209416b63a4488e038b5092abab5ba88d75cb2ae",
+    "head_date": "2026-11-15T02:43:48Z",
     "version": null,
     "fetch": "skipped",
-    "clone": "/tmp/poteto-examples-4dfshnbm/cache/cursor-plugins"
+    "clone": "/tmp/poteto-examples-45v208z6/cache/cursor-plugins"
   },
   "snapshot": {
-    "dir": "/home/box/developer/poteto-skills/research/upstream",
+    "dir": "/workspace/pr-fix/research/upstream",
     "pinned_sha": "6b78e9f4e46c75d1697d837e51f07c2692e60b24",
     "files_same": 17,
     "commits_since": []

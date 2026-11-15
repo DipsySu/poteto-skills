@@ -1,0 +1,138 @@
+{
+  "review_deadline_order": {
+    "status": "pass",
+    "assertions": 8
+  },
+  "review_mutant_deadline": {
+    "status": "pass",
+    "assertions": 5
+  },
+  "review_mutant_json": {
+    "status": "pass",
+    "assertions": 5
+  },
+  "review_mutant_errors": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_sigint": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_fixture_limits": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_phantom_routes": {
+    "status": "pass",
+    "assertions": 3
+  },
+  "review_baseline_retry": {
+    "status": "pass",
+    "assertions": 3
+  },
+  "review_git_warning": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_docs": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_import_budget": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_go_receivers": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_shrink_call_timeout": {
+    "status": "pass",
+    "assertions": 7
+  },
+  "review_synchronous_deadlines": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_path_rebindings": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_property_handoff": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_path_branches": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_git_fail_closed": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_call_timeout_exit": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_oneshot_timers": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_disabled_limits": {
+    "status": "pass",
+    "assertions": 2
+  },
+  "review_confirmed_signal_boundary": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_match_case_paths": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_git_locale": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_swallowed_alarm": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_route_workload": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_budget_namespace": {
+    "status": "pass",
+    "assertions": 1
+  },
+  "review_expression_paths": {
+    "status": "fail",
+    "error": "AssertionError: short-circuit and conditional assignments revoke uncertain joins but preserve evaluated aliases: [('path = self.translate_path(self.path)\\nif api_mode and (path := self.path): return\\nif path.startswith(\"/var/www/\"): pass', [('GET', '/var/www/<*>')], []), ('path = filesystem\\napi_mode or (path := self.path)\\nif path.startswith(\"/var/www/\"): pass', [('GET', '/var/www/<*>')], []), ('path = filesystem\\n(path := self.path) if api_mode else None\\nif path.startswith(\"/var/www/\"): pass', [('GET', '/var/www/<*>')], []), ('path = filesystem\\nNone if api_mode else (path := self.path)\\nif path.startswith(\"/var/www/\"): pass', [('GET', '/var/www/<*>')], []), ('(path := self.path) if api_mode else path.startswith(\"/var/www/\")', [('GET', '/var/www/<*>')], []), ('api_mode and ((path := self.path) if alternate else None)\\nif path.startswith(\"/var/www/\"): pass', [('GET', '/var/www/<*>')], []), ('path = filesystem\\n(path := filesystem) if (path := self.path) else None\\nif path.startswith(\"/var/www/\"): pass', [('GET', '/var/www/<*>')], []), ('path = filesystem\\npath.startswith(\"/var/www/\") if (path := self.path) else None', [], []), ('path = filesystem\\npath.startswith(\"/var/www/\") if api_mode and (path := self.path) else None', [], []), ('path = self.path\\n(path := filesystem) if path.startswith(\"/var/www/\") else None', [], [])]"
+  },
+  "review_query_path_aliases": {
+    "status": "fail",
+    "error": "AssertionError: query and fragment stripping retain request-path aliases, including unpacking, without blessing disk paths or query elements: [(\"path = self.path.split('?')[0]\", [], []), (\"path = self.path.split('?', 1)[0]\", [], []), (\"path = self.path.partition('?')[0]\", [], []), (\"path, query = self.path.split('?', 1)\", [], []), (\"path, query = self.path.split('?')\", [], []), (\"path, sep, query = self.path.partition('?')\", [], []), (\"[path, sep, query] = self.path.partition('?')\", [], []), (\"raw = self.path\\npath, sep, query = raw.partition('?')\", [], []), (\"path = request.path_info.split('?', 1)[0]\", [], []), (\"path = self.path.partition('#')[0]\", [], []), (\"path = self.path.split('?')[0]\\nparts = path.strip('/').split('/')\", [], [])]"
+  },
+  "review_go_receiver_workload": {
+    "status": "fail",
+    "error": "AssertionError: Go receiver lookup uses bounded work per route and preserves conventional receivers: [('unbounded receiver work', {'n': 100, 'receiver_searches': 100, 'searched_characters': 160755, 'seconds': 0.007699}), ('unbounded receiver work', {'n': 200, 'receiver_searches': 200, 'searched_characters': 646405, 'seconds': 0.027385}), ('unbounded receiver work', {'n': 400, 'receiver_searches': 400, 'searched_characters': 2607705, 'seconds': 0.100015}), ('unbounded receiver work', {'n': 800, 'receiver_searches': 800, 'searched_characters': 10490305, 'seconds': 0.414993}), ('eightfold routes exceed near-linear receiver work', [{'n': 100, 'receiver_searches': 100, 'searched_characters': 160755, 'seconds': 0.007699}, {'n': 200, 'receiver_searches': 200, 'searched_characters': 646405, 'seconds': 0.027385}, {'n': 400, 'receiver_searches': 400, 'searched_characters': 2607705, 'seconds': 0.100015}, {'n': 800, 'receiver_searches': 800, 'searched_characters': 10490305, 'seconds': 0.414993}])]"
+  },
+  "review_net_change_docs": {
+    "status": "fail",
+    "error": "AssertionError: public docs/help describe CHECK_TIMEOUT and the added limits without a nonexistent TIMEOUT migration: ['CHANGELOG.md', 'MAPPING.md', 'formal SKILL.md', 'gen_check.py --help', 'bounded_check.py --help']"
+  },
+  "review_timeout_format_handoff": {
+    "status": "fail",
+    "error": "AssertionError: a run timeout while rendering a call timeout remains inconclusive with no accepted input: [{'code': 3, 'stdout': '{\\n  \"seed\": 0,\\n  \"ok\": false,\\n  \"properties\": {\\n    \"slow\": {\\n      \"result\": \"pass\",\\n      \"accepted\": 0,\\n      \"generated\": 1,\\n      \"rejected\": 0,\\n      \"counterexample\": null,\\n      \"detail\": null,\\n      \"shrink_attempts\": 0\\n    }\\n  },\\n  \"called\": [],\\n  \"missing_targets\": [\\n    \"todo/store.py:Store.add\"\\n  ],\\n  \"timeout\": 10.0,\\n  \"call_timeout\": 1.0,\\n  \"incomplete\": \"stopped at the 10 s limit in slow\"\\n}\\n', 'stderr': '', 'events': []}, {'code': 1, 'stdout': '{\\n  \"seed\": 0,\\n  \"ok\": false,\\n  \"properties\": {\\n    \"slow\": {\\n      \"result\": \"pass\",\\n      \"accepted\": 0,\\n      \"generated\": 1,\\n      \"rejected\": 0,\\n      \"counterexample\": null,\\n      \"detail\": null,\\n      \"shrink_attempts\": 0\\n    }\\n  },\\n  \"called\": [],\\n  \"missing_targets\": [\\n    \"todo/store.py:Store.add\"\\n  ],\\n  \"timeout\": 10.0,\\n  \"call_timeout\": 1.0,\\n  \"incomplete\": \"stopped at the 10 s limit in slow\"\\n}\\n', 'stderr': '', 'events': []}]"
+  },
+  "review_interruptible_result_format": {
+    "status": "fail",
+    "error": "AssertionError: unbounded user repr during result formatting remains interruptible and retains confirmed failures: [('gen_check.py', 'formatting ran with deferred alarms', {'code': 1, 'stdout': '{\\n  \"seed\": 0,\\n  \"ok\": false,\\n  \"properties\": {\\n    \"broken\": {\\n      \"result\": \"fail\",\\n      \"accepted\": 1,\\n      \"generated\": 1,\\n      \"rejected\": 0,\\n      \"counterexample\": \"value\",\\n      \"detail\": \"returned False\",\\n      \"shrink_attempts\": 0\\n    }\\n  },\\n  \"called\": [\\n    \"format_target.py:checked\"\\n  ],\\n  \"missing_targets\": [],\\n  \"timeout\": 10.0,\\n  \"call_timeout\": 0.0,\\n  \"incomplete\": \"stopped at the 10 s limit in broken\"\\n}\\n', 'stderr': '', 'events': [1]}), ('bounded_check.py', 'formatting ran with deferred alarms', {'code': 1, 'stdout': '{\\n  \"model\": \"/var/folders/w_/nbbbcph110l9h8ctnmwfypc80000gn/T/poteto-examples-n34gom0c/review-artifacts/review_interruptible_result_format/clock_fixture.py\",\\n  \"depth\": 25,\\n  \"max_states\": 200000,\\n  \"timeout\": 10.0,\\n  \"call_timeout\": 0.0,\\n  \"invariants\": [\\n    \"broken\"\\n  ],\\n  \"ok\": false,\\n  \"result\": \"violation\",\\n  \"states\": 1,\\n  \"transitions\": 0,\\n  \"max_depth\": 0,\\n  \"hit_depth_bound\": false,\\n  \"hit_state_bound\": false,\\n  \"violation\": {\\n    \"kind\": \"invariant\",\\n    \"name\": \"broken\",\\n    \"detail\": null,\\n    \"trace\": [\\n      {\\n        \"step\": 0,\\n        \"action\": \"init\",\\n        \"state\": \"value\",\\n        \"describe\": null\\n      }\\n    ],\\n    \"trace_incomplete\": \"stopped at the 10 s limit\"\\n  },\\n  \"stopped\": \"stopped at the 10 s limit\",\\n  \"detail\": null,\\n  \"exhaustive\": false,\\n  \"seconds\": 20.0,\\n  \"incomplete\": \"stopped at the 10 s limit outside the search\",\\n  \"not_run\": [],\\n  \"mutants\": {},\\n  \"expect_violation\": null\\n}\\n', 'stderr': '', 'events': [1]}), ('gen_check.py', 'result formatting ignored the internal timeout'), ('bounded_check.py', 'result formatting ignored the internal timeout')]"
+  },
+  "review_bounded_limit_workload": {
+    "status": "fail",
+    "error": "AssertionError: bounded search coalesces one-shot timers and bypasses all call/record wrappers with both limits disabled: [{'size': 100, 'enabled': False, 'timers': 0, 'wrappers': 400, 'records': 300, 'invariants': 300, 'actions': 100}, {'size': 100, 'enabled': True, 'timers': 802, 'wrappers': 400, 'records': 300, 'invariants': 300, 'actions': 100}, {'size': 1000, 'enabled': False, 'timers': 0, 'wrappers': 4000, 'records': 3000, 'invariants': 3000, 'actions': 1000}, {'size': 1000, 'enabled': True, 'timers': 8002, 'wrappers': 4000, 'records': 3000, 'invariants': 3000, 'actions': 1000}]"
+  }
+}

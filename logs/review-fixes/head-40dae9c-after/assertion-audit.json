@@ -1,0 +1,6 @@
+{
+  "original_assertions": 238,
+  "current_assertions": 242,
+  "missing_or_changed": [],
+  "fixture_adjustment": "review_git_fail_closed now breaks the real .git pointer; inherited GIT_DIR must no longer select a repository. Existing assertion ASTs are unchanged."
+}

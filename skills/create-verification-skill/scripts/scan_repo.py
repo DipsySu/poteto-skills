@@ -18,6 +18,15 @@ Heuristics (stdlib only, no execution of repo code):
   Go      HandleFunc("GET /x/{id}"), r.GET("/x"), ListenAndServe(":N"), cobra Use:.
   Make    targets (test/check, build/all, run/serve/start/dev).
 Test files and agent dirs (.claude, .cursor, ...) are not scanned for routes or commands.
+A path under a filesystem root (/home, /tmp, /Users, ...) is a route only where the source declares it: a router
+call, decorator, explicitly named route table, "GET /x" string, or comparison with a recognized request path.
+Bare names need a preceding request-path assignment in the same function; path segments need a split of that path.
+Assignments that may not have executed on exceptional paths or after optional suites do not prove a path source.
+Unconfirmed containers/segments retain filesystem-prefix filtering. Go receiver names are restricted to common
+router conventions (r, router, mux, app, engine, group, api, server; http for Handle/HandleFunc). Each CLI option records takes_value: false for argparse's store_true,
+store_false, store_const, append_const, count, help, version, and BooleanOptionalAction, and for click flags.
+Static parser bindings retain register("action", alias, action) semantics across global references, aliases,
+argument groups, local helper calls and ArgumentParser constructors. Unknown custom actions use a bool-default heuristic.
 """
 from __future__ import annotations
 
@@ -28,6 +37,7 @@ import os
 import re
 import subprocess
 import sys
+from bisect import bisect_right
 from collections import Counter
 from pathlib import Path
 
@@ -58,6 +68,9 @@ DATA_FLAGS = ("--data", "--data-dir", "--datadir", "--db", "--database", "--db-p
               "--state", "--state-dir", "--dir", "--root", "--path", "--file", "--home", "--data-path")
 FS_PREFIX = re.compile(r"^/(tmp|etc|usr|var|dev|proc|bin|sbin|home|opt|root|sys|Users|private|mnt|Volumes|lib)(/|$)")
 ROUTE_DECOS = {"route", "get", "post", "put", "patch", "delete", "head", "options", "api_route", "websocket"}
+NO_VALUE_ACTIONS = {"store_true", "store_false", "store_const", "append_const", "count", "help", "version",
+                    "BooleanOptionalAction"}  # argparse actions that consume no token
+ARGPARSE_ACTIONS = argparse.ArgumentParser(add_help=False)._registries["action"]
 RE_FUNCS = {"match", "fullmatch", "search", "compile"}
 SKIP_CALLS = {"split", "rsplit", "strip", "rstrip", "lstrip", "join", "replace", "send_header", "open", "Path",
               "exists", "isfile", "isdir", "mkdir", "makedirs", "write", "print", "log_message", "format", "encode",
@@ -112,7 +125,13 @@ def line_of(text: str, pos: int) -> int:
 
 # ---------------------------------------------------------------- routes
 
-def normalize_route(s: str, kind: str = "eq") -> str | None:
+def normalize_route(s: str, kind: str = "eq", declared: bool = False) -> str | None:
+    """Route template for a path string, or None when it does not look like a route.
+
+    declared=True is for paths the source declares as routes (router registrations, route decorators, route tables,
+    "GET /x" strings, comparisons with the request path): those keep /home, /Users and other names that are also
+    filesystem roots. Strings in containers or generic call arguments may be file paths, so FS_PREFIX drops them.
+    """
     s = s.strip()
     if kind == "regex" or re.search(r"[\^$()\[\]\\+?|]", s):
         s = re.sub(r"^(\^|\\A)", "", s)
@@ -126,7 +145,7 @@ def normalize_route(s: str, kind: str = "eq") -> str | None:
     s = re.sub(r"<(?:\w+:)?(\w+)>", r"<\1>", s)          # Flask <int:id>
     s = re.sub(r"\{(\w+)(?::[^}]*)?\}", r"<\1>", s)        # FastAPI/Go {id}
     s = re.sub(r"(?<=/):(\w+)", r"<\1>", s)                # Express :id
-    if not s.startswith("/") or not re.fullmatch(r"/[\w\-./<>*~]*", s) or FS_PREFIX.match(s):
+    if not s.startswith("/") or not re.fullmatch(r"/[\w\-./<>*~]*", s) or (not declared and FS_PREFIX.match(s)):
         return None
     if "." in s.rsplit("/", 1)[-1] and not s.endswith((".json", ".html", ".txt", ".ico", ".xml")):
         return None  # looks like a file path, not a route
@@ -231,6 +250,479 @@ def _usage(node) -> str | None:
     return None
 
 
+def _function(node):
+    if node is None:
+        return None
+    if not hasattr(node, "_function_scope"):
+        node._function_scope = (node if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda))
+                                else None if isinstance(node, ast.ClassDef)
+                                else _function(getattr(node, "_parent", None)))
+    return node._function_scope
+
+
+def _target_bindings(target, value=None):
+    """Pair bound names with known RHS elements; opaque or starred unpacking revokes provenance."""
+    if isinstance(target, ast.Name):
+        yield target.id, value
+    elif isinstance(target, ast.Starred):
+        yield from _target_bindings(target.value)
+    elif isinstance(target, (ast.Tuple, ast.List)):
+        known = (isinstance(value, (ast.Tuple, ast.List)) and len(target.elts) == len(value.elts)
+                 and not any(isinstance(e, ast.Starred) for e in (*target.elts, *value.elts)))
+        path_source = _query_path_source(value)
+        for index, element in enumerate(target.elts):
+            source = value.elts[index] if known else path_source if index == 0 else None
+            yield from _target_bindings(element, source)
+
+
+def _condition_branches(node, truth):
+    """A true and / false or proves that every operand ran; other outcomes prove no prefix."""
+    if isinstance(node, ast.NamedExpr):
+        return _condition_branches(node.value, truth)
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
+        return _condition_branches(node.operand, not truth)
+    if isinstance(node, ast.BoolOp) and isinstance(node.op, ast.And if truth else ast.Or):
+        branches = {node: len(node.values) - 1}
+        for value in node.values:
+            branches.update(_condition_branches(value, truth))
+        return branches
+    return {}
+
+
+def _binding_position(node, end=False):
+    """Source order, except conditional-expression tests execute before either source arm."""
+    if not hasattr(node, "_expression_context"):
+        parent = getattr(node, "_parent", None)
+        if parent is not None:
+            _binding_position(parent)
+        context = parent._expression_context if parent is not None else ()
+        if isinstance(parent, ast.IfExp):
+            arm = (parent.test, parent.body, parent.orelse).index(node)
+            context += (parent.lineno, parent.col_offset, arm)
+        node._expression_context = context
+    return node._expression_context + ((node.end_lineno, node.end_col_offset) if end
+                                       else (getattr(node, "lineno", 0), getattr(node, "col_offset", 0)))
+
+
+def _if_branches(node, fn):
+    """Cached control-flow arms and evaluated short-circuit prefixes."""
+    if node is fn:
+        return {}
+    if not hasattr(node, "_branch_arms"):
+        parent = getattr(node, "_parent", None)
+        branches = _if_branches(parent, fn).copy()
+        if isinstance(parent, ast.If):
+            if node in parent.body:
+                branches[parent] = "body"
+                branches.update(_condition_branches(parent.test, True))
+            elif node in parent.orelse:
+                branches[parent] = "else"
+                branches.update(_condition_branches(parent.test, False))
+        elif isinstance(parent, ast.IfExp):
+            if node is parent.body:
+                branches[parent] = "body"
+                branches.update(_condition_branches(parent.test, True))
+            elif node is parent.orelse:
+                branches[parent] = "else"
+                branches.update(_condition_branches(parent.test, False))
+        elif isinstance(parent, ast.BoolOp):
+            if not hasattr(parent, "_operand_positions"):
+                parent._operand_positions = {value: i for i, value in enumerate(parent.values)}
+            index = parent._operand_positions[node]
+            if index:
+                branches[parent] = index  # Reaching operand N proves operands 0..N were evaluated.
+        elif isinstance(parent, ast.Match) and isinstance(node, ast.match_case):
+            branches[parent] = node
+            if node.guard is not None:
+                branches[node] = "entered"
+        elif isinstance(parent, ast.match_case) and parent.guard is not None:
+            # Pattern captures and guard assignments survive a false guard. They may reach later
+            # cases, unlike body assignments, but do not establish a definite source at that join.
+            if node in parent.body:
+                branches.update(_condition_branches(parent.guard, True))
+            else:
+                branches.pop(parent._parent)
+        elif isinstance(parent, (ast.Try, getattr(ast, "TryStar", ast.Try))):
+            if node in parent.body:
+                branches[parent] = "body"
+            elif node in parent.handlers:
+                branches[parent] = node
+            elif node in parent.orelse:
+                branches[parent] = "else"
+            elif node in parent.finalbody:
+                branches[parent] = "finally"
+        elif isinstance(parent, (ast.With, ast.AsyncWith)):
+            # Managers enter left to right. An earlier manager can suppress an error
+            # before a later context expression is evaluated, letting code after the
+            # with run without that expression's assignments. The body proves all items ran.
+            if node in parent.items:
+                index = parent.items.index(node)
+                if index:
+                    branches[parent] = index
+            elif node in parent.body:
+                branches[parent] = len(parent.items)
+        elif isinstance(parent, (ast.For, ast.AsyncFor, ast.While)):
+            if node in parent.body:
+                branches[parent] = "body"
+            elif node in getattr(parent, "orelse", []):
+                branches[parent] = "else"
+        elif isinstance(parent, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
+            branches[parent] = "body"
+        node._branch_arms = branches
+    return node._branch_arms
+
+
+def _binding_index(fn):
+    """Index each function's bindings once, sharing cached scope and branch ancestry."""
+    if hasattr(fn, "_bindings"):
+        return fn._bindings
+    bindings = {}
+
+    def record(at, pairs):
+        end = _binding_position(at, end=True)
+        # Reaching code after a finally suite proves it completed. Other try suites may
+        # have been interrupted before this binding, even when their source precedes it.
+        assigned_in = {branch: arm for branch, arm in _if_branches(at, fn).items() if arm != "finally"}
+        for name, value in pairs:
+            bindings.setdefault(name, []).append((end, value, assigned_in))
+
+    for candidate in ast.walk(fn):
+        if isinstance(candidate, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            if _function(getattr(candidate, "_parent", None)) is fn:
+                record(candidate, [(candidate.name, None)])
+            continue
+        if _function(candidate) is not fn:
+            continue
+        if isinstance(candidate, ast.Assign):
+            for target in candidate.targets:
+                record(candidate, _target_bindings(target, candidate.value))
+        elif isinstance(candidate, (ast.AnnAssign, ast.NamedExpr)):
+            if candidate.value is not None:  # An annotation alone does not rebind an existing local.
+                record(candidate, _target_bindings(candidate.target, candidate.value))
+        elif isinstance(candidate, ast.AugAssign):
+            record(candidate, _target_bindings(candidate.target))
+        elif isinstance(candidate, (ast.For, ast.AsyncFor)):
+            # The iterable is evaluated before binding the target, which takes effect inside the body.
+            record(candidate.iter, _target_bindings(candidate.target))
+        elif isinstance(candidate, (ast.With, ast.AsyncWith)):
+            for item in candidate.items:
+                if item.optional_vars is not None:
+                    record(item.optional_vars, _target_bindings(item.optional_vars))
+        elif isinstance(candidate, ast.Delete):
+            for target in candidate.targets:
+                record(candidate, _target_bindings(target))
+        elif isinstance(candidate, (ast.Import, ast.ImportFrom)):
+            record(candidate, [(alias.asname or alias.name.split('.')[0], None) for alias in candidate.names])
+        elif isinstance(candidate, ast.ExceptHandler) and candidate.name:
+            record(candidate.type, [(candidate.name, None)])
+            record(candidate, [(candidate.name, None)])  # Python deletes the exception alias afterward.
+        elif isinstance(candidate, (ast.MatchAs, ast.MatchStar)) and candidate.name:
+            record(candidate, [(candidate.name, None)])
+        elif isinstance(candidate, ast.MatchMapping) and candidate.rest:
+            record(candidate, [(candidate.rest, None)])
+    for values in bindings.values():
+        values.sort(key=lambda binding: binding[0])
+    fn._bindings = bindings
+    return bindings
+
+
+def _assigned_value(node):
+    """Latest compatible binding; conditional joins with unknown sources revoke provenance."""
+    if not isinstance(node, ast.Name) or (fn := _function(node)) is None:
+        return None
+    # Comprehension targets shadow enclosing aliases without rebinding them outside the comprehension.
+    parent = getattr(node, "_parent", None)
+    while parent is not fn:
+        if isinstance(parent, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)):
+            if any(name == node.id for gen in parent.generators for name, _ in _target_bindings(gen.target)):
+                return None
+        parent = getattr(parent, "_parent", None)
+    bindings = _binding_index(fn).get(node.id, [])
+    position = _binding_position(node)
+    branches = _if_branches(node, fn)
+    end = bisect_right(bindings, position, key=lambda binding: binding[0])
+    # Stable ordering also preserves left-to-right binding of repeated names in one unpacking assignment.
+    for index in range(end - 1, -1, -1):
+        _, value, assigned_in = bindings[index]
+        definite = True
+        for branch, arm in assigned_in.items():
+            current = branches.get(branch)
+            if isinstance(branch, (ast.Try, getattr(ast, "TryStar", ast.Try))):
+                if arm == "body":
+                    # else proves the try body completed; a handler/finally/join does not.
+                    definite &= current in ("body", "else")
+                elif (current is not None and current != "finally" and current != arm
+                      and not isinstance(branch, getattr(ast, "TryStar", ()))):
+                    break  # Separate handlers and else are mutually exclusive.
+                else:
+                    definite &= current == arm
+            elif isinstance(branch, (ast.For, ast.AsyncFor, ast.While)):
+                # A loop's else suite can follow zero iterations or an interrupted body.
+                definite &= current == arm
+            elif isinstance(branch, (ast.With, ast.AsyncWith)):
+                definite &= current is not None and current >= arm
+            elif current is not None and (current < arm if isinstance(branch, ast.BoolOp) else current != arm):
+                break  # This binding is in a mutually exclusive arm.
+            else:
+                definite &= current is not None
+        else:
+            return value if definite else None
+    return None
+
+
+def _query_path_source(node):
+    """The first split/partition element keeps the URL path when removing query or fragment text."""
+    if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+            and node.func.attr in {"split", "partition"} and node.args
+            and _str(node.args[0]) in {"?", "#"}):
+        return node.func.value
+    return None
+
+
+def _request_path(node) -> bool:
+    """Recognize direct request paths and same-function aliases, never translated filesystem paths."""
+    if isinstance(node, ast.Name):
+        return _request_path(_assigned_value(node))
+    if isinstance(node, ast.NamedExpr):
+        return _request_path(node.value)
+    if isinstance(node, ast.Subscript) and _literal(node.slice) == 0:
+        return _request_path(_query_path_source(node.value))
+    if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+            and node.func.attr in {"strip", "rstrip", "lstrip"}):
+        return _request_path(node.func.value)
+    if isinstance(node, ast.Attribute) and node.attr in {"path", "path_info"}:
+        if isinstance(node.value, ast.Name):
+            return node.value.id in {"self", "request", "req"}
+        return (isinstance(node.value, ast.Call) and _call_name(node.value) in {"urlsplit", "urlparse"}
+                and bool(node.value.args) and _request_path(node.value.args[0]))
+    return False
+
+
+def _request_segments(node) -> bool:
+    if isinstance(node, ast.Name):
+        return _request_segments(_assigned_value(node))
+    return (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "split" and node.args and _str(node.args[0]) == "/"
+            and _request_path(node.func.value))
+
+
+def _route_table(node) -> bool:
+    """Only explicit route-table bindings authorize filesystem-like route names."""
+    if _str(node.elts[0]) not in HTTP_METHODS:
+        return False
+    parent = getattr(node, "_parent", None)
+    while isinstance(parent, (ast.List, ast.Tuple, ast.Dict)):
+        parent = getattr(parent, "_parent", None)
+    targets = (parent.targets if isinstance(parent, ast.Assign) else [parent.target]
+               if isinstance(parent, ast.AnnAssign) else [])
+    return any(isinstance(t, ast.Name) and t.id.lower() in {"routes", "route_table", "urlpatterns"} for t in targets)
+
+
+def _compares_path(node) -> bool:
+    """True for a string compared with the request path (==, match/case, startswith, re.match): a declared route.
+    False for one in a container or passed to a generic call, where it may be a filesystem path."""
+    p = getattr(node, "_parent", None)
+    if isinstance(p, ast.Call):
+        if _call_name(p) == "startswith" and isinstance(p.func, ast.Attribute):
+            return node in p.args and _request_path(p.func.value)
+        if _call_name(p) in RE_FUNCS and p.args and node is p.args[0]:
+            subject = p.args[1] if len(p.args) > 1 else next((k.value for k in p.keywords if k.arg == "string"), None)
+            return _request_path(subject)
+    if isinstance(p, ast.Compare):
+        return any(other is not node and _request_path(other) for other in (p.left, *p.comparators))
+    if isinstance(p, ast.MatchValue):
+        match = getattr(getattr(p, "_parent", None), "_parent", None)
+        return isinstance(match, ast.Match) and _request_path(match.subject)
+    return False
+
+
+def _registered_argparse_actions(tree):
+    """Follow static parser bindings and their shared action registries, without executing repo code."""
+    if not any(isinstance(node, ast.Call) and _call_name(node) == 'register' for node in ast.walk(tree)):
+        return {}
+    options, functions, called, active = {}, [], set(), set()
+    action_classes = {"argparse." + cls.__name__: name not in NO_VALUE_ACTIONS
+                      for name, cls in ARGPARSE_ACTIONS.items() if cls is not None}
+    action_classes["argparse.BooleanOptionalAction"] = False
+
+    class Parser:
+        def __init__(self):
+            self.actions = {}
+            self.methods = {}
+
+    def record(node, actions):
+        # A helper can be used with several parsers. Only agreed registrations are known.
+        if node in options:
+            old = options[node]
+            options[node] = {key: value for key, value in old.items()
+                             if key in actions and actions[key] == value}
+        else:
+            options[node] = actions.copy()
+
+    def define(node, env):
+        # Python captures default objects at definition time, before later name rebindings.
+        parameters = [*node.args.posonlyargs, *node.args.args]
+        defaults = {param.arg: value(default, env) for param, default in
+                    zip(parameters[len(parameters) - len(node.args.defaults):], node.args.defaults)}
+        defaults.update({param.arg: value(default, env) for param, default in
+                         zip(node.args.kwonlyargs, node.args.kw_defaults) if default is not None})
+        function = (node, env, defaults)
+        functions.append(function)
+        return function
+
+    def invoke(function, args=(), keywords=None):
+        node, enclosing, defaults = function
+        if node in active:
+            return None
+        called.add(node)
+        active.add(node)
+        env = enclosing.copy()
+        # Python's lexical locals shadow globals even before their first assignment.
+        pending = list(node.body)
+        local, globals_ = set(), set()
+        while pending:
+            child = pending.pop()
+            if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                local.add(child.name)
+                continue
+            if isinstance(child, ast.Global):
+                globals_.update(child.names)
+            if isinstance(child, ast.Name) and isinstance(child.ctx, (ast.Store, ast.Del)):
+                local.add(child.id)
+            if isinstance(child, (ast.Import, ast.ImportFrom)):
+                local.update(alias.asname or alias.name.split('.')[0] for alias in child.names)
+            pending.extend(ast.iter_child_nodes(child))
+        env.update({name: None for name in local - globals_})
+        positional = [*node.args.posonlyargs, *node.args.args]
+        env.update({param.arg: defaults.get(param.arg) for param in [*positional, *node.args.kwonlyargs]})
+        env.update(zip((param.arg for param in positional), args))
+        env.update({param.arg: keywords[param.arg] for param in [*node.args.args, *node.args.kwonlyargs]
+                    if keywords is not None and param.arg in keywords})
+        try:
+            return statements(node.body, env, enclosing, globals_)
+        finally:
+            active.remove(node)
+
+    def value(node, env):
+        if isinstance(node, ast.Name):
+            return env.get(node.id)
+        if isinstance(node, ast.Attribute):
+            base = value(node.value, env)
+            return base + '.' + node.attr if isinstance(base, str) else None
+        if not isinstance(node, ast.Call):
+            return None
+        args = [value(arg, env) for arg in node.args]
+        keywords = {kw.arg: value(kw.value, env) for kw in node.keywords if kw.arg}
+        if isinstance(node.func, ast.Attribute):
+            receiver = value(node.func.value, env)
+            if isinstance(receiver, Parser):
+                if node.func.attr in {'add_subparsers', 'add_parser'}:
+                    return Parser()  # Each subparser owns its registry; it is not an argument group.
+                if node.func.attr in {'add_argument_group', 'add_mutually_exclusive_group'}:
+                    return receiver  # argparse groups share the parent's registry, in both directions.
+                if node.func.attr == 'register' and len(node.args) >= 3 and _str(node.args[0]) == 'action':
+                    alias = _str(node.args[1])
+                    if alias:
+                        action = args[2]
+                        receiver.actions[alias] = action_classes.get(action) if isinstance(action, str) else None
+                elif node.func.attr == 'add_argument':
+                    record(node, receiver.actions)
+                elif node.func.attr in receiver.methods:
+                    return invoke(receiver.methods[node.func.attr], [receiver, *args], keywords)
+                return None
+        target = value(node.func, env)
+        if target == 'argparse.ArgumentParser':
+            return Parser()
+        if isinstance(target, tuple) and isinstance(target[0], ast.ClassDef):
+            cls, enclosing, methods = target
+            if any(value(base, enclosing) == 'argparse.ArgumentParser' for base in cls.bases):
+                parser = Parser()
+                parser.methods = methods
+                init = methods.get('__init__')
+                if init and isinstance(init[0], ast.FunctionDef):
+                    invoke(init, [parser, *args], keywords)
+                return parser
+        if isinstance(target, tuple) and isinstance(target[0], (ast.FunctionDef, ast.AsyncFunctionDef)):
+            return invoke(target, args, keywords)
+        return None
+
+    def statements(body, env, global_env=None, global_names=()):
+        for node in body:
+            if isinstance(node, (ast.Import, ast.ImportFrom)):
+                for alias in node.names:
+                    env[alias.asname or alias.name.split('.')[0]] = ((node.module + '.' + alias.name)
+                        if isinstance(node, ast.ImportFrom) and node.module else alias.name)
+            elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                if isinstance(node, ast.ClassDef):
+                    methods = {child.name: define(child, env) for child in node.body
+                               if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef))}
+                    env[node.name] = (node, env, methods)
+                else:
+                    env[node.name] = define(node, env)
+            elif isinstance(node, (ast.Assign, ast.AnnAssign)):
+                result = value(node.value, env)
+                for target in node.targets if isinstance(node, ast.Assign) else [node.target]:
+                    if isinstance(target, ast.Name):
+                        env[target.id] = result
+                        if target.id in global_names:
+                            global_env[target.id] = result
+            elif isinstance(node, ast.Expr):
+                value(node.value, env)
+            elif isinstance(node, ast.Return):
+                return value(node.value, env)
+            elif isinstance(node, ast.Match):
+                for case in node.cases:
+                    statements(case.body, env, global_env, global_names)
+            elif isinstance(node, (ast.If, ast.For, ast.AsyncFor, ast.While, ast.With, ast.AsyncWith,
+                                   ast.Try, getattr(ast, 'TryStar', ast.Try))):
+                # Preserve syntactic inventory inside compound suites. Main guards also call entry points here.
+                statements(node.body, env, global_env, global_names)
+                for handler in getattr(node, 'handlers', []):
+                    statements(handler.body, env, global_env, global_names)
+                statements(getattr(node, 'orelse', []), env, global_env, global_names)
+                statements(getattr(node, 'finalbody', []), env, global_env, global_names)
+        return None
+
+    statements(tree.body, {})
+    # Uncalled entry points are still inventoried. Do not let their registrations leak to other entry points.
+    for function in functions:
+        if function[0] not in called:
+            parsers = [item for item in function[1].values() if isinstance(item, Parser)]
+            saved = [(parser, parser.actions.copy()) for parser in parsers]
+            invoke(function)
+            for parser, actions in saved:
+                parser.actions = actions
+    return options
+
+
+def _takes_value(keywords: list[ast.keyword], default, names: list[str], registered=None) -> bool:
+    """Whether an argparse or click option consumes the next token. argparse supplies the default of store_true and
+    the other no-value actions, so read action= (or nargs=0) and click's is_flag=, count=, flag_value= and
+    --on/--off names instead of the default. A custom action class is opaque: guess from a bool default."""
+    kw = {k.arg: k.value for k in keywords if k.arg}
+    if any(_literal(kw[k]) is True for k in ("is_flag", "count") if k in kw):
+        return False
+    if "flag_value" in kw or any(n.startswith("-") and "/" in n for n in names):
+        return False
+    if "nargs" in kw:
+        return _literal(kw["nargs"]) != 0
+    action = kw.get("action")
+    if action is None:
+        return True
+    if isinstance(action, ast.Constant):
+        if registered is not None and action.value in registered:
+            known = registered[action.value]
+            return known if known is not None else not isinstance(default, bool)
+        if action.value in NO_VALUE_ACTIONS:
+            return False
+        if action.value in ARGPARSE_ACTIONS:
+            return True  # Includes None, argparse's default store action.
+        return not isinstance(default, bool)  # An unresolved alias is as opaque as a custom action class.
+    if (action.attr if isinstance(action, ast.Attribute) else getattr(action, "id", None)) in NO_VALUE_ACTIONS:
+        return False  # argparse.BooleanOptionalAction
+    return not isinstance(default, bool)
+
+
 def _enclosing_boolop(node):
     cur = getattr(node, "_parent", None)
     while cur is not None and not isinstance(cur, ast.stmt):
@@ -244,10 +736,11 @@ def _enclosing_boolop(node):
     return None
 
 
-def _segment_route(test: ast.AST) -> str | None:
+def _segment_route(test: ast.AST) -> tuple[str, bool] | None:
     """`parts == ["todos"]` or `len(parts) == 3 and parts[0] == "todos" and parts[2] == "done"`."""
     segs: dict[int, str] = {}
     length = None
+    sources = []
     conds = test.values if isinstance(test, ast.BoolOp) and isinstance(test.op, ast.And) else [test]
     for c in conds:
         if not (isinstance(c, ast.Compare) and len(c.ops) == 1 and isinstance(c.ops[0], ast.Eq)):
@@ -256,18 +749,19 @@ def _segment_route(test: ast.AST) -> str | None:
         lit = _literal(right)
         if isinstance(lit, list | tuple) and lit and all(isinstance(x, str) for x in lit) and isinstance(left, ast.Name):
             if all(re.fullmatch(r"[\w.-]+", x) for x in lit):
-                return "/" + "/".join(lit)
+                return "/" + "/".join(lit), _request_segments(left)
         if isinstance(left, ast.Subscript) and isinstance(right, ast.Constant) and isinstance(right.value, str):
             idx = _literal(left.slice)
             if isinstance(idx, int) and idx >= 0 and re.fullmatch(r"[\w.-]+", right.value):
                 segs[idx] = right.value
+                sources.append(left.value)
         if (isinstance(left, ast.Call) and _call_name(left) == "len" and isinstance(right, ast.Constant)
                 and isinstance(right.value, int)):
             length = right.value
     if not segs or 0 not in segs:
         return None
     n = length or (max(segs) + 1)
-    return "/" + "/".join(segs.get(i, "<id>") for i in range(n))
+    return "/" + "/".join(segs.get(i, "<id>") for i in range(n)), all(_request_segments(s) for s in sources)
 
 
 def _body_keys(fn) -> list[str]:
@@ -301,6 +795,7 @@ def analyze_python(rel: str, text: str) -> dict:
         info["notes"].append(f"{rel}: not parsed ({e.__class__.__name__})")
         return info
     _parents(tree)
+    registered_actions = _registered_argparse_actions(tree)
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             info["imports"].update(a.name for a in node.names)
@@ -337,11 +832,12 @@ def analyze_python(rel: str, text: str) -> dict:
                     else:
                         ms = [name.upper()] if name.upper() in HTTP_METHODS else ["GET"]
                     for m in ms:
-                        add_route(str(m).upper(), normalize_route(first), d, "decorator", _body_keys(node))
+                        add_route(str(m).upper(), normalize_route(first, declared=True), d, "decorator", _body_keys(node))
                 if name in ("option", "argument") and isinstance(d.func, ast.Attribute):
                     names = [s for s in (_str(a) for a in d.args) if s]
                     dflt = next((_literal(k.value) for k in d.keywords if k.arg == "default"), None)
-                    click_opts.append({"names": names, "default": dflt, "positional": bool(names) and not names[0].startswith("-")})
+                    click_opts.append({"names": names, "default": dflt, "positional": bool(names) and not names[0].startswith("-"),
+                                       "takes_value": _takes_value(d.keywords, dflt, names)})
             for d in node.decorator_list:
                 if isinstance(d, ast.Call) and _call_name(d) in ("command", "group") and isinstance(d.func, ast.Attribute):
                     if not ({"click", "typer"} & {i.split(".")[0] for i in info["imports"]}):
@@ -358,7 +854,8 @@ def analyze_python(rel: str, text: str) -> dict:
         if name in ("path", "re_path") and rel.endswith("urls.py") and node.args:
             s = _str(node.args[0])
             if s is not None:
-                add_route("ANY", normalize_route("/" + s.lstrip("^/"), "regex" if name == "re_path" else "eq"), node, "django")
+                add_route("ANY", normalize_route("/" + s.lstrip("^/"), "regex" if name == "re_path" else "eq", declared=True),
+                          node, "django")
         # argparse
         if name == "add_parser" and node.args and _str(node.args[0]):
             p = getattr(node, "_parent", None)
@@ -371,7 +868,8 @@ def analyze_python(rel: str, text: str) -> dict:
             if names:
                 dflt = next((_literal(k.value) for k in node.keywords if k.arg == "default"), None)
                 info["parser_options"].setdefault(node.func.value.id, []).append(
-                    {"names": names, "default": dflt, "positional": not names[0].startswith("-")})
+                    {"names": names, "default": dflt, "positional": not names[0].startswith("-"),
+                     "takes_value": _takes_value(node.keywords, dflt, names, registered_actions.get(node))})
         # ports
         if name in ("HTTPServer", "ThreadingHTTPServer", "TCPServer", "ThreadingTCPServer", "make_server") and node.args:
             addr = _literal(node.args[0])
@@ -402,7 +900,7 @@ def analyze_python(rel: str, text: str) -> dict:
         s = _str(node)
         m = re.fullmatch(r"(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+(/\S*)", s or "")
         if m:
-            add_route(m.group(1), normalize_route(m.group(2)), node, "method-path string")
+            add_route(m.group(1), normalize_route(m.group(2), declared=True), node, "method-path string")
 
     if info["server"]:
         # route tables: ("GET", r"^/todos/(\d+)$", handler)
@@ -415,7 +913,7 @@ def analyze_python(rel: str, text: str) -> dict:
                     if s is None and isinstance(e, ast.Call) and _call_name(e) in RE_FUNCS and e.args:
                         s = _str(e.args[0])
                     if s and s not in HTTP_METHODS:
-                        paths.append(normalize_route(s, "regex" if re.search(r"[\^$()\\]", s) else "eq"))
+                        paths.append(normalize_route(s, "regex" if re.search(r"[\^$()\\]", s) else "eq", declared=_route_table(node)))
                 for m in ms[:1]:
                     for p in paths:
                         add_route(m, p, node, "route table")
@@ -429,7 +927,7 @@ def analyze_python(rel: str, text: str) -> dict:
                     seg = _segment_route(node.test)
                     if seg:
                         for m in _method_context(node.test) or ["ANY"]:
-                            add_route(m, normalize_route(seg), node, "path segments", body)
+                            add_route(m, normalize_route(seg[0], declared=seg[1]), node, "path segments", body)
                 s = _str(node)
                 if not s or not (s.startswith("/") or s.startswith("^/") or s.startswith("\\A/")):
                     continue
@@ -449,12 +947,16 @@ def analyze_python(rel: str, text: str) -> dict:
                                 suffixes.append(_str(n2))
                     base = s.rstrip("/")
                     paths = [base + "/<*>" + "/" + x.lstrip("/") for x in suffixes] or [base + "/<*>"]
-                    for m in methods:
-                        for p in paths:
-                            add_route(m, normalize_route(p), node, "startswith", body)
-                    continue
+                else:
+                    paths = [s]
+                # Only filesystem-like paths need provenance. Normalize first so anchored regexes
+                # receive the same filtering, then share this work across all methods and suffixes.
+                paths = [normalize_route(p, kind, declared=True) for p in paths]
+                declared = not any(p and FS_PREFIX.match(p) for p in paths) or _compares_path(node)
+                paths = [p for p in paths if p and (declared or not FS_PREFIX.match(p))]
                 for m in methods:
-                    add_route(m, normalize_route(s, kind), node, kind, body)
+                    for p in paths:
+                        add_route(m, p, node, "startswith" if kind == "prefix" else kind, body)
     return info
 
 
@@ -487,12 +989,24 @@ NODE_PORTS = [re.compile(r"\.listen\(\s*(\d{2,5})\b"), re.compile(r"\bPORT\s*(?:
 NODE_ENV = re.compile(r"process\.env\.([A-Z][A-Z0-9_]*)|process\.env\[['\"]([A-Z][A-Z0-9_]*)['\"]\]")
 GO_HANDLE = re.compile(r"""\.(?:HandleFunc|Handle)\(\s*"([^"]+)\"""")
 GO_ROUTER = re.compile(r"""\.(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS|Get|Post|Put|Patch|Delete|Head|Options)\(\s*"(/[^"]*)\"""")
+GO_HANDLE_RECEIVERS = {'http', 'mux', 'router', 'r', 'server', 'app'}
+GO_ROUTER_RECEIVERS = {'r', 'router', 'mux', 'app', 'engine', 'group', 'api', 'server'}
 GO_PORTS = [re.compile(r"""ListenAndServe(?:TLS)?\(\s*"[^"]*:(\d{2,5})\""""), re.compile(r"""Addr:\s*"[^"]*:(\d{2,5})\""""),
             re.compile(r"""flag\.(?:Int|String)\(\s*"(?:port|addr)"\s*,\s*"?:?(\d{2,5})""")]
 GO_FLAGS = re.compile(r"""flag\.(?:Int|String|Bool)(?:Var)?\([^"]*"([\w-]+)\"""")
 GO_COBRA = re.compile(r"""Use:\s*"([\w-]+)""")
 GO_ENV = re.compile(r"""os\.Getenv\("([A-Z][A-Z0-9_]*)"\)""")
 MAKE_TARGET = re.compile(r"^([A-Za-z0-9][\w.-]*)\s*:(?!=)", re.M)
+
+
+def go_route_receiver(text: str, dot: int, known: set[str]) -> bool:
+    """Conventional receivers may bypass FS filtering; ordinary paths need no receiver whitelist."""
+    start = max(0, dot - 256)
+    before = text[start:dot]
+    receiver = re.search(r'\b(\w+)\s*$', before)
+    prefix = before[:receiver.start()].rstrip() if receiver else ""
+    return bool(receiver and receiver.group(1) in known
+                and (prefix or start == 0) and not prefix.endswith('.'))
 
 
 # ---------------------------------------------------------------- features
@@ -754,7 +1268,8 @@ def scan(repo: Path, max_files: int = 20000) -> dict:
             text = read(repo, rel)
             for m in NODE_ROUTE.finditer(text):
                 method = m.group(1).upper()
-                routes.append({"method": "ANY" if method == "ALL" else method, "path": normalize_route(m.group(3)),
+                routes.append({"method": "ANY" if method == "ALL" else method,
+                               "path": normalize_route(m.group(3), declared=True),
                                "source": f"{rel}:{line_of(text, m.start())}", "how": "node router"})
             for m in NODE_CLI.finditer(text):
                 commands.append({"prog": (f"npx {bin_names[0]}" if bin_names else f"node {rel}"), "aliases": bin_names,
@@ -784,11 +1299,15 @@ def scan(repo: Path, max_files: int = 20000) -> dict:
                 method, path = (mm_.group(1), mm_.group(2)) if mm_ else ("ANY", raw)
                 if path.endswith("/") and len(path) > 1:
                     path = path + "<*>"
-                routes.append({"method": method, "path": normalize_route(path), "source": f"{rel}:{line_of(text, m.start())}",
-                               "how": "net/http"})
+                path = normalize_route(path, declared=go_route_receiver(text, m.start(), GO_HANDLE_RECEIVERS))
+                if path is not None:
+                    routes.append({"method": method, "path": path,
+                                   "source": f"{rel}:{line_of(text, m.start())}", "how": "net/http"})
             for m in GO_ROUTER.finditer(text):
-                routes.append({"method": m.group(1).upper(), "path": normalize_route(m.group(2)),
-                               "source": f"{rel}:{line_of(text, m.start())}", "how": "go router"})
+                path = normalize_route(m.group(2), declared=go_route_receiver(text, m.start(), GO_ROUTER_RECEIVERS))
+                if path is not None:
+                    routes.append({"method": m.group(1).upper(), "path": path,
+                                   "source": f"{rel}:{line_of(text, m.start())}", "how": "go router"})
             for pat in GO_PORTS:
                 for m in pat.finditer(text):
                     ports.append({"port": int(m.group(1)), "source": f"{rel}:{line_of(text, m.start())}"})
