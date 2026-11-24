@@ -1,0 +1,61 @@
+{
+  "source_commit": "0fe8150cd2b6c25fe0aba35e218d2917ba8a8bb9",
+  "parsed": [
+    {
+      "title": "1. Existing fields across subheadings",
+      "fields": {
+        "source": "https://example.invalid/source",
+        "level": "ci",
+        "skill": "curator",
+        "change": "Add a regression check for proposals."
+      },
+      "urls": [
+        "https://example.invalid/source"
+      ]
+    },
+    {
+      "title": "2. Acceptance fields after source",
+      "fields": {
+        "source": "https://example.invalid/source-two",
+        "level": "test",
+        "skill": "collection",
+        "change": "Keep existing proposal fields in their parent."
+      },
+      "urls": [
+        "https://example.invalid/source-two"
+      ]
+    }
+  ],
+  "result": {
+    "file": "examples/fixtures/curator/legacy-descriptive-h3.md",
+    "items": 2,
+    "deterministic": 2,
+    "prose_or_review": 0,
+    "problems": [],
+    "warnings": [],
+    "ok": true,
+    "proposals": [
+      {
+        "title": "1. Existing fields across subheadings",
+        "level": "ci",
+        "skill": "curator",
+        "urls": [
+          "https://example.invalid/source"
+        ],
+        "fetch": null
+      },
+      {
+        "title": "2. Acceptance fields after source",
+        "level": "test",
+        "skill": "collection",
+        "urls": [
+          "https://example.invalid/source-two"
+        ],
+        "fetch": null
+      }
+    ]
+  },
+  "exit_code": 0,
+  "stdout": "check_proposals: PASS: 2 proposal(s), 2 above prose, 0 prose/review (examples/fixtures/curator/legacy-descriptive-h3.md)\n",
+  "stderr": ""
+}

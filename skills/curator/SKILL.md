@@ -12,6 +12,7 @@ The skills here are prose, layer 3 of the pyramid. The curator keeps them curren
 ## Cadence
 
 - **Daily: propose.** `$SKILL_DIR/scripts/curate.sh --propose` runs `upstream_diff.sh`, then a headless `claude -p --model opus --effort max` with [`references/curator-prompt.md`](references/curator-prompt.md). That writes `proposals/YYYY-MM-DD.md`, and `check_proposals.py --fetch` must pass (it re-requests every source URL).
+- **Panel:** `$SKILL_DIR/scripts/curate.sh --panel PROMPT.md` runs the read-only seats in [`references/panel.json`](references/panel.json), checks each fragment with `check_proposals.py --fragment --fetch`, and records seat output and routing in `logs/curator/`.
 - **Weekly: apply.** `$SKILL_DIR/scripts/curate.sh --apply` creates branch `curator/YYYY-MM-DD` in a separate git worktree. There, Claude implements at most three proposals, a CHANGELOG line is appended, and `scripts/verify.sh --run-examples` runs. The commit happens only if verify passes. A human reviews and merges.
 
 ```cron
@@ -26,6 +27,7 @@ For a scheduled cloud agent instead of cron, use `references/curator-prompt.md` 
 ```bash
 $SKILL_DIR/scripts/upstream_diff.sh                     # changed, new, and removed upstream pstack files and skills
 $SKILL_DIR/scripts/curate.sh --propose --offline        # no network or LLM: requires a populated local cache
+$SKILL_DIR/scripts/curate.sh --panel PROMPT.md          # seat routing and options: curate.sh --help
 python3 $SKILL_DIR/scripts/check_proposals.py proposals/2026-10-19.md --fetch --skills-dir skills
 $SKILL_DIR/scripts/curate.sh --apply --offline          # deterministic apply: sync changed upstream files into research/upstream/
 ```
@@ -62,3 +64,4 @@ Reject unsourced claims, prose that restates an existing rule, and anything that
 - S3 pstack README: https://github.com/cursor/plugins/blob/main/pstack/README.md
 - S18 principle-build-the-lever: https://github.com/cursor/plugins/blob/main/pstack/skills/principle-build-the-lever/SKILL.md
 - S20 Barnaby Robson, "On pstack" (scheduled daily routines), secondary: https://barnabyrobson.org/on-pstack/
+- Panel routing: [@poteto v0.15.46](https://x.com/poteto/status/2123824683862855898) and [setup-pstack](https://raw.githubusercontent.com/cursor/plugins/005d8f6e8ec057b738adcd08a08b30db0478402d/pstack/skills/setup-pstack/SKILL.md).

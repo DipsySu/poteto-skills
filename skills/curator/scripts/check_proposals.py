@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """Check a curator proposals file against the acceptance bar.
 
-  check_proposals.py proposals/YYYY-MM-DD.md [--fetch] [--skills-dir DIR] [--json]
+  check_proposals.py FILE [--fragment] [--fetch] [--skills-dir DIR] [--json]
 
-Each proposal is an H2 section (`## 1. Title`) with these bullet fields:
+Each proposal is an H2 section (`## 1. Title`) or an H3 section (`### Title`)
+with its own Source bullet, either under an H2 or in a bare --fragment:
   - Source: <http(s) URL the curator actually fetched>   (one or more URLs)
   - Level: architecture | types | lint | test | verification | ci | prose | review
   - Skill: <existing skill name> | new:<name> | collection
   - Change: <the concrete change, preferably a script, lint, test, or type>
   - Why: <one sentence>                                   (optional)
-A file with no H2 sections is valid only with an explicit `No proposals` line.
+A section with other proposal fields but no Source is still checked and fails.
+A file with no proposals is valid only with an explicit `No proposals` line.
+--fragment accepts a seat's standalone output; it does not relax any checks.
 
 --fetch re-requests every source URL with curl (the curator is the one skill allowed to use
 the network), following redirects. Only a final 2xx passes; 401/403/429 and anything else
@@ -29,17 +32,57 @@ ALIASES = {"static-analysis": "lint", "static analysis": "lint", "docs": "prose"
            "codebase": "architecture", "type": "types", "tests": "test", "formal": "verification"}
 DETERMINISTIC = {"architecture", "types", "lint", "test", "verification", "ci"}
 URL_RE = re.compile(r"https?://[^\s<>)\]`'\"]+")
+FIELD_RE = re.compile(r"^\s*[-*]\s*\**([A-Za-z][\w ]*?)\**\s*:\s*(.*)$", re.M)
+PROPOSAL_FIELDS = {"source", "level", "skill", "change"}
+
+
+def section(title: str, body: str) -> dict:
+    fields: dict[str, str] = {}
+    for match in FIELD_RE.finditer(body):
+        fields.setdefault(match.group(1).strip().lower(), match.group(2).strip())
+    return {"title": title.strip(), "fields": fields, "urls": URL_RE.findall(fields.get("source", ""))}
 
 
 def parse(text: str) -> list[dict]:
     items = []
     parts = re.split(r"^##\s+", text, flags=re.M)
-    for chunk in parts[1:]:
-        title, _, body = chunk.partition("\n")
-        fields: dict[str, str] = {}
-        for m in re.finditer(r"^\s*[-*]\s*\**([A-Za-z][\w ]*?)\**\s*:\s*(.*)$", body, re.M):
-            fields.setdefault(m.group(1).strip().lower(), m.group(2).strip())
-        items.append({"title": title.strip(), "fields": fields, "urls": URL_RE.findall(fields.get("source", ""))})
+    for index, chunk in enumerate(parts):
+        title, _, body = chunk.partition("\n") if index else ("", "", chunk)
+        children = re.split(r"^###\s+", body, flags=re.M)
+        if index and not any("source" in section("", child.partition("\n")[2])["fields"]
+                             for child in children[1:]):
+            # Legacy H2 proposals may organize their fields beneath descriptive
+            # H3 headings. Only an H3 with its own Source starts the new format.
+            items.append(section(title, body))
+            continue
+        parent_body = children[0]
+        parent_is_proposal = index and (PROPOSAL_FIELDS.intersection(section(title, parent_body)["fields"])
+                                        or re.match(r"\d+\.", title))
+        proposals = []
+        for child in children[1:]:
+            child_title, _, child_body = child.partition("\n")
+            item = section(child_title, child_body)
+            if parent_is_proposal and not proposals and "source" not in item["fields"]:
+                # Descriptive H3 fields still belong to a preceding H2 proposal,
+                # up until the first H3 that starts its own sourced proposal.
+                parent_body += "\n### " + child
+            elif PROPOSAL_FIELDS.intersection(item["fields"]):
+                proposals.append(item)
+            elif proposals:
+                # A descriptive subheading belongs to the preceding proposal.
+                previous = proposals[-1]
+                for key, value in item["fields"].items():
+                    previous["fields"].setdefault(key, value)
+            else:
+                parent_body += "\n### " + child
+        if index:
+            parent = section(title, parent_body)
+            # Only an unnumbered, field-free H2 wrapping H3 proposals is a group.
+            # Numbered H2 proposals and malformed field-bearing parents retain
+            # every existing acceptance check, including missing Source.
+            if not proposals or PROPOSAL_FIELDS.intersection(parent["fields"]) or re.match(r"\d+\.", title):
+                items.append(parent)
+        items.extend(proposals)
     return items
 
 
@@ -59,7 +102,8 @@ def check(path: Path, skills_dir: Path | None, do_fetch: bool) -> dict:
     skills = {p.name for p in skills_dir.iterdir() if (p / "SKILL.md").is_file()} if skills_dir and skills_dir.is_dir() else None
     problems, warnings = [], []
     if not items and not re.search(r"^No proposals(?:[.:]|$)", text, re.M):
-        problems.append("no proposal sections and no explicit No proposals outcome")
+        problems.append("no proposal sections and no explicit No proposals outcome; add a ## or ### proposal "
+                        "with Source, Level, Skill, and Change bullets, or write No proposals.")
     for n, it in enumerate(items, 1):
         f, where = it["fields"], f"#{n} \"{it['title'][:60]}\""
         if not it["urls"]:
@@ -93,12 +137,16 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         prog="check_proposals.py",
         description="Validate a curator proposals file: every proposal has a source URL, a pyramid level, a target "
-                    "skill, and a concrete change. --fetch re-checks that each URL is reachable.",
+                    "skill, and a concrete change. Reads ## proposals and ### proposals with their own Source "
+                    "bullets, under an H2 or standalone. Other proposal fields without Source still fail. "
+                    "--fetch re-checks each proposal's URLs.",
         epilog="examples:\n  check_proposals.py proposals/2026-10-19.md\n"
                "  check_proposals.py proposals/2026-10-19.md --fetch --skills-dir skills",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     ap.add_argument("proposals", type=Path, help="proposals/YYYY-MM-DD.md")
+    ap.add_argument("--fragment", action="store_true",
+                    help="accept standalone panel output (### proposals or No proposals.); all checks still apply")
     ap.add_argument("--fetch", action="store_true", help="re-request each source URL with curl")
     ap.add_argument("--skills-dir", type=Path, help="validate Skill: names against this skills/ dir")
     ap.add_argument("--json", action="store_true", help="machine-readable output")

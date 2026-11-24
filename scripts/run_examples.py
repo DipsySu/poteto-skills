@@ -2742,6 +2742,241 @@ properties = {"copy": (sampled_from([" title "]), check)}
             self.run(self.script(self.name,'check_proposals.py'),malformed,expected=1)
             self.ensure(True, 'unstructured proposal text cannot pass as an empty proposal list')
             module = load_module(self.script(self.name,'check_proposals.py'),'example_proposals')
+            fixtures = ROOT/'examples/fixtures/curator'
+            checker = self.script(self.name,'check_proposals.py')
+            for fixture_name, baseline_name in (('legacy-valid.md','legacy-baseline.json'),
+                                                ('legacy-descriptive-h3.md','legacy-descriptive-baseline.json')):
+                baseline = json.loads((fixtures/baseline_name).read_text())
+                legacy = (fixtures/fixture_name).relative_to(ROOT)
+                self.ensure(module.parse((ROOT/legacy).read_text()) == baseline['parsed'],
+                            f'{fixture_name}: legacy H2 proposals retain the exact count, fields, titles, and URLs')
+                legacy_output = self.run(checker,legacy,'--skills-dir','skills',cwd=ROOT,
+                                         expected=baseline['exit_code'])
+                self.ensure(legacy_output == baseline['stdout'] and not baseline['stderr'],
+                            f'{fixture_name}: pre-change exit code and exact CLI output are retained')
+                self.ensure(self.json(checker,legacy,'--skills-dir','skills','--json',cwd=ROOT)
+                            == baseline['result'], f'{fixture_name}: the entire original JSON check result is retained')
+            for layout, flags in (('nested',()), ('fragment',('--fragment',))):
+                valid = fixtures/f'{layout}-h3-valid.md'
+                bad = fixtures/f'{layout}-h3-banana.md'
+                result = self.json(checker,valid,*flags,'--skills-dir',collection/'skills','--json')
+                self.ensure(result['items'] == 2 and len(module.parse(valid.read_text())) == 2,
+                            f'two H3 proposals parse and validate as two in a {layout}')
+                result = self.json(checker,bad,*flags,'--skills-dir',collection/'skills','--json',expected=1)
+                self.ensure(result['items'] == 2 and any('#2' in p and 'banana' in p for p in result['problems']),
+                            f'the second H3 Level banana fails independently in a {layout}')
+            for name, problem in (('h2-banana.md','banana'), ('h2-missing-source.md','Source')):
+                result = self.json(checker,fixtures/name,'--skills-dir',collection/'skills','--json',expected=1)
+                self.ensure(any(problem in p for p in result['problems']),
+                            f'legacy H2 rejection is retained for {name}')
+            mixed = self.scratch/'mixed-h2-h3.md'
+            mixed.write_text((fixtures/'h2-missing-source.md').read_text()+'\n'
+                             +(fixtures/'fragment-h3-valid.md').read_text())
+            result = module.check(mixed,collection/'skills',False)
+            self.ensure(result['items'] == 3 and not result['ok']
+                        and any('#1' in p and 'Source' in p for p in result['problems']),
+                        'a malformed numbered H2 parent stays invalid when valid H3 children follow it')
+            mixed.write_text('## 1. Missing fields\n\n'+(fixtures/'fragment-h3-valid.md').read_text())
+            result = module.check(mixed,collection/'skills',False)
+            self.ensure(result['items'] == 3 and not result['ok'],
+                        'an empty numbered H2 proposal cannot disappear into an H3 grouping')
+            mixed.write_text('## 1. Parent\n- Source: https://example.invalid/parent\n'
+                             '- Level: ci\n- Skill: curator\n### Implementation\n'
+                             '- Change: Add a parent proposal check.\n\n'
+                             +(fixtures/'fragment-h3-valid.md').read_text())
+            result = module.check(mixed,collection/'skills',False)
+            self.ensure(result['items'] == 3 and result['ok']
+                        and module.parse(mixed.read_text())[0]['fields']['change'] == 'Add a parent proposal check.',
+                        'H2 parent fields under a descriptive H3 remain intact alongside two sourced H3 proposals')
+            mixed.write_text((fixtures/'fragment-h3-banana.md').read_text()+'\nNo proposals.\n')
+            self.ensure(not module.check(mixed,collection/'skills',False)['ok'],
+                        'No proposals. cannot override a malformed proposal already present')
+
+            # Repeat every field gate behind an earlier valid proposal: it cannot lend fields to the next one.
+            first, second = (fixtures/'fragment-h3-valid.md').read_text().split('### Second',1)
+            mutations = (
+                ('source URL', '- Source: https://example.invalid/second', '- Source: not-a-url', 'Source'),
+                ('missing source', '- Source: https://example.invalid/second', '', 'Source'),
+                ('missing level', '- Level: test', '', 'Level'),
+                ('short change', '- Change: Check each proposal independently before acceptance.', '- Change: Fix it', 'Change'),
+                ('missing change', '- Change: Check each proposal independently before acceptance.', '', 'Change'),
+                ('unknown skill', '- Skill: curator', '- Skill: nonexistent-skill', 'Skill'),
+                ('missing skill', '- Skill: curator', '', 'Skill'),
+            )
+            mutant = self.scratch/'proposal-field-mutant.md'
+            for label, old, new, problem in mutations:
+                for layout in ('h2','nested','fragment'):
+                    body = first+'### Second'+second.replace(old,new)
+                    if layout == 'h2':
+                        body = body.replace('### First','## 1. First').replace('### Second','## 2. Second')
+                    elif layout == 'nested':
+                        body = '## Panel proposals\n\n'+body
+                    mutant.write_text(body)
+                    result = module.check(mutant,collection/'skills',False)
+                    self.ensure(result['items'] == 2 and not result['ok']
+                                and any('#2' in p and problem in p for p in result['problems']),
+                                f'{layout} proposals retain the {label} gate without borrowing earlier fields')
+            for alias, level in module.ALIASES.items():
+                mutant.write_text(first+'### Second'+second.replace('- Level: test',f'- Level: {alias}'))
+                result = module.check(mutant,collection/'skills',False)
+                self.ensure(result['ok'] and result['proposals'][1]['level'] == level,
+                            f'H3 level alias {alias!r} retains its canonical value {level!r}')
+            for skill in ('collection','new:panel-example'):
+                mutant.write_text(first+'### Second'+second.replace('- Skill: curator',f'- Skill: {skill}'))
+                self.ensure(module.check(mutant,collection/'skills',False)['ok'],
+                            f'H3 proposals retain the accepted skill target {skill!r}')
+            fetched = []
+            def fake_fetch(url):
+                fetched.append(url)
+                return 200
+            with patch.object(module,'fetch_status',fake_fetch):
+                result = module.check(fixtures/'nested-h3-valid.md',collection/'skills',True)
+            self.ensure(result['ok'] and fetched == ['https://example.invalid/first','https://example.invalid/second']
+                        and all(p['fetch'] == {p['urls'][0]:200} for p in result['proposals']),
+                        '--fetch requests and records each H3 section URL independently')
+            for status in (0,199,300,401,403,429,500):
+                with patch.object(module,'fetch_status',lambda url, status=status: status if url.endswith('/second') else 200):
+                    result = module.check(fixtures/'nested-h3-valid.md',collection/'skills',True)
+                self.ensure(not result['ok'] and any('#2' in p and 'unreachable' in p for p in result['problems']),
+                            f'the second H3 source still fails on HTTP {status or "error"}')
+
+            # Real subprocesses, stub seats and a stub curl exercise the panel without any network or model CLI.
+            panel = self.scratch/'panel'
+            panel.mkdir()
+            prompt = panel/'prompt.md'
+            prompt.write_text('Read this exact prompt and return a proposal fragment.\n')
+            no_proposals = panel/'no-proposals.md'
+            no_proposals.write_text('No proposals.\n')
+            empty = panel/'empty.md'
+            empty.write_text('')
+            unstructured = panel/'unstructured.md'
+            unstructured.write_text('This fragment has no proposal or explicit outcome.\n')
+            bin_dir = panel/'bin'
+            bin_dir.mkdir()
+            fetch_log = panel/'fetched.jsonl'
+            curl = bin_dir/'curl'
+            curl.write_text('#!/usr/bin/env python3\nimport json, os, sys\n'
+                            'with open(os.environ["PANEL_FETCH_LOG"], "a") as stream:\n'
+                            '    stream.write(json.dumps(sys.argv[-1])+"\\n")\n'
+                            'print(403 if os.environ.get("PANEL_FAIL_FETCH") == sys.argv[-1] else 200, end="")\n')
+            curl.chmod(0o755)
+            panel_env = dict(env,PATH=str(bin_dir)+os.pathsep+env.get('PATH',''),
+                             PANEL_FETCH_LOG=str(fetch_log),CURATOR_TIMEOUT='10',
+                             POTETO_CACHE=str(panel/'unused-cache'),POTETO_UPSTREAM_URL='invalid-panel-upstream')
+            config = panel/'seats.json'
+            seat_code = ('from pathlib import Path; import sys; '
+                         'Path(sys.argv[2]).write_text(sys.stdin.read()); '
+                         'sys.stderr.write("seat diagnostics\\n"); '
+                         'sys.stdout.write(Path(sys.argv[1]).read_text()); sys.exit(int(sys.argv[3]))')
+            def seat(name, vendor, fixture, code=0):
+                return {'name':name,'vendor':vendor,
+                        'argv':[sys.executable,'-c',seat_code,str(fixture),str(panel/f'{name}.stdin'),str(code)]}
+            panel_runs = 0
+            def run_panel(seats, expected=0, extra=(), environment=None):
+                nonlocal panel_runs
+                panel_runs += 1
+                date = f'2026-11-{panel_runs:02d}'
+                config.write_text(json.dumps(seats))
+                output = self.run(self.script(self.name,'curate.sh'),'--panel',prompt,'--panel-config',config,
+                                  '--repo',collection,'--date',date,*extra,env=environment or panel_env,expected=expected)
+                self.ensure(not (collection/f'logs/curator/{date}.upstream.json').exists(),
+                            f'panel run {panel_runs} does not invoke the upstream diff stage')
+                return date, output
+            good_seats = [seat('claude-stub','anthropic',fixtures/'fragment-h3-valid.md'),
+                          seat('codex-stub','openai',no_proposals)]
+            date, _ = run_panel(good_seats)
+            panel_log = collection/f'logs/curator/{date}.log'
+            records = [json.loads(line) for line in panel_log.read_text().splitlines() if line.startswith('{')]
+            for entry in good_seats:
+                name = entry['name']
+                self.ensure((panel/f'{name}.stdin').read_text() == prompt.read_text(),
+                            f'{name} receives the exact prompt on stdin')
+                self.ensure((collection/f'logs/curator/{date}.{name}-x-propose.md').read_text()
+                            == Path(entry['argv'][-3]).read_text()
+                            and (collection/f'logs/curator/{date}.{name}-x-propose.err').read_text() == 'seat diagnostics\n',
+                            f'{name} saves the fragment and separate stderr artifact')
+                self.ensure(any((r.get('name') or r.get('seat')) == name and r['vendor'] == entry['vendor']
+                                and r['argv'] == entry['argv'] and r['exit_code'] == 0 and r['check_exit_code'] == 0
+                                for r in records), f'{name} logs vendor, argv, command exit, and gate exit')
+            self.ensure([json.loads(line) for line in fetch_log.read_text().splitlines()]
+                        == ['https://example.invalid/first','https://example.invalid/second'],
+                        'panel invokes the fragment fetch gate on every H3 URL with stubbed transport')
+            self.ensure((collection/f'logs/curator/{date}.codex-stub-x-propose.md').read_text() == 'No proposals.\n',
+                        'a fragment containing only No proposals. passes the panel gate')
+            for name, fixture, code in (('empty-seat',empty,0), ('unstructured-seat',unstructured,0),
+                                        ('banana-seat',fixtures/'fragment-h3-banana.md',0),
+                                        ('crashed-seat',no_proposals,23)):
+                date, output = run_panel([seat(name,'anthropic',fixture,code),
+                                          seat('later-seat','openai',no_proposals)],expected=1)
+                self.ensure(name in output and (collection/f'logs/curator/{date}.later-seat-x-propose.md').is_file(),
+                            f'{name} exits 1 naming the failed seat and still runs the later seat')
+            same_vendor = [seat('one-vendor-a','openai',no_proposals),seat('one-vendor-b','openai',no_proposals)]
+            before_fetch = fetch_log.read_text()
+            _, output = run_panel(same_vendor,expected=2)
+            self.ensure('--allow-single-vendor' in output and all(not (panel/f"{s['name']}.stdin").exists() for s in same_vendor)
+                        and fetch_log.read_text() == before_fetch,
+                        'same-vendor panel exits 2 before any seat or fetch and names the override fix')
+            run_panel(same_vendor,extra=('--allow-single-vendor',))
+            self.ensure(all((panel/f"{s['name']}.stdin").is_file() for s in same_vendor),
+                        '--allow-single-vendor explicitly enables the same-vendor panel')
+            _, output = run_panel(good_seats,expected=1,
+                                  environment=dict(panel_env,PANEL_FAIL_FETCH='https://example.invalid/second'))
+            self.ensure('claude-stub' in output and '403' in output,
+                        'panel names the failed seat when its second H3 source cannot be fetched')
+            preflight = seat('preflight-first','anthropic',no_proposals)
+            for malformed_seat, fix in (
+                ({'name':'later-invalid','vendor':'openai','argv':'not-an-array'},'argv'),
+                (seat('PREFLIGHT-FIRST','openai',no_proposals),'duplicate'),
+                (seat('../invalid-name','openai',no_proposals),'name'),
+            ):
+                date, output = run_panel([preflight,malformed_seat],expected=2)
+                self.ensure(fix in output and not (panel/'preflight-first.stdin').exists()
+                            and not (collection/f'logs/curator/{date}.log').exists(),
+                            f'invalid later seat {fix} fails preflight before an earlier seat or log is started')
+            for flag in ('--offline','--no-fetch'):
+                _, output = run_panel([preflight,seat('preflight-second','openai',no_proposals)],
+                                      extra=(flag,),expected=2)
+                self.ensure(flag in output and not (panel/'preflight-first.stdin').exists(),
+                            f'panel rejects {flag} before running seats instead of silently skipping source fetches')
+            override_args = panel/'override-argv.json'
+            shell_sentinel = panel/'shell-must-not-run'
+            override_seat = {'name':'override-seat','vendor':'anthropic','argv':[
+                sys.executable,'-c',
+                'from pathlib import Path; import json, sys; sys.stdin.read(); '
+                'Path(sys.argv[1]).write_text(json.dumps(sys.argv[2:])); print("No proposals.")',
+                str(override_args),'${CURATOR_MODEL:-default-model}','${CURATOR_EFFORT:-default-effort}',
+                'prefix-${CURATOR_MODEL:-unchanged}']}
+            override_value = f'model with spaces $(touch {shell_sentinel})'
+            for model, effort, expected_args in (
+                (override_value,'high effort',[override_value,'high effort','prefix-${CURATOR_MODEL:-unchanged}']),
+                ('','',['default-model','default-effort','prefix-${CURATOR_MODEL:-unchanged}']),
+            ):
+                run_panel([override_seat,seat('override-peer','openai',no_proposals)],
+                          environment=dict(panel_env,CURATOR_MODEL=model,CURATOR_EFFORT=effort))
+                self.ensure(json.loads(override_args.read_text()) == expected_args and not shell_sentinel.exists(),
+                            'panel model and effort overrides/defaults expand only whole argv tokens without shell evaluation')
+            child_started = panel/'timeout-child-started'
+            late_marker = panel/'timeout-child-late'
+            child_code = ('from pathlib import Path; import sys, time; '
+                          'Path(sys.argv[1]).write_text("started"); time.sleep(2); '
+                          'Path(sys.argv[2]).write_text("escaped timeout"); print("late child output", flush=True)')
+            parent_code = ('import subprocess, sys, time; '
+                           'subprocess.Popen([sys.executable,"-c",sys.argv[1],sys.argv[2],sys.argv[3]]); '
+                           'print("No proposals.", flush=True); time.sleep(10)')
+            timeout_seat = {'name':'timeout-seat','vendor':'anthropic','argv':[
+                sys.executable,'-c',parent_code,child_code,str(child_started),str(late_marker)]}
+            date, output = run_panel([timeout_seat,seat('timeout-peer','openai',no_proposals)],expected=1,
+                                     environment=dict(panel_env,CURATOR_TIMEOUT='1'))
+            records = [json.loads(line) for line in (collection/f'logs/curator/{date}.log').read_text().splitlines()
+                       if line.startswith('{')]
+            self.ensure('timeout-seat' in output and child_started.is_file()
+                        and any(r.get('name') == 'timeout-seat' and r['exit_code'] == 124 for r in records),
+                        'a seat that already spawned a child times out with exit 124 and a named failure')
+            fragment = collection/f'logs/curator/{date}.timeout-seat-x-propose.md'
+            checked_bytes = fragment.read_bytes()
+            time.sleep(2.3)
+            self.ensure(not late_marker.exists() and fragment.read_bytes() == checked_bytes,
+                        'seat timeout kills descendants so a child cannot mutate the validated fragment afterwards')
             for status in (401,403,429):
                 module.fetch_status = lambda url, status=status: status
                 result = module.check(proposal,collection/'skills',True)

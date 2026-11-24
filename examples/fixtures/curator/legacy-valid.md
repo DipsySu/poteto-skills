@@ -1,0 +1,20 @@
+# Curator proposals: 2026-10-19
+
+Generated offline by curate.sh from the upstream diff (no web research). Upstream cursor/plugins @ cc2f774f6667.
+
+## 1. Upstream changed: correct/SKILL.md
+
+- Source: https://github.com/cursor/plugins/blob/main/pstack/skills/correct/SKILL.md
+- Level: prose
+- Skill: correct
+- Change: Diff research/upstream/correct/SKILL.md against upstream, port any new rule into skills/correct as a script, lint, or test where it can be checked, and refresh the snapshot file.
+- Why: pstack changed this file after the snapshot pinned in research/NOTES.md.
+
+## 2. New upstream skill: local-added
+
+- Source: https://github.com/cursor/plugins/tree/main/pstack/skills/local-added
+- Level: prose
+- Skill: collection
+- Change: Read pstack skill local-added; if it pushes output up the pyramid, propose a poteto-skills skill with a deterministic helper script, otherwise record it in MAPPING.md as not adopted.
+- Why: pstack has a skill with no snapshot in research/upstream/ that no earlier curator run reported.
+

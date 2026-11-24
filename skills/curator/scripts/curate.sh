@@ -6,6 +6,7 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 usage: curate.sh [--propose | --apply] [--offline] [--no-fetch] [--date YYYY-MM-DD] [--repo DIR]
+       curate.sh --panel PROMPT.md [--panel-config FILE] [--allow-single-vendor] [--date YYYY-MM-DD] [--repo DIR]
 
   --propose   (default) run upstream_diff.sh, then write proposals/DATE.md:
               online: headless `claude -p --model opus --effort max` with references/curator-prompt.md
@@ -17,24 +18,40 @@ usage: curate.sh [--propose | --apply] [--offline] [--no-fetch] [--date YYYY-MM-
               commit only if it passes. Never pushes.
               online: claude implements the best proposals; --offline: sync changed upstream files
               into research/upstream/ (a deterministic, sourced change)
+  --panel F   send F on stdin to each read-only seat in references/panel.json; no upstream diff.
+              Save DATE.<seat>-x-propose.md and .err; check every fragment with --fragment --fetch.
+              Exit 1 names a failed/empty/invalid seat; exit 2 rejects invalid configuration
+              or a single-vendor panel before running seats. No proposals. is a valid fragment.
+  --panel-config F       use this JSON array of {name, vendor, argv} seats instead
+  --allow-single-vendor  allow all panel seats to use one vendor (panel mode only)
   --offline   skip network fetches and every LLM step; requires a populated local cache
   --no-fetch  don't fetch upstream; diff against the cached clone
   --date D    run date (default: today)
   --repo DIR  poteto-skills checkout (default: derived from this script)
 
 logs: logs/curator/DATE.log plus DATE.upstream.json, DATE.claude-*.json, DATE.verify.log
+      panel logs each seat's name, vendor, resolved argv, process and checker exit codes to DATE.log
 env:  POTETO_CACHE (clone and worktrees, default ~/.cache/poteto-skills), POTETO_UPSTREAM_URL,
-      CURATOR_MODEL (opus), CURATOR_EFFORT (max), CURATOR_TIMEOUT (3600 s),
+      CURATOR_MODEL (propose/apply: opus; panel: configured Claude model), CURATOR_EFFORT (max),
+      CURATOR_TIMEOUT (3600 s per seat); panel mode requires network for --fetch
 cron: 17 6 * * *  /path/to/poteto-skills/skills/curator/scripts/curate.sh --propose
       47 6 * * 1  /path/to/poteto-skills/skills/curator/scripts/curate.sh --apply
 EOF
 }
 
 mode=propose offline=0 nofetch=0 date_="$(date +%F)" repo="${POTETO_SKILLS_REPO:-}"
+panel_prompt="" panel_config="" allow_single_vendor=0 explicit_mode=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --propose) mode=propose; shift ;;
-    --apply) mode=apply; shift ;;
+    --propose) mode=propose; explicit_mode=1; shift ;;
+    --apply) mode=apply; explicit_mode=1; shift ;;
+    --panel)
+      [[ $# -ge 2 && -n "$2" && "$2" != --* ]] || { echo 'curate: pass --panel PROMPT.md' >&2; exit 2; }
+      panel_prompt="$2"; shift 2 ;;
+    --panel-config)
+      [[ $# -ge 2 && -n "$2" && "$2" != --* ]] || { echo 'curate: pass --panel-config FILE' >&2; exit 2; }
+      panel_config="$2"; shift 2 ;;
+    --allow-single-vendor) allow_single_vendor=1; shift ;;
     --offline) offline=1; shift ;;
     --no-fetch) nofetch=1; shift ;;
     --date) date_="${2:?--date needs YYYY-MM-DD}"; shift 2 ;;
@@ -44,6 +61,14 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 [[ "$date_" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || { echo "curate: --date must be YYYY-MM-DD" >&2; exit 2; }
+if [[ -n "$panel_prompt" ]]; then
+  [[ "$explicit_mode" == 0 && "$offline" == 0 && "$nofetch" == 0 ]] || {
+    echo 'curate: use --panel without --propose, --apply, --offline or --no-fetch; every panel source must be fetched' >&2; exit 2;
+  }
+  mode=panel
+elif [[ -n "$panel_config" || "$allow_single_vendor" == 1 ]]; then
+  echo 'curate: use --panel PROMPT.md with --panel-config or --allow-single-vendor' >&2; exit 2
+fi
 
 script_real="$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "${BASH_SOURCE[0]}")"
 script_dir="$(dirname "$script_real")"
@@ -51,6 +76,12 @@ skill_dir="$(dirname "$script_dir")"
 [[ -n "$repo" ]] || repo="$(cd "$skill_dir/../.." && pwd)"
 [[ -d "$repo/research/upstream" && -d "$repo/skills" ]] || { echo "curate: $repo is not a poteto-skills checkout; pass --repo" >&2; exit 2; }
 repo="$(cd "$repo" && pwd)"
+if [[ "$mode" == panel ]]; then
+  panel_args=("$panel_prompt" --repo "$repo" --date "$date_")
+  [[ -n "$panel_config" ]] && panel_args+=(--panel-config "$panel_config")
+  [[ "$allow_single_vendor" == 1 ]] && panel_args+=(--allow-single-vendor)
+  exec python3 "$script_dir/run_panel.py" "${panel_args[@]}"
+fi
 cache="${POTETO_CACHE:-$HOME/.cache/poteto-skills}"
 log_dir="$repo/logs/curator"
 mkdir -p "$log_dir"
