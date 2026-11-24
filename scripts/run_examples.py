@@ -3166,7 +3166,7 @@ properties = {"copy": (sampled_from([" title "]), check)}
             fenced = (fixtures/'legacy-fenced-h3.md').read_text()
             fenced_baseline = json.loads((fixtures/'legacy-fenced-baseline.json').read_text())
             for fence in ('```', '~~~', '````', '~~~~'):
-                for heading in ('##', '###'):
+                for heading in ('###',):
                     body = fenced.replace('```', fence).replace('### Example', heading+' Example')
                     self.ensure(module.parse(body) == fenced_baseline['parsed'],
                                 f'{fence} fences keep {heading} example headings inside one legacy proposal')
@@ -3174,6 +3174,34 @@ properties = {"copy": (sampled_from([" title "]), check)}
                                 f'{fence} closing fences preserve the next proposal after {heading} example headings')
             self.ensure(module.parse('```inline example```\n\n'+fenced) == fenced_baseline['parsed'],
                         'an inline backtick span before a proposal is not an unclosed fenced block')
+            broken_fence = self.scratch/'unclosed-proposal-fence.md'
+            nested_fences = ('## 1. Check nested examples\n'
+                             '- Source: https://example.invalid/source\n'
+                             '- Level: test\n- Skill: curator\n'
+                             '- Change: Check all proposal fields after examples.\n'
+                             '```markdown\n### Example\n```bash\necho example\n```\n```\n'
+                             '## 2. Invalid proposal\n'
+                             '- Level: banana\n- Skill: missing-skill\n'
+                             '- Change: Check this second proposal independently.\n')
+            broken_fence.write_text(nested_fences)
+            result = self.json(checker,broken_fence,'--skills-dir',collection/'skills','--json',expected=1)
+            self.ensure(result['items'] == 2
+                        and all(any('#2' in p and field in p for p in result['problems'])
+                                for field in ('Source', 'banana', 'missing-skill'))
+                        and any(f'{broken_fence}:11:' in p and 'close the fence' in p
+                                for p in result['problems']),
+                        'an unclosed nested fence names its opening line and cannot hide an invalid later H2 proposal')
+            broken_fence.write_text('No proposals.\n~~~\n')
+            result = self.json(checker,broken_fence,'--fragment','--json',expected=1)
+            self.ensure(any(f'{broken_fence}:2:' in p and 'close the fence' in p
+                            for p in result['problems']),
+                        'a stray tilde fence rejects a no-proposals fragment with its opening line and fix')
+            broken_fence.write_text('```markdown\n## 1. Hidden\n```\nNo proposals:\n')
+            result = self.json(checker,broken_fence,'--json',expected=1)
+            self.ensure(result['items'] == 1 and any('Source' in p for p in result['problems'])
+                        and any(f'{broken_fence}:1:' in p and 'close the fence' in p
+                                for p in result['problems']),
+                        'a fenced H2 stays a legacy proposal and No proposals cannot conceal its missing fields')
             references = self.scratch/'proposal-references.md'
             references.write_text('## 1. Check proposal references\n'
                                   '- Source: https://example.invalid/proposal\n'
@@ -3276,12 +3304,13 @@ properties = {"copy": (sampled_from([" title "]), check)}
                             f'the second H3 source still fails on HTTP {status or "error"}')
 
             # Quote fixtures use the real checker and transport subprocess, never a patched matcher.
-            # Only the real correct skill is tracked here: this test's own strings cannot prove themselves.
+            # Only real correct skill files are tracked here: this test's own strings cannot prove themselves.
             quote_root = self.scratch/'quote-collection'
-            (quote_root/'skills/correct').mkdir(parents=True)
+            (quote_root/'skills/correct/scripts').mkdir(parents=True)
             shutil.copyfile(ROOT/'skills/correct/SKILL.md',quote_root/'skills/correct/SKILL.md')
+            shutil.copyfile(ROOT/'skills/correct/scripts/patlint.py',quote_root/'skills/correct/scripts/patlint.py')
             self.run('git','init','-q','--template=',quote_root)
-            self.run('git','-C',quote_root,'add','skills/correct/SKILL.md')
+            self.run('git','-C',quote_root,'add','skills/correct')
             (quote_root/'proposals').mkdir()
             quote_file = quote_root/'proposals/current.md'
             transport = self.scratch/'quote-transport'
@@ -3297,8 +3326,9 @@ properties = {"copy": (sampled_from([" title "]), check)}
                                   '    assert "-g" in args or "--globoff" in args, "Source URL must stay literal"\n'
                                   'with open(os.environ["QUOTE_FETCH_LOG"], "a") as stream:\n'
                                   '    stream.write(json.dumps(url)+"\\n")\n'
-                                  'status, page = json.loads(Path(os.environ["QUOTE_PAGES"]).read_text())[url]\n'
-                                  'Path(args[args.index("-D")+1]).write_text(f"HTTP/1.1 {status} Fixture\\r\\n\\r\\n")\n'
+                                  'status, page, *media_types = json.loads(Path(os.environ["QUOTE_PAGES"]).read_text())[url]\n'
+                                  'media_type = media_types[0] if media_types else "text/plain"\n'
+                                  'Path(args[args.index("-D")+1]).write_text(f"HTTP/1.1 {status} Fixture\\r\\nContent-Type: {media_type}\\r\\n\\r\\n")\n'
                                   'time.sleep(float(os.environ.get("QUOTE_CURL_DELAY", "0")))\n'
                                   'sys.stdout.buffer.write(Path(page).read_bytes())\n'
                                   'sys.exit(int(os.environ.get("QUOTE_CURL_EXIT", "0")))\n')
@@ -3309,6 +3339,7 @@ properties = {"copy": (sampled_from([" title "]), check)}
             blob_url = 'https://github.com/fixture/skills/blob/abc123/SKILL.md'
             raw_url = 'https://raw.githubusercontent.com/fixture/skills/abc123/SKILL.md'
             tweet_url = 'https://api.fxtwitter.com/fixture/status/123'
+            plain_url = 'https://example.invalid/plain-code'
             phrase = 'violet lanterns protect the quiet archive'
             sources = {
                 first_url: (200, '<html><p>'+phrase+'</p><p>The curator\'s evidence stays beside each claim.</p>'
@@ -3321,12 +3352,14 @@ properties = {"copy": (sampled_from([" title "]), check)}
                 tweet_url: (200, json.dumps({'tweet':{'text':"The keeper's nested evidence survives JSON decoding."},
                                              'These hidden keys are never quoted evidence':False})
                             .replace("'",r'\u0027')),
+                plain_url: (200, 'a < b\n<!--\nPlain code comparisons preserve the quoted evidence.\n-->\nresult -> value'),
             }
             manifest = {}
             for index, (url, (status, body)) in enumerate(sources.items()):
                 page = transport/f'page-{index}.body'
                 page.write_text(body)
-                manifest[url] = [status,str(page)]
+                media_type = 'text/html; charset=utf-8' if url in (first_url,second_url,blob_url) else 'text/plain'
+                manifest[url] = [status,str(page),media_type]
             quote_pages.write_text(json.dumps(manifest))
 
             def quoted_proposal(change, why='', url=first_url, title='1. Quote evidence', heading='##'):
@@ -3388,6 +3421,12 @@ properties = {"copy": (sampled_from([" title "]), check)}
             result = check_quotes(quoted_proposal(f'"{correct_line}"'))
             self.ensure(result['ok'] and all(correct_line not in body for _, body in sources.values()),
                         'a quote of an actual tracked correct/SKILL.md line passes without any source page holding it')
+            patlint_quote = 'regex_prefixes must contain regex strings and non-empty include glob lists'
+            result = check_quotes(quoted_proposal(f'At skills/correct/scripts/patlint.py:170, "{patlint_quote}"'))
+            self.ensure(result['ok'] and all(patlint_quote not in body for _, body in sources.values()),
+                        'a verbatim patlint.py:170 quote survives comment delimiters elsewhere in the tracked Python file')
+            result = check_quotes(quoted_proposal('"Plain code comparisons preserve the quoted evidence."',url=plain_url))
+            self.ensure(result['ok'], 'text/plain evidence between a < b and -> retains literal HTML comment delimiters')
             result = check_quotes(quoted_proposal('"three invented words" and `"an invented proposed message stays unchecked"`'
                                                   '\n  ```text\n  "a fenced proposed message is also skipped"\n  ```'))
             self.ensure(result['ok'], 'three-word quotes and backticked inline or fenced proposed messages are skipped')
@@ -3515,6 +3554,39 @@ properties = {"copy": (sampled_from([" title "]), check)}
                         'panel invokes the fragment fetch gate on every H3 URL with stubbed transport')
             self.ensure((collection/f'logs/curator/{date}.codex-stub-x-propose.md').read_text() == 'No proposals.\n',
                         'a fragment containing only No proposals. passes the panel gate')
+            symlink_seats = [seat('symlink-seat','anthropic',no_proposals),
+                             seat('symlink-peer','openai',no_proposals)]
+            config.write_text(json.dumps(symlink_seats))
+            sentinel_bytes = b'Preserve this sentinel byte-for-byte.\n\x00\xff'
+            for number, suffix in enumerate(('.md','.err','.log'), 10):
+                symlink_date = f'2026-12-{number:02d}'
+                sentinel = collection/'panel-sentinel' if suffix == '.md' else panel/'outside-sentinel'
+                sentinel.write_bytes(sentinel_bytes)
+                destination = collection/'logs/curator'/(
+                    f'{symlink_date}.log' if suffix == '.log' else f'{symlink_date}.symlink-seat-x-propose{suffix}')
+                destination.symlink_to('../../panel-sentinel' if suffix == '.md' else sentinel)
+                command = ([self.script(self.name,'curate.sh'),'--panel',prompt] if suffix != '.log'
+                           else [sys.executable,self.script(self.name,'run_panel.py'),prompt])
+                try:
+                    output = self.run(*command,'--panel-config',config,'--repo',collection,
+                                      '--date',symlink_date,env=panel_env,expected=2)
+                    self.ensure(sentinel.read_bytes() == sentinel_bytes and str(destination) in output
+                                and 'symlink' in output and 'replace' in output
+                                and not (panel/'symlink-seat.stdin').exists(),
+                                f'panel rejects the {suffix} symlink before seats run and preserves its sentinel target')
+                finally:
+                    destination.unlink()
+            escaped_repo = panel/'escaped-repo'
+            for directory in ('skills','research/upstream','logs'):
+                (escaped_repo/directory).mkdir(parents=True,exist_ok=True)
+            outside_logs = panel/'outside-logs'
+            outside_logs.mkdir()
+            (escaped_repo/'logs/curator').symlink_to(outside_logs,target_is_directory=True)
+            output = self.run(self.script(self.name,'curate.sh'),'--panel',prompt,'--panel-config',config,
+                              '--repo',escaped_repo,'--date','2026-12-13',env=panel_env,expected=2)
+            self.ensure(str(escaped_repo/'logs/curator') in output and 'inside' in output
+                        and not list(outside_logs.iterdir()) and not (panel/'symlink-seat.stdin').exists(),
+                        'panel refuses a logs/curator directory resolving outside the repo before writing any output')
             panel_module = load_module(self.script(self.name,'run_panel.py'),'example_panel_cleanup')
             for number, error in enumerate((PermissionError, ProcessLookupError), 1):
                 cleanup_date = f'2026-12-{number:02d}'

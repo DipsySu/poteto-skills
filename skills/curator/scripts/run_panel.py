@@ -35,6 +35,18 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 OVERRIDE = re.compile(r"\$\{(CURATOR_MODEL|CURATOR_EFFORT):-([^{}]+)\}")
 
 
+def open_output(path: Path, mode: str):
+    flags = os.O_WRONLY | os.O_CREAT | os.O_NOFOLLOW
+    flags |= os.O_APPEND if mode == "a" else os.O_TRUNC
+    try:
+        fd = os.open(path, flags, 0o644)
+    except OSError as error:
+        print(f"panel: {path}: {error}; replace any symlink with a regular writable file and rerun --panel",
+              file=sys.stderr)
+        raise SystemExit(2) from error
+    return os.fdopen(fd, mode, encoding="utf-8" if mode == "a" else None)
+
+
 def load_seats(path: Path, allow_single_vendor: bool) -> list[dict]:
     seats = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(seats, list) or not seats:
@@ -87,14 +99,23 @@ def main(argv: list[str] | None = None) -> int:
         if not math.isfinite(timeout) or timeout <= 0:
             raise ValueError("set CURATOR_TIMEOUT to a positive finite number of seconds")
         seats = load_seats(args.panel_config, args.allow_single_vendor)
+        log_dir = repo / "logs/curator"
+        if not log_dir.resolve().is_relative_to(repo):
+            raise ValueError(f"{log_dir}: resolves outside the repo; move logs/curator inside {repo}")
+        destinations = [log_dir / f"{args.date}.log"]
+        for seat in seats:
+            fragment = log_dir / f"{args.date}.{seat['name']}-x-propose.md"
+            destinations.extend((fragment, fragment.with_suffix(".err")))
+        for path in destinations:
+            if path.is_symlink():
+                raise ValueError(f"{path}: destination is a symlink; replace it with a regular file")
+        log_dir.mkdir(parents=True, exist_ok=True)
     except (OSError, ValueError) as error:
         print(f"panel: {error}; fix the prompt, routing file or options and rerun --panel", file=sys.stderr)
         return 2
 
-    log_dir = repo / "logs/curator"
-    log_dir.mkdir(parents=True, exist_ok=True)
     failed = False
-    with (log_dir / f"{args.date}.log").open("a", encoding="utf-8") as log:
+    with open_output(log_dir / f"{args.date}.log", "a") as log:
         def report(message: str) -> None:
             print(message, flush=True)
             log.write(message + "\n")
@@ -105,7 +126,7 @@ def main(argv: list[str] | None = None) -> int:
             fragment = log_dir / f"{args.date}.{name}-x-propose.md"
             stderr = fragment.with_suffix(".err")
             report(f"panel: running {name} (vendor={seat['vendor']}) argv={json.dumps(seat['argv'])}")
-            with fragment.open("wb") as out, stderr.open("wb") as err:
+            with open_output(fragment, "wb") as out, open_output(stderr, "wb") as err:
                 try:
                     with subprocess.Popen(seat["argv"], stdin=subprocess.PIPE, stdout=out, stderr=err,
                                           cwd=repo, start_new_session=True) as process:

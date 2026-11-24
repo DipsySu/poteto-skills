@@ -209,13 +209,14 @@ def check_digest(path: Path) -> dict:
             "problems": problems, "warnings": [], "ok": not problems}
 
 
-def normalize(text: str) -> str:
+def normalize(text: str, *, is_html: bool = False) -> str:
     text = html.unescape(text)
-    text = re.sub(r"<!--.*?-->", "", text, flags=re.S)
-    # Block elements separate words; inline markup can split a single word.
-    text = re.sub(r"</?(?:p|div|br|li|h[1-6]|tr|td|section|article|pre|blockquote)\b[^<>]*>", " ",
-                  text, flags=re.I)
-    text = re.sub(r"</?[A-Za-z][^<>]*>", "", text)
+    if is_html:
+        text = re.sub(r"<!--.*?-->", "", text, flags=re.S)
+        # Block elements separate words; inline markup can split a single word.
+        text = re.sub(r"</?(?:p|div|br|li|h[1-6]|tr|td|section|article|pre|blockquote)\b[^<>]*>", " ",
+                      text, flags=re.I)
+        text = re.sub(r"</?[A-Za-z][^<>]*>", "", text)
     text = text.casefold().translate(str.maketrans({'“': '"', '”': '"', '‘': "'", '’': "'",
                                                   '–': '-', '—': '-', '*': '', '_': '', '`': ''}))
     return " ".join(text.split())
@@ -279,7 +280,7 @@ def collection_texts(root: Path, proposal: Path):
         except OSError:
             continue
         if b'\0' not in data:
-            yield normalize(data.decode('utf-8', errors='replace'))
+            yield normalize(data.decode('utf-8', errors='replace'), is_html=file.suffix.lower() in {'.html', '.htm'})
 
 
 def section(title: str, body: str) -> dict:
@@ -289,16 +290,21 @@ def section(title: str, body: str) -> dict:
     return {"title": title.strip(), "fields": fields, "urls": URL_RE.findall(fields.get("source", ""))}
 
 
-def split_headings(text: str, level: int) -> list[str]:
-    """Split on Markdown headings outside backtick/tilde fences, retaining bodies."""
+def split_headings(text: str, level: int, *, unclosed: list[int] | None = None,
+                   first_line: int = 1) -> list[str]:
+    """Keep legacy H2 splitting; split H3 headings outside backtick/tilde fences."""
+    if level == 2:
+        return re.split(r"^##\s+", text, flags=re.M)
     parts, start, offset, fence = [], 0, 0, None
-    for line in text.splitlines(keepends=True):
+    opening_line = None
+    for line_number, line in enumerate(text.splitlines(keepends=True), first_line):
         marker = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", line)
         if fence:
             if marker and marker[1][0] == fence[0] and len(marker[1]) >= len(fence) and not marker[2].strip():
                 fence = None
         elif marker and (marker[1][0] != '`' or '`' not in marker[2]):
             fence = marker[1]
+            opening_line = line_number
         else:
             heading = re.match(rf"^{'#' * level}[ \t]+", line)
             if heading:
@@ -306,6 +312,8 @@ def split_headings(text: str, level: int) -> list[str]:
                 start = offset + heading.end()
         offset += len(line)
     parts.append(text[start:])
+    if fence and unclosed is not None:
+        unclosed.append(opening_line)
     return parts
 
 
@@ -379,7 +387,7 @@ def raw_source(url: str) -> str | None:
 
 
 def fetch_source(url: str) -> tuple[int, str]:
-    """Fetch a bounded body; curl writes headers to -D and the body to stdout."""
+    """Fetch a bounded body and normalize using the final response's Content-Type."""
     process = None
     try:
         with tempfile.TemporaryDirectory(prefix="curator-source-") as temporary:
@@ -413,8 +421,12 @@ def fetch_source(url: str) -> tuple[int, str]:
             returncode = process.wait(timeout=max(0.001, deadline - time.monotonic()))
             if returncode and not capped:
                 return 0, ""
-            statuses = re.findall(rb"^HTTP/\S+\s+(\d{3})\b", headers.read_bytes(), re.M)
+            response_headers = headers.read_bytes()
+            statuses = re.findall(rb"^HTTP/\S+\s+(\d{3})\b", response_headers, re.M)
             status = int(statuses[-1]) if statuses else 0
+            final_headers = re.split(rb"^HTTP/\S+\s+\d{3}\b", response_headers, flags=re.M)[-1]
+            media_types = re.findall(rb"^Content-Type:[ \t]*([^;\r\n]+)", final_headers, re.M | re.I)
+            is_html = bool(media_types and media_types[-1].strip().lower() in {b'text/html', b'application/xhtml+xml'})
             text = body.decode("utf-8", errors="replace")
             if urlsplit(url).hostname == "api.fxtwitter.com":
                 # JSON syntax and keys are not quotations from the post itself.
@@ -432,7 +444,7 @@ def fetch_source(url: str) -> tuple[int, str]:
                     elif isinstance(value, list):
                         pending.extend(reversed(value))
                 text = "\n".join(strings)
-            return status, text
+            return status, normalize(text, is_html=is_html)
     except (OSError, ValueError, subprocess.TimeoutExpired):
         return 0, ""
     finally:
@@ -449,6 +461,12 @@ def check(path: Path, skills_dir: Path | None, do_fetch: bool, *, fragment: bool
     items = parse(text, with_quotes=do_fetch, fragment=fragment)
     skills = {p.name for p in skills_dir.iterdir() if (p / "SKILL.md").is_file()} if skills_dir and skills_dir.is_dir() else None
     problems, timestamp_count = proposal_times(path, text)
+    unclosed, first_line = [], 1
+    for chunk in re.split(r"(?=^##\s+)", text, flags=re.M):
+        split_headings(chunk, 3, unclosed=unclosed, first_line=first_line)
+        first_line += chunk.count("\n")
+    problems.extend(f"{path}:{line}: unclosed code fence; close the fence before the next ## section "
+                    "or end of file" for line in unclosed)
     warnings = []
     fetched: dict[str, tuple[int, str]] = {}
     unmatched = []
@@ -486,7 +504,7 @@ def check(path: Path, skills_dir: Path | None, do_fetch: bool, *, fragment: bool
                     it["fetch"][url] = code
                     if 200 <= code < 300:
                         reachable = True
-                        sources.append(normalize(body))
+                        sources.append(body)
                 if not reachable:
                     codes = ', '.join(str(it['fetch'][url] or 'error') for url in urls)
                     problems.append(f"{where}: {u} is unreachable (HTTP {codes}); "
