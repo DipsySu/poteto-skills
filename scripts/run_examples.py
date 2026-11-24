@@ -1504,6 +1504,102 @@ class Handler(BaseHTTPRequestHandler):
             shutil.copyfile(ROOT / 'examples/fixtures/FILLED-BRIEF.md', filled)
             self.run(self.script(self.name,'brief.py'),'--check',filled)
             self.ensure(True,'filled brief with executable outside-check command passes')
+            checker = self.script(self.name, 'brief.py')
+            task = 'quick fix: stop todos getting lost when two adds overlap'
+            quick = self.json(checker, task, '--repo', self.repo, '--json')
+            root_label = '- Root cause (the first place it goes wrong; a path or path:symbol):'
+            change_label = '- The change that was asked for:'
+            self.ensure('quick' not in quick['keywords'], 'quick-fix constraints are not repo search keywords')
+            self.ensure(root_label in quick['brief'] and change_label + ' fixes it | covers it' in quick['brief'],
+                        'quick-fix template asks for the root cause and whether the requested change fixes or covers it')
+            self.ensure(re.search(r'^- Over-specified[^\n]*:\s*quick fix\b', quick['brief'], re.M),
+                        'the matched quick-fix phrase starts the over-specified constraint')
+            retry = self.art / 'RETRY-BRIEF.md'
+            retry_text = f'''# Brief: {task}
+
+## In my own words
+
+Stop losing todos when adds overlap.
+{change_label} fixes it
+
+## How a top expert would approach it
+
+Read todo/api.py and retry three times in todo/api.py, because it is the quickest change.
+
+## Specification check
+
+- Over-specified: quick fix
+- Under-specified: none
+
+## Outside check
+
+- Command or link: `python3 -m unittest -q`
+- Pass condition: concurrent adds retain both todos.
+'''
+            retry.write_text(retry_text)
+            failure = self.run(checker, '--check', retry, '--repo', self.repo, expected=1)
+            self.ensure('quick fix' in failure and 'Root cause:' in failure,
+                        'a complete retry-only brief fails for its missing root cause and names quick fix')
+            fixed = retry_text.replace('Stop losing todos when adds overlap.',
+                                       'Stop losing todos when adds overlap.\n- Root cause: todo/store.py')
+            retry.write_text(fixed)
+            self.run(checker, '--check', retry, '--repo', self.repo)
+            self.ensure(True, 'an existing root-cause path with fixes it passes')
+            retry.write_text(fixed.replace('- Root cause: todo/store.py', root_label + ' todo/store.py:Store.add'))
+            self.run(checker, '--check', retry, '--repo', self.repo)
+            self.ensure(True, 'the generated root-cause label accepts an existing path with a symbol')
+            retry.write_text(fixed.replace('- Root cause: todo/store.py', '- Root cause: todo/missing.py'))
+            failure = self.run(checker, '--check', retry, '--repo', self.repo, expected=1)
+            self.ensure('todo/missing.py' in failure, 'a nonexistent root-cause path fails and names the path')
+            for invalid in ('', 'maybe', 'fixes it | covers it'):
+                retry.write_text(fixed.replace(change_label + ' fixes it', change_label + ' ' + invalid))
+                failure = self.run(checker, '--check', retry, '--repo', self.repo, expected=1)
+                self.ensure('fixes it' in failure and 'covers it' in failure,
+                            f'the requested-change value {invalid!r} must choose fixes it or covers it')
+            covered = fixed.replace(change_label + ' fixes it', change_label + ' covers it')
+            retry.write_text(covered)
+            failure = self.run(checker, '--check', retry, '--repo', self.repo, expected=1)
+            self.ensure('-> yours:' in failure, 'covers it fails with a fix naming the user-owned choice syntax')
+            incomplete_choice = '- Under-specified:\n  - Retry three times in todo/api.py -> yours:'
+            retry.write_text(covered.replace('- Under-specified: none', incomplete_choice))
+            self.run(checker, '--check', retry, '--repo', self.repo, expected=1)
+            self.ensure(True, 'a user-owned bandaid choice without the root-cause fix still fails')
+            choice = ('- Under-specified:\n'
+                      '  - Retry three times in todo/api.py (bandaid) or fix the lost-write root cause '
+                      'in todo/store.py -> yours:')
+            retry.write_text(covered.replace('- Under-specified: none', choice))
+            self.run(checker, '--check', retry, '--repo', self.repo)
+            self.ensure(True, 'covers it passes when an open user-owned choice names both the bandaid and root-cause fix')
+            for options, description in (
+                    ('fix locking in todo/store.py or fix locking in todo/store.py',
+                     'repeating the root-cause fix does not name two alternatives'),
+                    ('todo/store.py:Store.add or do something',
+                     'a path and symbol alone do not name the root-cause fix')):
+                invalid_choice = '- Under-specified:\n  - ' + options + ' -> yours:'
+                retry.write_text(covered.replace('- Under-specified: none', invalid_choice))
+                failure = self.run(checker, '--check', retry, '--repo', self.repo, expected=1)
+                self.ensure('-> yours:' in failure, description)
+            path_repo = self.scratch / 'brief-paths'
+            (path_repo / 'todo').mkdir(parents=True)
+            shutil.copyfile(self.repo / 'todo/store.py', path_repo / 'todo/store.py')
+            (path_repo / 'todo/store-link.py').symlink_to('store.py')
+            linked = covered.replace('- Under-specified: none', choice).replace('todo/store.py', 'todo/store-link.py')
+            retry.write_text(linked)
+            self.run(checker, '--check', retry, '--repo', path_repo)
+            self.ensure(True, 'an internal root-cause symlink reused in the named user choice passes')
+            outside = self.scratch / 'brief-outside.py'
+            outside.write_text('pass\n')
+            (path_repo / 'todo/outside.py').symlink_to(outside)
+            for reference in ('todo/outside.py', '../brief-outside.py'):
+                retry.write_text(fixed.replace('- Root cause: todo/store.py', '- Root cause: ' + reference))
+                failure = self.run(checker, '--check', retry, '--repo', path_repo, expected=1)
+                self.ensure(reference in failure and 'path in this repo' in failure,
+                            f'root-cause path {reference!r} cannot escape the repo through a symlink or traversal')
+            ordinary = self.json(checker, 'set the minimum title length to 3', '--repo', self.repo, '--json')
+            self.ensure(root_label not in ordinary['brief'] and change_label not in ordinary['brief'],
+                        'minimum title length is an ordinary task and adds neither root-cause field')
+            self.ensure(filled.read_bytes() == (ROOT / 'examples/fixtures/FILLED-BRIEF.md').read_bytes(),
+                        'the existing filled brief fixture passes unchanged')
 
     def formal(self):
         with self.case('formal-verification'):
