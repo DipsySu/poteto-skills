@@ -344,6 +344,11 @@ class Examples:
         finally:
             self.run(control, 'cleanup', env=env)
 
+    def child_pids(self, parent):
+        # `ps -A -o pid=,ppid=` works with BSD ps (macOS) and procps (Linux); `--ppid` is GNU-only.
+        rows = (row.split() for row in self.run('ps', '-A', '-o', 'pid=,ppid=', json_stdout=True).splitlines())
+        return [r[0] for r in rows if len(r) == 2 and r[1] == str(parent)]
+
     def wrapped_cleanup(self):
         # A wrapper launch command (sh -c, npm, make) forks the real server; cleanup must stop that child too.
         wrapped = self.repo / '.claude/skills/verify-wrapped'
@@ -357,7 +362,13 @@ class Examples:
         launch, closed = None, False
         try:
             launch = self.json(control, 'launch', env=env)
-            self.ensure(self.run('ps', '-o', 'pid=', '--ppid', launch['pid']).split(), 'wrapper launch runs the server as a child of the recorded PID')
+            leaf = subprocess.Popen(['sleep', '30'])
+            try:
+                self.ensure(not self.child_pids(leaf.pid), 'child_pids finds no children of a leaf process')
+            finally:
+                leaf.kill()
+                leaf.wait()
+            self.ensure(self.child_pids(launch['pid']), 'wrapper launch runs the server as a child of the recorded PID')
             self.ensure(self.json(control, 'cleanup', env=env)['killed'], 'cleanup stops the recorded wrapper')
             for _ in range(30):
                 with socket.socket() as s:
