@@ -48,7 +48,7 @@
         "**/*.mm"
       ],
       "ignore_case": true,
-      "regex": "^(?![^\\r\\n]*(?:#[0-9]+\\b|\\b(?:[a-z][a-z0-9+.-]*://|www\\.)\\S+))(?:[ \\t]*(?:#|//|/\\*|\\*|--|<!--)|(?:[^\"'`/\\r\\n]|\"(?:\\\\.|[^\"\\\\\\r\\n])*\"|'(?:\\\\.|[^'\\\\\\r\\n])*'|`(?:\\\\.|[^`\\\\\\r\\n])*`|(?<=[&<])'[A-Za-z_]\\w*\\b(?!')|/(?!/))*[ \\t](?:#|//))[^\\r\\n]*\\b(?:HACK|WORKAROUND|XXX|FIXME|for[ \\t]+now|temporar(?:y|ily)|quick[ \\t]+fix|band-?aid|fine[ \\t]+for[ \\t]+now|too[ \\t]+risky)\\b",
+      "regex": "[^\\r\\n]*\\b(?:HACK|WORKAROUND|XXX|FIXME|for[ \\t]+now|temporar(?:y|ily)|quick[ \\t]+fix|band-?aid|fine[ \\t]+for[ \\t]+now|too[ \\t]+risky)\\b",
       "message": "Fix the root cause in this change, or delete the comment and track the work in an issue written as `TODO(#123)`; an excuse comment licenses a bandaid that the next agent copies.",
       "tests": [
         {
@@ -240,6 +240,81 @@
           "expect": "no-excuse-comment",
           "code": "struct Store<'a> { // temporary",
           "path": "src/store.rs"
+        },
+        {
+          "expect": "ok",
+          "code": "average = total // temporary",
+          "path": "todo/store.py"
+        },
+        {
+          "expect": "no-excuse-comment",
+          "code": "average = total // temporary  # HACK: skip validation",
+          "path": "todo/store.py"
+        },
+        {
+          "expect": "no-excuse-comment",
+          "code": "average = total; // temporary",
+          "path": "src/store.js"
+        },
+        {
+          "expect": "ok",
+          "code": "average = total // temporary",
+          "path": "src/store.lua"
+        }
+      ],
+      "regex_prefixes": [
+        {
+          "include": [
+            "**/*.py",
+            "**/*.pyi",
+            "**/*.sh",
+            "**/*.bash",
+            "**/*.zsh",
+            "**/*.rb",
+            "**/*.sql",
+            "**/*.lua",
+            "**/*.html",
+            "**/*.htm",
+            "**/*.xml",
+            "**/*.css"
+          ],
+          "regex": "^(?![^\\r\\n]*(?:#[0-9]+\\b|\\b(?:[a-z][a-z0-9+.-]*://|www\\.)\\S+))(?:[ \\t]*(?:#|/\\*|\\*|--|<!--)|(?:[^\"'`\\r\\n]|\"(?:\\\\.|[^\"\\\\\\r\\n])*\"|'(?:\\\\.|[^'\\\\\\r\\n])*'|`(?:\\\\.|[^`\\\\\\r\\n])*`|(?<=[&<])'[A-Za-z_]\\w*\\b(?!'))*[ \\t]#)"
+        },
+        {
+          "include": [
+            "**/*.js",
+            "**/*.jsx",
+            "**/*.ts",
+            "**/*.tsx",
+            "**/*.mjs",
+            "**/*.cjs",
+            "**/*.mts",
+            "**/*.cts",
+            "**/*.go",
+            "**/*.rs",
+            "**/*.java",
+            "**/*.kt",
+            "**/*.kts",
+            "**/*.swift",
+            "**/*.c",
+            "**/*.h",
+            "**/*.cc",
+            "**/*.cpp",
+            "**/*.cxx",
+            "**/*.hh",
+            "**/*.hpp",
+            "**/*.cs",
+            "**/*.php",
+            "**/*.scss",
+            "**/*.sass",
+            "**/*.less",
+            "**/*.vue",
+            "**/*.svelte",
+            "**/*.dart",
+            "**/*.m",
+            "**/*.mm"
+          ],
+          "regex": "^(?![^\\r\\n]*(?:#[0-9]+\\b|\\b(?:[a-z][a-z0-9+.-]*://|www\\.)\\S+))(?:[ \\t]*(?:#|//|/\\*|\\*|--|<!--)|(?:[^\"'`/\\r\\n]|\"(?:\\\\.|[^\"\\\\\\r\\n])*\"|'(?:\\\\.|[^'\\\\\\r\\n])*'|`(?:\\\\.|[^`\\\\\\r\\n])*`|(?<=[&<])'[A-Za-z_]\\w*\\b(?!')|/(?!/))*[ \\t](?:#|//))"
         }
       ]
     }

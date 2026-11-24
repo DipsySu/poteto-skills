@@ -21,6 +21,9 @@ Rules file (JSON):
 Globs: `**/` spans directories, `*` stays inside one path segment, and a pattern
 without `/` matches the file name at any depth (like .gitignore). Paths are
 matched relative to --root (default: the git toplevel of the current directory).
+Optional `regex_prefixes` entries each have `include` globs and a `regex` prefix;
+only those prefixes apply, joined to the rule's shared regex. This lets language
+specific comment delimiters share one vocabulary and rule id.
 
 Files: inside a git checkout a directory argument means the files git would
 commit, as `git ls-files --cached --others --exclude-standard` lists them:
@@ -158,6 +161,20 @@ def load_rules(path: Path) -> list[dict]:
         except re.error as e:
             errors.append(f"{where}: bad regex: {e}")
             continue
+        prefixes = r.get("regex_prefixes", [])
+        if not isinstance(prefixes, list) or any(
+            not isinstance(p, dict) or not isinstance(p.get("regex"), str)
+            or not isinstance(p.get("include"), list) or not p["include"]
+            or not all(isinstance(g, str) and g for g in p["include"]) for p in prefixes
+        ):
+            errors.append(f"{where}: regex_prefixes must contain regex strings and non-empty include glob lists")
+            continue
+        try:
+            scoped = [(re.compile(p["regex"] + r["regex"], flags),
+                       [glob_to_regex(g) for g in p["include"]]) for p in prefixes]
+        except re.error as e:
+            errors.append(f"{where}: bad regex prefix: {e}")
+            continue
         inc = r.get("include", ["**"])
         exc = r.get("exclude", [])
         if isinstance(inc, str):
@@ -189,6 +206,7 @@ def load_rules(path: Path) -> list[dict]:
             errors.append(f"{where}: fix must be a list of relative path and dotted symbol references")
             continue
         rules.append({"id": rid, "regex": rx, "include": [glob_to_regex(g) for g in inc],
+                      "regex_prefixes": scoped,
                       "exclude": [glob_to_regex(g) for g in exc], "message": msg,
                       "multiline": bool(r.get("multiline")), "include_globs": inc, "exclude_globs": exc,
                       "tests": tests, "fix": fixes})
@@ -211,12 +229,14 @@ def text_matches(rule: dict, rel_path: str, text: str) -> list[tuple[int, int]]:
     """Return raw match positions using the same scope and flags in every mode."""
     if not applies(rule, rel_path):
         return []
+    patterns = ([rx for rx, globs in rule["regex_prefixes"] if any(g.match(rel_path) for g in globs)]
+                if rule.get("regex_prefixes") else [rule["regex"]])
     if rule["multiline"]:
         return [(text.count("\n", 0, m.start()) + 1,
                  m.start() - (text.rfind("\n", 0, m.start()) + 1) + 1)
-                for m in rule["regex"].finditer(text)]
+                for rx in patterns for m in rx.finditer(text)]
     return [(n, m.start() + 1) for n, line in enumerate(text.splitlines(), 1)
-            for m in rule["regex"].finditer(line)]
+            for rx in patterns for m in rx.finditer(line)]
 
 
 def line_matches(rule: dict, rel_path: str, line: str) -> bool:

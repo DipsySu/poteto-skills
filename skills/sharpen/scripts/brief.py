@@ -73,6 +73,7 @@ def candidate_files(repo: Path, kws: list[str], limit: int = 8) -> list[tuple[st
 
 
 def render(task: str, repo: Path | None) -> tuple[str, dict]:
+    task = " ".join(task.split())
     kws = keywords(task)
     cands = candidate_files(repo, kws) if repo else []
     src = ", ".join(f"`{p}` ({n} hits)" for p, n in cands) if cands else "none found by keyword; name them yourself"

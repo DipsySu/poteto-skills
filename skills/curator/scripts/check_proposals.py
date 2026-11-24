@@ -17,7 +17,8 @@ A file with no proposals is valid only with an explicit `No proposals` line.
 --fetch retains up to 5 MiB per source within curl's --max-time 20, following redirects.
 GitHub blob URLs also fetch their raw file; a final 2xx from either representation passes.
 Double-quoted spans of at least four words in Change/Why must match an own fetched source
-or a collection file (tracked, proposals/, logs/curator/), excluding this proposal itself.
+or a collection file (tracked, proposals/, logs/curator/), excluding this proposal itself,
+*.log / *.err diagnostics and DATE.<seat>-x-propose.md panel fragments.
 HTML/entities, case, curly punctuation, dashes, Markdown emphasis and whitespace are
 normalized; ... or … parts must occur in order in one source/file. Proposed messages,
 commands and test inputs belong in backticks and are skipped. No --fetch skips quotes.
@@ -253,7 +254,7 @@ def contains_quote(text: str, quote: str) -> bool:
 
 
 def collection_texts(root: Path, proposal: Path):
-    """Tracked files plus curator history; the input cannot be its own evidence."""
+    """Tracked files plus history, excluding input, diagnostics and panel fragments."""
     root, proposal = root.resolve(), proposal.resolve()
     env = {key: value for key, value in os.environ.items() if not key.startswith('GIT_')}
     result = subprocess.run(['git', '-C', str(root), 'ls-files', '-z'],
@@ -266,6 +267,8 @@ def collection_texts(root: Path, proposal: Path):
     for file in sorted(files):
         resolved = file.resolve()
         if resolved == proposal or not resolved.is_relative_to(root) or not file.is_file():
+            continue
+        if file.suffix.lower() in {'.log', '.err'} or re.fullmatch(rf'{DATE}\..+-x-propose\.md', file.name):
             continue
         try:
             data = file.read_bytes()
@@ -282,6 +285,26 @@ def section(title: str, body: str) -> dict:
     return {"title": title.strip(), "fields": fields, "urls": URL_RE.findall(fields.get("source", ""))}
 
 
+def split_headings(text: str, level: int) -> list[str]:
+    """Split on Markdown headings outside backtick/tilde fences, retaining bodies."""
+    parts, start, offset, fence = [], 0, 0, None
+    for line in text.splitlines(keepends=True):
+        marker = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", line)
+        if fence:
+            if marker and marker[1][0] == fence[0] and len(marker[1]) >= len(fence) and not marker[2].strip():
+                fence = None
+        elif marker and (marker[1][0] != '`' or '`' not in marker[2]):
+            fence = marker[1]
+        else:
+            heading = re.match(rf"^{'#' * level}[ \t]+", line)
+            if heading:
+                parts.append(text[start:offset])
+                start = offset + heading.end()
+        offset += len(line)
+    parts.append(text[start:])
+    return parts
+
+
 def parse(text: str, *, with_quotes: bool = False) -> list[dict]:
     def read_section(title, body):
         item = section(title, body)
@@ -290,10 +313,10 @@ def parse(text: str, *, with_quotes: bool = False) -> list[dict]:
         return item
 
     items = []
-    parts = re.split(r"^##\s+", text, flags=re.M)
+    parts = split_headings(text, 2)
     for index, chunk in enumerate(parts):
         title, _, body = chunk.partition("\n") if index else ("", "", chunk)
-        children = re.split(r"^###\s+", body, flags=re.M)
+        children = split_headings(body, 3)
         if index and not any("source" in read_section("", child.partition("\n")[2])["fields"]
                              for child in children[1:]):
             # Legacy H2 proposals may organize their fields beneath descriptive
@@ -497,7 +520,8 @@ def main(argv: list[str] | None = None) -> int:
                "api.fxtwitter.com JSON contributes string values. Matching normalizes HTML/entities, case,\n"
                "curly quotes/apostrophes, en/em dashes, Markdown emphasis and whitespace. Ellipsis (...) or\n"
                "… parts must occur in order within one page/file. Local evidence: tracked files plus\n"
-               "proposals/ and logs/curator/, excluding the input itself. Collection root is the parent\n"
+               "proposals/ and logs/curator/, excluding the input, *.log / *.err diagnostics and\n"
+               "DATE.<seat>-x-propose.md panel fragments. Collection root is the parent\n"
                "of --skills-dir, or this script's checkout. Without --fetch, quotes are not checked.\n\n"
                "Timestamps (no network): decode X Snowflake IDs using (id >> 22) + 1288834974657 ms.\n"
                "Proposals: YYYY-MM-DD (status ID) and (status ID, YYYY-MM-DD) use the UTC date;\n"

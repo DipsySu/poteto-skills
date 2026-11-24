@@ -1281,6 +1281,19 @@ class Handler(BaseHTTPRequestHandler):
                         'collect_feedback --code-comments mines the same two excuse comments through the shared rule')
             excuse_rules = ROOT / 'skills/correct/references/excuse-comments.json'
             excuse_rule = json.loads(excuse_rules.read_text())['rules'][0]
+            arithmetic_repo = self.scratch / 'excuse-arithmetic'
+            self.run('git', 'clone', '--quiet', '--no-checkout', '--no-hardlinks', self.repo, arithmetic_repo)
+            (arithmetic_repo / 'average.py').write_text('average = total // temporary\n')
+            self.run('git', 'add', 'average.py', cwd=arithmetic_repo)
+            arithmetic = self.lint(excuse_rules, arithmetic_repo, root=arithmetic_repo)
+            self.ensure(arithmetic['ok'] and not arithmetic['violations'],
+                        'Python floor division by temporary is code, not an excuse comment')
+            mined_arithmetic = self.json(self.script(self.name, 'mine_mistakes.py'), arithmetic_repo, '--json')
+            feedback_arithmetic = self.json(self.script('feedback-to-architecture', 'collect_feedback.py'),
+                                            '--repo', arithmetic_repo, '--code-comments')
+            self.ensure(mined_arithmetic['counts'].get('code-comment', 0) == 0
+                        and feedback_arithmetic['counts'].get('code-comment', 0) == 0,
+                        'mining and feedback share the lint exemption for Python floor division')
             replay = self.json(self.script(self.name, 'patlint.py'), '--rules', excuse_rules,
                                '--root', excuse_repo, '--test', '--json')
             self.ensure(replay['ok'] and {'no-excuse-comment', 'ok'} <= {t['expect'] for t in excuse_rule['tests']},
@@ -1514,6 +1527,15 @@ class Handler(BaseHTTPRequestHandler):
                         'quick-fix template asks for the root cause and whether the requested change fixes or covers it')
             self.ensure(re.search(r'^- Over-specified[^\n]*:\s*quick fix\b', quick['brief'], re.M),
                         'the matched quick-fix phrase starts the over-specified constraint')
+            multiline = self.json(checker, 'stop todos getting lost\nUse a quick fix', '--repo', self.repo, '--json')
+            missing_root = self.art / 'MULTILINE-MISSING-ROOT.md'
+            fixture = (ROOT / 'examples/fixtures/sharpen/MULTILINE-MISSING-ROOT.md').read_text()
+            missing_root.write_text(multiline['brief'].split('\n\n', 1)[0] + '\n' + fixture.split('\n', 1)[1])
+            failure = self.run(checker, '--check', missing_root, '--repo', self.repo, expected=1)
+            self.ensure('Root cause:' in failure and 'The change that was asked for:' in failure,
+                        'a multiline quick-fix task still requires both root-cause fields after they are removed')
+            self.ensure(multiline['brief'].splitlines()[0] == '# Brief: stop todos getting lost Use a quick fix',
+                        'multiline task whitespace collapses into the brief title')
             retry = self.art / 'RETRY-BRIEF.md'
             retry_text = f'''# Brief: {task}
 
@@ -3114,7 +3136,8 @@ properties = {"copy": (sampled_from([" title "]), check)}
             self.ensure(not timestamp_fetch.exists(),
                         'real digest and proposals pass/fail timestamp fixtures never invoke the network transport')
             for fixture_name, baseline_name in (('legacy-valid.md','legacy-baseline.json'),
-                                                ('legacy-descriptive-h3.md','legacy-descriptive-baseline.json')):
+                                                ('legacy-descriptive-h3.md','legacy-descriptive-baseline.json'),
+                                                ('legacy-fenced-h3.md','legacy-fenced-baseline.json')):
                 baseline = json.loads((fixtures/baseline_name).read_text())
                 legacy = (fixtures/fixture_name).relative_to(ROOT)
                 self.ensure(module.parse((ROOT/legacy).read_text()) == baseline['parsed'],
@@ -3127,6 +3150,17 @@ properties = {"copy": (sampled_from([" title "]), check)}
                 self.ensure(self.json(checker,legacy,'--skills-dir','skills','--json',cwd=ROOT)
                             == dict(baseline['result'],quotes_checked=False),
                             f'{fixture_name}: original JSON check fields are retained with quotes_checked false')
+            fenced = (fixtures/'legacy-fenced-h3.md').read_text()
+            fenced_baseline = json.loads((fixtures/'legacy-fenced-baseline.json').read_text())
+            for fence in ('```', '~~~', '````', '~~~~'):
+                for heading in ('##', '###'):
+                    body = fenced.replace('```', fence).replace('### Example', heading+' Example')
+                    self.ensure(module.parse(body) == fenced_baseline['parsed'],
+                                f'{fence} fences keep {heading} example headings inside one legacy proposal')
+                    self.ensure(module.parse(body+'\n'+body) == fenced_baseline['parsed'] * 2,
+                                f'{fence} closing fences preserve the next proposal after {heading} example headings')
+            self.ensure(module.parse('```inline example```\n\n'+fenced) == fenced_baseline['parsed'],
+                        'an inline backtick span before a proposal is not an unclosed fenced block')
             for layout, flags in (('nested',()), ('fragment',('--fragment',))):
                 valid = fixtures/f'{layout}-h3-valid.md'
                 bad = fixtures/f'{layout}-h3-banana.md'
@@ -3281,6 +3315,24 @@ properties = {"copy": (sampled_from([" title "]), check)}
                             and 'quote the fetched page exactly' in p and 'add the page you quoted to Source' in p
                             and 'put proposed text in backticks' in p for p in result['problems']),
                         'one changed word fails through the real transport and names the quote, proposal, and fixes')
+            diagnostics = quote_root/'logs/curator'
+            diagnostics.mkdir(parents=True)
+            rejected = result
+            for name, content in (
+                    ('2026-11-24.log', '\n'.join(rejected['problems'])),
+                    ('2026-11-24.test-seat-x-propose.err', '\n'.join(rejected['problems'])),
+                    ('2026-11-24.test-seat-x-propose.md', quoted_proposal(f'"{wrong_phrase}"'))):
+                artifact = diagnostics/name
+                artifact.write_text(content)
+                try:
+                    for tracked in (False, True):
+                        if tracked:
+                            self.run('git', '-C', quote_root, 'add', artifact)
+                        result = check_quotes(quoted_proposal(f'"{wrong_phrase}"'), expected=1)
+                        self.ensure(result['problems'] == rejected['problems'],
+                                    f'{name} (tracked={tracked}) cannot validate its rejected quote on rerun')
+                finally:
+                    artifact.unlink()
             result = check_quotes(quoted_proposal('“The curator’s evidence stays beside each claim.”'))
             self.ensure(result['ok'], 'curly double quotes and apostrophes match straight apostrophes in a fetched body')
             result = check_quotes(quoted_proposal('"amber birds arrive before dusk…silver foxes leave at dawn"'))
