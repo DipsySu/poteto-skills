@@ -120,7 +120,7 @@ def main(argv: list[str] | None = None) -> int:
                             # group before checking, even if the direct process has exited.
                             try:
                                 os.killpg(process.pid, signal.SIGKILL)
-                            except ProcessLookupError:
+                            except (ProcessLookupError, PermissionError):
                                 pass
                             process.communicate()
                 except OSError as error:

@@ -18,7 +18,7 @@ import sys
 import tempfile
 import time
 import traceback
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 ROOT = Path(__file__).resolve().parent.parent
 SKILLS = sorted(p.name for p in (ROOT / "skills").iterdir() if (p / "SKILL.md").is_file())
@@ -345,11 +345,16 @@ class Examples:
             self.run(control, 'cleanup', env=env)
 
     def child_pids(self, parent):
-        # `ps -A -o pid=,ppid=` works with BSD ps (macOS) and procps (Linux); `--ppid` is GNU-only.
-        rows = (row.split() for row in self.run('ps', '-A', '-o', 'pid=,ppid=', json_stdout=True).splitlines())
+        # Separate -o options are strictly POSIX; `--ppid` is GNU-only.
+        rows = (row.split() for row in self.run('ps', '-A', '-o', 'pid=', '-o', 'ppid=', json_stdout=True).splitlines())
         return [r[0] for r in rows if len(r) == 2 and r[1] == str(parent)]
 
     def wrapped_cleanup(self):
+        with patch.object(self, 'run', return_value='101 42\n102 420\n103 142\n42 1\n104 42\n') as ps:
+            self.ensure(self.child_pids(42) == ['101', '104'],
+                        'child_pids selects only exact PPID matches')
+            self.ensure(ps.call_args_list == [call('ps', '-A', '-o', 'pid=', '-o', 'ppid=', json_stdout=True)],
+                        'child_pids requests PID and PPID with separate POSIX -o options')
         # A wrapper launch command (sh -c, npm, make) forks the real server; cleanup must stop that child too.
         wrapped = self.repo / '.claude/skills/verify-wrapped'
         shutil.copytree(self.skill, wrapped)
@@ -3128,6 +3133,14 @@ properties = {"copy": (sampled_from([" title "]), check)}
             result = check_dated_proposal(reversed_body)
             self.ensure(result['ok'] and result['timestamps_checked'] == 1,
                         'the parenthesized status-ID-first proposal form accepts the correct UTC date offline')
+            for citation in ('2026-11-10 (status 403)', '(status 403, 2026-11-10)'):
+                result = check_dated_proposal(dated_body.replace('2026-11-14 (status 2121646643124809848)', citation))
+                self.ensure(result['ok'] and result.get('timestamps_checked', 0) == 0,
+                            f'HTTP status citation {citation} is not checked as an X status ID')
+            result = check_digest(digest.replace('2121646643124809848', '403'))
+            self.ensure(result['ok'] and result['timestamps_checked'] == 1,
+                        'a short numeric status URL is not decoded as an X Snowflake ID')
+            dated_proposal.write_text(reversed_body)
             digest_file.write_text(digest)
             result = self.json(sys.executable,checker,dated_proposal,'--digest',digest_file,'--json',
                                env=timestamp_env)
@@ -3161,11 +3174,27 @@ properties = {"copy": (sampled_from([" title "]), check)}
                                 f'{fence} closing fences preserve the next proposal after {heading} example headings')
             self.ensure(module.parse('```inline example```\n\n'+fenced) == fenced_baseline['parsed'],
                         'an inline backtick span before a proposal is not an unclosed fenced block')
+            references = self.scratch/'proposal-references.md'
+            references.write_text('## 1. Check proposal references\n'
+                                  '- Source: https://example.invalid/proposal\n'
+                                  '- Level: lint\n- Skill: curator\n'
+                                  '- Change: Check proposal fields before acceptance.\n'
+                                  '### References\n- Source: https://example.invalid/reference\n')
+            result = self.json(checker,references,'--skills-dir',collection/'skills','--json')
+            self.ensure(result['ok'] and result['items'] == 1
+                        and len(module.parse(references.read_text())) == 1,
+                        'a Source-only References H3 remains part of its valid H2 proposal')
+            result = self.json(checker,fixtures/'fragment-h3-valid.md','--json',expected=1)
+            self.ensure(result['items'] == 0 and any('no proposal sections' in p for p in result['problems']),
+                        'bare H3 proposals require --fragment instead of silently passing as a full file')
+            before_h2 = (fixtures/'fragment-h3-valid.md').read_text() + '\n' + references.read_text()
+            self.ensure(len(module.parse(before_h2)) == 1 and len(module.parse(before_h2,fragment=True)) == 3,
+                        'H3 sections before the first H2 count only in fragment mode')
             for layout, flags in (('nested',()), ('fragment',('--fragment',))):
                 valid = fixtures/f'{layout}-h3-valid.md'
                 bad = fixtures/f'{layout}-h3-banana.md'
                 result = self.json(checker,valid,*flags,'--skills-dir',collection/'skills','--json')
-                self.ensure(result['items'] == 2 and len(module.parse(valid.read_text())) == 2,
+                self.ensure(result['items'] == 2 and len(module.parse(valid.read_text(), fragment=bool(flags))) == 2,
                             f'two H3 proposals parse and validate as two in a {layout}')
                 result = self.json(checker,bad,*flags,'--skills-dir',collection/'skills','--json',expected=1)
                 self.ensure(result['items'] == 2 and any('#2' in p and 'banana' in p for p in result['problems']),
@@ -3194,7 +3223,7 @@ properties = {"copy": (sampled_from([" title "]), check)}
                         and module.parse(mixed.read_text())[0]['fields']['change'] == 'Add a parent proposal check.',
                         'H2 parent fields under a descriptive H3 remain intact alongside two sourced H3 proposals')
             mixed.write_text((fixtures/'fragment-h3-banana.md').read_text()+'\nNo proposals.\n')
-            self.ensure(not module.check(mixed,collection/'skills',False)['ok'],
+            self.ensure(not module.check(mixed,collection/'skills',False,fragment=True)['ok'],
                         'No proposals. cannot override a malformed proposal already present')
 
             # Repeat every field gate behind an earlier valid proposal: it cannot lend fields to the next one.
@@ -3217,18 +3246,18 @@ properties = {"copy": (sampled_from([" title "]), check)}
                     elif layout == 'nested':
                         body = '## Panel proposals\n\n'+body
                     mutant.write_text(body)
-                    result = module.check(mutant,collection/'skills',False)
+                    result = module.check(mutant,collection/'skills',False,fragment=layout == 'fragment')
                     self.ensure(result['items'] == 2 and not result['ok']
                                 and any('#2' in p and problem in p for p in result['problems']),
                                 f'{layout} proposals retain the {label} gate without borrowing earlier fields')
             for alias, level in module.ALIASES.items():
                 mutant.write_text(first+'### Second'+second.replace('- Level: test',f'- Level: {alias}'))
-                result = module.check(mutant,collection/'skills',False)
+                result = module.check(mutant,collection/'skills',False,fragment=True)
                 self.ensure(result['ok'] and result['proposals'][1]['level'] == level,
                             f'H3 level alias {alias!r} retains its canonical value {level!r}')
             for skill in ('collection','new:panel-example'):
                 mutant.write_text(first+'### Second'+second.replace('- Skill: curator',f'- Skill: {skill}'))
-                self.ensure(module.check(mutant,collection/'skills',False)['ok'],
+                self.ensure(module.check(mutant,collection/'skills',False,fragment=True)['ok'],
                             f'H3 proposals retain the accepted skill target {skill!r}')
             fetched = []
             def fake_fetch(url):
@@ -3264,6 +3293,8 @@ properties = {"copy": (sampled_from([" title "]), check)}
                                   'args = sys.argv[1:]\n'
                                   'assert args[args.index("--max-time")+1] == os.environ.get("QUOTE_MAX_TIME", "20")\n'
                                   'url = args[-1]\n'
+                                  'if any(char in url for char in "{}[]"):\n'
+                                  '    assert "-g" in args or "--globoff" in args, "Source URL must stay literal"\n'
                                   'with open(os.environ["QUOTE_FETCH_LOG"], "a") as stream:\n'
                                   '    stream.write(json.dumps(url)+"\\n")\n'
                                   'status, page = json.loads(Path(os.environ["QUOTE_PAGES"]).read_text())[url]\n'
@@ -3285,7 +3316,8 @@ properties = {"copy": (sampled_from([" title "]), check)}
                             '<p>THE  <em>luminous</em>\n archive &amp; its caretakers — keep_a *careful* `record`.</p></html>'),
                 second_url: (200, '<p>cobalt rivers carry every unlisted quotation</p>'),
                 blob_url: (503, '<p>Service unavailable</p>'),
-                raw_url: (200, 'Raw file evidence confirms the cedar gate.'),
+                raw_url: (200, 'Raw file evidence confirms the cedar gate.\n'
+                          'a < b\nCopper lanterns illuminate the comparison branch.\nresult -> value'),
                 tweet_url: (200, json.dumps({'tweet':{'text':"The keeper's nested evidence survives JSON decoding."},
                                              'These hidden keys are never quoted evidence':False})
                             .replace("'",r'\u0027')),
@@ -3301,10 +3333,11 @@ properties = {"copy": (sampled_from([" title "]), check)}
                 return (f'{heading} {title}\n- Source: {url}\n- Level: lint\n- Skill: collection\n'
                         f'- Change: Validate each quoted claim. {change}\n- Why: {why or "Keep fetched evidence accurate."}\n')
 
-            def check_quotes(body, expected=0, fetch=True):
+            def check_quotes(body, expected=0, fetch=True, fragment=False):
                 quote_file.write_text(body)
                 return self.json(checker,quote_file,'--skills-dir',quote_root/'skills','--json',
-                                 *(('--fetch',) if fetch else ()),env=quote_env,expected=expected)
+                                 *(('--fetch',) if fetch else ()), *(('--fragment',) if fragment else ()),
+                                 env=quote_env,expected=expected)
 
             result = check_quotes(quoted_proposal(f'"{phrase}"'))
             self.ensure(result['ok'] and result['quotes_checked'],
@@ -3321,7 +3354,8 @@ properties = {"copy": (sampled_from([" title "]), check)}
             for name, content in (
                     ('2026-11-24.log', '\n'.join(rejected['problems'])),
                     ('2026-11-24.test-seat-x-propose.err', '\n'.join(rejected['problems'])),
-                    ('2026-11-24.test-seat-x-propose.md', quoted_proposal(f'"{wrong_phrase}"'))):
+                    ('2026-11-24.test-seat-x-propose.md', quoted_proposal(f'"{wrong_phrase}"')),
+                    ('2026-11-24.x-propose-prompt.md', quoted_proposal(f'"{wrong_phrase}"'))):
                 artifact = diagnostics/name
                 artifact.write_text(content)
                 try:
@@ -3333,6 +3367,13 @@ properties = {"copy": (sampled_from([" title "]), check)}
                                     f'{name} (tracked={tracked}) cannot validate its rejected quote on rerun')
                 finally:
                     artifact.unlink()
+            digest_evidence = diagnostics/'2026-11-24.x-digest.md'
+            digest_evidence.write_text(wrong_phrase)
+            try:
+                self.ensure(check_quotes(quoted_proposal(f'"{wrong_phrase}"'))['ok'],
+                            'an untracked x-digest remains valid collection quotation evidence')
+            finally:
+                digest_evidence.unlink()
             result = check_quotes(quoted_proposal('“The curator’s evidence stays beside each claim.”'))
             self.ensure(result['ok'], 'curly double quotes and apostrophes match straight apostrophes in a fetched body')
             result = check_quotes(quoted_proposal('"amber birds arrive before dusk…silver foxes leave at dawn"'))
@@ -3358,13 +3399,24 @@ properties = {"copy": (sampled_from([" title "]), check)}
             self.ensure(any(wrong_phrase in p for p in result['problems']), 'a missing quote in a multiline Why fails')
             borrowed = 'cobalt rivers carry every unlisted quotation'
             result = check_quotes(quoted_proposal('"'+borrowed+'"',title='Borrower',heading='###')
-                                  +quoted_proposal('Add a concrete check.',url=second_url,title='Other source',heading='###'),expected=1)
+                                  +quoted_proposal('Add a concrete check.',url=second_url,title='Other source',heading='###'),
+                                  expected=1,fragment=True)
             self.ensure(any('#1 "Borrower"' in p and borrowed in p for p in result['problems'])
                         and not any('#2' in p for p in result['problems']),
                         'a quote on only another proposal\'s fetched page fails without borrowing its evidence')
             result = check_quotes(quoted_proposal('"Raw file evidence confirms the cedar gate."',url=blob_url))
             self.ensure(result['ok'] and blob_url in quote_fetch_log.read_text() and raw_url in quote_fetch_log.read_text(),
                         'a GitHub blob returning 503 passes with the quote on its additional raw file fetch')
+            result = check_quotes(quoted_proposal('"Copper lanterns illuminate the comparison branch."',url=blob_url))
+            self.ensure(result['ok'], 'a verbatim raw-body quote between a < b and a later -> survives HTML normalization')
+            for url in ('https://example.invalid/{a,b}', 'https://example.invalid/[1-2]'):
+                manifest[url] = manifest[first_url]
+                quote_pages.write_text(json.dumps(manifest))
+                with patch.dict(os.environ, quote_env):
+                    status, body = module.fetch_source(url)
+                self.ensure(status == 200 and phrase in body
+                            and json.loads(quote_fetch_log.read_text().splitlines()[-1]) == url,
+                            f'curl disables glob expansion for the literal Source URL {url}')
             result = check_quotes(quoted_proposal('“The keeper’s nested evidence survives JSON decoding.”',url=tweet_url))
             self.ensure(result['ok'], 'FxTwitter nested JSON string values decode escaped apostrophes before matching')
             result = check_quotes(quoted_proposal('"These hidden keys are never quoted evidence"',url=tweet_url),expected=1)
@@ -3463,6 +3515,19 @@ properties = {"copy": (sampled_from([" title "]), check)}
                         'panel invokes the fragment fetch gate on every H3 URL with stubbed transport')
             self.ensure((collection/f'logs/curator/{date}.codex-stub-x-propose.md').read_text() == 'No proposals.\n',
                         'a fragment containing only No proposals. passes the panel gate')
+            panel_module = load_module(self.script(self.name,'run_panel.py'),'example_panel_cleanup')
+            for number, error in enumerate((PermissionError, ProcessLookupError), 1):
+                cleanup_date = f'2026-12-{number:02d}'
+                config.write_text(json.dumps([seat('finished-seat','anthropic',no_proposals),
+                                              seat('finished-peer','openai',no_proposals)]))
+                with patch.dict(os.environ,panel_env), patch.object(panel_module.os,'killpg',side_effect=error) as killpg:
+                    code = panel_module.main([str(prompt),'--panel-config',str(config),
+                                              '--repo',str(collection),'--date',cleanup_date])
+                records = [json.loads(line) for line in (collection/f'logs/curator/{cleanup_date}.log').read_text().splitlines()
+                           if line.startswith('{')]
+                self.ensure(code == 0 and killpg.call_count == 2 and len(records) == 2
+                            and all(r['exit_code'] == 0 and r['check_exit_code'] == 0 for r in records),
+                            f'{error.__name__} during finished-seat cleanup preserves exit 0 instead of reporting exit 127')
             for name, fixture, code in (('empty-seat',empty,0), ('unstructured-seat',unstructured,0),
                                         ('banana-seat',fixtures/'fragment-h3-banana.md',0),
                                         ('crashed-seat',no_proposals,23)):

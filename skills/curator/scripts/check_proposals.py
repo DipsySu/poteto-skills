@@ -4,21 +4,22 @@
   check_proposals.py [FILE] [--digest FILE] [--fragment] [--fetch] [--skills-dir DIR] [--json]
 
 Each proposal is an H2 section (`## 1. Title`) or an H3 section (`### Title`)
-with its own Source bullet, either under an H2 or in a bare --fragment:
+with Source plus Level, Skill or Change, under an H2 or before it with --fragment:
   - Source: <http(s) URL the curator actually fetched>   (one or more URLs)
   - Level: architecture | types | lint | test | verification | ci | prose | review
   - Skill: <existing skill name> | new:<name> | collection
   - Change: <the concrete change, preferably a script, lint, test, or type>
   - Why: <one sentence>                                   (optional)
-A section with other proposal fields but no Source is still checked and fails.
+Unsourced H3 sections can supply legacy H2 fields; malformed field-bearing sections
+in an H3 group or --fragment are still checked. Source-only H3s are descriptive.
 A file with no proposals is valid only with an explicit `No proposals` line.
 --fragment accepts a seat's standalone output; it does not relax any checks.
 
 --fetch retains up to 5 MiB per source within curl's --max-time 20, following redirects.
 GitHub blob URLs also fetch their raw file; a final 2xx from either representation passes.
 Double-quoted spans of at least four words in Change/Why must match an own fetched source
-or a collection file (tracked, proposals/, logs/curator/), excluding this proposal itself,
-*.log / *.err diagnostics and DATE.<seat>-x-propose.md panel fragments.
+or a collection file (tracked files and proposals/*.md), excluding this proposal itself
+and *.log / *.err diagnostics. Only *.x-digest.md is evidence under logs/curator/.
 HTML/entities, case, curly punctuation, dashes, Markdown emphasis and whitespace are
 normalized; ... or … parts must occur in order in one source/file. Proposed messages,
 commands and test inputs belong in backticks and are skipped. No --fetch skips quotes.
@@ -57,13 +58,13 @@ FETCH_SECONDS = 20
 DATE = r"\d{4}-\d{2}-\d{2}"
 STATUS_URL_RE = re.compile(
     r"https?://(?:(?:www|mobile)\.)?(?:x\.com|twitter\.com|api\.fxtwitter\.com)/"
-    r"(?:[\w]+|i/web)/status/(?P<id>\d+)(?![\w/])(?:\?[^\s<>)\]`'\"]*)?"
+    r"(?:[\w]+|i/web)/status/(?P<id>\d{15,20})(?![\w/])(?:\?[^\s<>)\]`'\"]*)?"
 )
 STAMP_RE = re.compile(rf"(?P<time>{DATE} \d{{2}}:\d{{2}})[ \t]+(?P<zone>[\w/+\-]+)(?=$|[\s;,)])")
 INLINE_STAMP_RE = re.compile(STATUS_URL_RE.pattern + rf"[)>]?[ \t]*\((?P<stamp>{DATE}[^)\n]*)")
 PROPOSAL_DATE_RES = (
-    re.compile(rf"\b(?P<date>{DATE})[ \t]*\(status[ \t]+(?P<id>\d+)\)"),
-    re.compile(rf"\(status[ \t]+(?P<id>\d+),[ \t]*(?P<date>{DATE})\)"),
+    re.compile(rf"\b(?P<date>{DATE})[ \t]*\(status[ \t]+(?P<id>\d{{15,20}})\)"),
+    re.compile(rf"\(status[ \t]+(?P<id>\d{{15,20}}),[ \t]*(?P<date>{DATE})\)"),
 )
 ISO_INSTANT_RE = re.compile(rf"{DATE}T\d{{2}}:\d{{2}}(?::\d{{2}}(?:\.\d+)?)?(?:Z|[+-]\d{{2}}:\d{{2}})")
 
@@ -210,10 +211,11 @@ def check_digest(path: Path) -> dict:
 
 def normalize(text: str) -> str:
     text = html.unescape(text)
+    text = re.sub(r"<!--.*?-->", "", text, flags=re.S)
     # Block elements separate words; inline markup can split a single word.
-    text = re.sub(r"</?(?:p|div|br|li|h[1-6]|tr|td|section|article|pre|blockquote)\b[^>]*>", " ",
+    text = re.sub(r"</?(?:p|div|br|li|h[1-6]|tr|td|section|article|pre|blockquote)\b[^<>]*>", " ",
                   text, flags=re.I)
-    text = re.sub(r"<[^>]*>", "", text)
+    text = re.sub(r"</?[A-Za-z][^<>]*>", "", text)
     text = text.casefold().translate(str.maketrans({'“': '"', '”': '"', '‘': "'", '’': "'",
                                                   '–': '-', '—': '-', '*': '', '_': '', '`': ''}))
     return " ".join(text.split())
@@ -254,7 +256,7 @@ def contains_quote(text: str, quote: str) -> bool:
 
 
 def collection_texts(root: Path, proposal: Path):
-    """Tracked files plus history, excluding input, diagnostics and panel fragments."""
+    """Tracked files plus proposal/digest history, excluding input and diagnostics."""
     root, proposal = root.resolve(), proposal.resolve()
     env = {key: value for key, value in os.environ.items() if not key.startswith('GIT_')}
     result = subprocess.run(['git', '-C', str(root), 'ls-files', '-z'],
@@ -262,11 +264,13 @@ def collection_texts(root: Path, proposal: Path):
     if result.returncode and (root / '.git').exists():
         raise OSError('cannot list tracked collection files; fix git ls-files in the collection and rerun')
     files = {root / os.fsdecode(name) for name in result.stdout.split(b'\0') if name} if result.returncode == 0 else set()
-    for directory in ('proposals', 'logs/curator'):
-        files.update((root / directory).rglob('*'))
+    files.update((root / 'proposals').glob('*.md'))
+    files.update((root / 'logs/curator').glob('*.x-digest.md'))
     for file in sorted(files):
         resolved = file.resolve()
         if resolved == proposal or not resolved.is_relative_to(root) or not file.is_file():
+            continue
+        if file.is_relative_to(root / 'logs/curator') and not file.name.endswith('.x-digest.md'):
             continue
         if file.suffix.lower() in {'.log', '.err'} or re.fullmatch(rf'{DATE}\..+-x-propose\.md', file.name):
             continue
@@ -305,22 +309,27 @@ def split_headings(text: str, level: int) -> list[str]:
     return parts
 
 
-def parse(text: str, *, with_quotes: bool = False) -> list[dict]:
+def parse(text: str, *, with_quotes: bool = False, fragment: bool = False) -> list[dict]:
     def read_section(title, body):
         item = section(title, body)
         if with_quotes:
             item['quotes'] = quotations(body)
         return item
 
+    def starts_h3(item):
+        return "source" in item["fields"] and (PROPOSAL_FIELDS - {"source"}).intersection(item["fields"])
+
     items = []
     parts = split_headings(text, 2)
     for index, chunk in enumerate(parts):
+        if not index and not fragment:
+            continue
         title, _, body = chunk.partition("\n") if index else ("", "", chunk)
         children = split_headings(body, 3)
-        if index and not any("source" in read_section("", child.partition("\n")[2])["fields"]
+        if index and not any(starts_h3(read_section("", child.partition("\n")[2]))
                              for child in children[1:]):
             # Legacy H2 proposals may organize their fields beneath descriptive
-            # H3 headings. Only an H3 with its own Source starts the new format.
+            # H3 headings. Source plus another proposal field starts the new format.
             items.append(read_section(title, body))
             continue
         parent_body = children[0]
@@ -330,11 +339,11 @@ def parse(text: str, *, with_quotes: bool = False) -> list[dict]:
         for child in children[1:]:
             child_title, _, child_body = child.partition("\n")
             item = read_section(child_title, child_body)
-            if parent_is_proposal and not proposals and "source" not in item["fields"]:
+            if parent_is_proposal and not proposals and not starts_h3(item):
                 # Descriptive H3 fields still belong to a preceding H2 proposal,
                 # up until the first H3 that starts its own sourced proposal.
                 parent_body += "\n### " + child
-            elif PROPOSAL_FIELDS.intersection(item["fields"]):
+            elif (PROPOSAL_FIELDS - {"source"}).intersection(item["fields"]):
                 proposals.append(item)
             elif proposals:
                 # A descriptive subheading belongs to the preceding proposal.
@@ -377,7 +386,7 @@ def fetch_source(url: str) -> tuple[int, str]:
             headers = Path(temporary) / "headers"
             deadline = time.monotonic() + FETCH_SECONDS
             process = subprocess.Popen(
-                ["curl", "-sS", "-L", "-D", str(headers), "--max-time", str(FETCH_SECONDS),
+                ["curl", "-g", "-sS", "-L", "-D", str(headers), "--max-time", str(FETCH_SECONDS),
                  "-A", "poteto-skills-curator/0.1", url],
                 stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
             )
@@ -435,9 +444,9 @@ def fetch_source(url: str) -> tuple[int, str]:
                 process.stdout.close()
 
 
-def check(path: Path, skills_dir: Path | None, do_fetch: bool) -> dict:
+def check(path: Path, skills_dir: Path | None, do_fetch: bool, *, fragment: bool = False) -> dict:
     text = path.read_text(encoding="utf-8", errors="replace")
-    items = parse(text, with_quotes=do_fetch)
+    items = parse(text, with_quotes=do_fetch, fragment=fragment)
     skills = {p.name for p in skills_dir.iterdir() if (p / "SKILL.md").is_file()} if skills_dir and skills_dir.is_dir() else None
     problems, timestamp_count = proposal_times(path, text)
     warnings = []
@@ -511,8 +520,9 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         prog="check_proposals.py",
         description="Validate a curator proposals file: every proposal has a source URL, a pyramid level, a target "
-                    "skill, and a concrete change. Reads ## proposals and ### proposals with their own Source "
-                    "bullets, under an H2 or standalone. Other proposal fields without Source still fail. "
+                    "skill, and a concrete change. Reads ## proposals and ### proposals with Source plus "
+                    "Level, Skill or Change, under an H2 or standalone with --fragment. Unsourced H3s can "
+                    "supply H2 fields; malformed proposals in H3 groups/fragments still fail. "
                     "--fetch checks double-quoted phrases (4+ words) in Change/Why against that proposal's "
                     "fetched sources or collection files. Put proposed messages, commands and test inputs in backticks. "
                     "Status-ID date/time checks always run locally, including calls from curate.sh --offline.",
@@ -520,8 +530,8 @@ def main(argv: list[str] | None = None) -> int:
                "api.fxtwitter.com JSON contributes string values. Matching normalizes HTML/entities, case,\n"
                "curly quotes/apostrophes, en/em dashes, Markdown emphasis and whitespace. Ellipsis (...) or\n"
                "… parts must occur in order within one page/file. Local evidence: tracked files plus\n"
-               "proposals/ and logs/curator/, excluding the input, *.log / *.err diagnostics and\n"
-               "DATE.<seat>-x-propose.md panel fragments. Collection root is the parent\n"
+               "proposals/*.md, excluding the input and *.log / *.err diagnostics. Only\n"
+               "*.x-digest.md is evidence under logs/curator/. Collection root is the parent\n"
                "of --skills-dir, or this script's checkout. Without --fetch, quotes are not checked.\n\n"
                "Timestamps (no network): decode X Snowflake IDs using (id >> 22) + 1288834974657 ms.\n"
                "Proposals: YYYY-MM-DD (status ID) and (status ID, YYYY-MM-DD) use the UTC date;\n"
@@ -554,7 +564,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"check_proposals: {path} not found; provide an existing input file", file=sys.stderr)
             return 2
     try:
-        res = check(args.proposals, args.skills_dir, args.fetch) if args.proposals else None
+        res = check(args.proposals, args.skills_dir, args.fetch, fragment=args.fragment) if args.proposals else None
         digest = check_digest(args.digest) if args.digest else None
     except OSError as error:
         print(f"check_proposals: {error}; make the input file readable and rerun", file=sys.stderr)
