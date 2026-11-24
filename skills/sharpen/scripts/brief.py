@@ -2,7 +2,7 @@
 """Write (or check) a pre-work brief for a task.
 
   brief.py "task" [--repo DIR] [--out BRIEF.md] [--force] [--json]
-  brief.py --check BRIEF.md
+  brief.py --check BRIEF.md [--repo DIR]
 
 The brief has four parts: the task in your own words, how a top expert would approach it
 (raw sources, method, prior art), whether the task is over- or under-specified, and one
@@ -11,6 +11,8 @@ match the task's keywords as candidate raw sources, so the expert section starts
 real files, not memory.
 
 --check exits 1 while any TODO remains or the outside check has no runnable command or URL.
+Quick-fix constraints also require an existing root-cause path, fixes it / covers it,
+and an open user choice between both options when the requested change only covers it.
 """
 from __future__ import annotations
 
@@ -28,9 +30,14 @@ me my not of on or our please should so some than that the their them then there
 up use using want we what when where which while who why will with would you your add fix new get set
 change update improve make sure also just like need needs task work""".split())
 
+QUALIFIER = r"(?:smallest|minimal|quickest|simplest|least\s+invasive)"
+QUICK_FIX = re.compile(
+    rf"\b(?:{QUALIFIER}(?:\s+or\s+{QUALIFIER})*\s+(?:possible\s+)?(?:change|fix|patch|diff)"
+    r"|quick\s+fix|hotfix|band-aid|workaround|for\s+now|temporary)\b", re.I)
+
 
 def keywords(task: str) -> list[str]:
-    words = re.findall(r"[A-Za-z_][A-Za-z0-9_-]{2,}", task)
+    words = re.findall(r"[A-Za-z_][A-Za-z0-9_-]{2,}", QUICK_FIX.sub(" ", task))
     out = []
     for w in words:
         lw = w.lower()
@@ -66,10 +73,15 @@ def candidate_files(repo: Path, kws: list[str], limit: int = 8) -> list[tuple[st
 
 
 def render(task: str, repo: Path | None) -> tuple[str, dict]:
+    task = " ".join(task.split())
     kws = keywords(task)
     cands = candidate_files(repo, kws) if repo else []
     src = ", ".join(f"`{p}` ({n} hits)" for p, n in cands) if cands else "none found by keyword; name them yourself"
     today = dt.date.today().isoformat()
+    constraint = QUICK_FIX.search(task)
+    root_lines = ("\n- Root cause (the first place it goes wrong; a path or path:symbol): TODO"
+                  "\n- The change that was asked for: fixes it | covers it") if constraint else ""
+    over = f"{constraint[0]} — TODO" if constraint else "TODO"
     text = f"""# Brief: {task}
 
 Written {today}. Fill in every blank below, then run `brief.py --check` on this file. Keep it short: the point is better work, not a bigger plan.
@@ -78,7 +90,7 @@ Written {today}. Fill in every blank below, then run `brief.py --check` on this 
 
 - What the user is really after: TODO
 - The problem behind the request: TODO
-- Not the goal (effort that would be wasted): TODO
+- Not the goal (effort that would be wasted): TODO{root_lines}
 
 ## How a top expert would approach it
 
@@ -89,7 +101,7 @@ Written {today}. Fill in every blank below, then run `brief.py --check` on this 
 
 ## Specification check
 
-- Over-specified (constraints that don't serve the goal; loosen them): TODO
+- Over-specified (constraints that don't serve the goal; loosen them): {over}
 - Under-specified (decisions that are the user's to make; leave them open or ask): TODO
 - Choices I'll make myself, and why they're mine to make: TODO
 
@@ -104,7 +116,74 @@ One check outside my own judgment that shows the result is right: a command, a r
     return text, {"task": task, "keywords": kws, "candidate_sources": [{"path": p, "hits": n} for p, n in cands]}
 
 
-def check(path: Path) -> list[str]:
+def section(text: str, heading: str) -> str:
+    match = re.search(rf"^##\s+{re.escape(heading)}\s*$(.*?)(?=^##\s|\Z)", text, re.M | re.S)
+    return match[1] if match else ""
+
+
+def field(text: str, label: str) -> str:
+    match = re.search(rf"^[ \t]*(?:-[ \t]+)?{re.escape(label)}(?:[ \t]*\([^\n)]*\))?:[ \t]*([^\n]*)$",
+                      text, re.M | re.I)
+    return match[1].strip() if match else ""
+
+
+def user_choice(text: str, root: Path, repo: Path, reference: str) -> bool:
+    """Require two named alternatives under Under-specified, ending in -> yours:."""
+    under = re.search(r"^- Under-specified(?:[ \t]*\([^\n)]*\))?:[ \t]*(.*?)(?=^- \S|^#|\Z)",
+                      section(text, "Specification check"), re.M | re.S | re.I)
+    if not under:
+        return False
+    root_names = (reference, root.relative_to(repo).as_posix(), str(root))
+    root_pattern = re.compile(r"(?<![\w./-])(?:" + "|".join(map(re.escape, root_names))
+                              + r")(?::[^\s`,;)]+)?(?=[\s`,;)]|$)")
+    generic = {"bandaid", "band", "aid", "workaround", "root", "cause", "fix", "it", "the", "a", "an"}
+    for line in under[1].splitlines():
+        choice = re.fullmatch(r"[ \t]*(?:-[ \t]+)?(.+?)[ \t]+->[ \t]+yours:[ \t]*", line, re.I)
+        if not choice:
+            continue
+        options = re.split(r"\s+(?:or|versus|vs\.?)\s+|\s*[;|]\s*", choice[1], flags=re.I)
+        normalized = [re.sub(r"\W+", " ", option).strip().lower() for option in options]
+        for n, option in enumerate(options):
+            if root_pattern.search(option) and re.search(r"[A-Za-z]+", root_pattern.sub("", option)):
+                if any(set(re.findall(r"[a-z]+", other.lower())) - generic
+                       for i, other in enumerate(options) if normalized[i] != normalized[n]):
+                    return True
+    return False
+
+
+def root_cause_errors(text: str, repo: Path) -> list[str]:
+    title = re.search(r"^# Brief:[ \t]*(.*)$", text, re.M)
+    constraint = QUICK_FIX.search(title[1]) if title else None
+    if not constraint:
+        return []
+    errs = []
+    own_words = section(text, "In my own words")
+    value = field(own_words, "Root cause")
+    reference = value.removeprefix("`").removesuffix("`").split(":", 1)[0].strip()
+    repo = repo.resolve()
+    root = None
+    if reference:
+        try:
+            candidate = (repo / reference).resolve()
+            if candidate != repo and candidate.is_relative_to(repo) and candidate.exists():
+                root = candidate
+        except (OSError, ValueError, RuntimeError):
+            pass
+    if root is None:
+        detail = f"; invalid root-cause path: {value}" if value else ""
+        errs.append(f'the task asks for a "{constraint[0]}"; name the root cause as a path in this repo '
+                    '(Root cause: todo/store.py:Store.add), so the brief can tell a fix from a bandaid' + detail)
+    asked = field(own_words, "The change that was asked for").lower()
+    if asked not in ("fixes it", "covers it"):
+        errs.append('set "The change that was asked for:" to exactly "fixes it" or "covers it"')
+    elif asked == "covers it" and (root is None or not user_choice(text, root, repo, reference)):
+        errs.append('the requested change covers it; add an Under-specified item naming both options '
+                    '(e.g. "Retry three times in todo/api.py (bandaid) or fix locking in todo/store.py '
+                    '-> yours:"), using your root-cause path; ask the user this choice in the final reply')
+    return errs
+
+
+def check(path: Path, repo: Path = Path(".")) -> list[str]:
     text = path.read_text(encoding="utf-8", errors="replace")
     errs = []
     todos = [n for n, line in enumerate(text.splitlines(), 1) if re.search(r"\bTODO\b", line)]
@@ -121,7 +200,7 @@ def check(path: Path) -> list[str]:
             errs.append("the outside check needs a runnable command in backticks or a URL to compare against")
         if not re.search(r"pass condition:\s*\S", body, re.I):
             errs.append("state the pass condition for the outside check")
-    return errs
+    return errs + root_cause_errors(text, repo)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -131,11 +210,25 @@ def main(argv: list[str] | None = None) -> int:
                     "check), or --check a filled one.",
         epilog="examples:\n"
                "  brief.py \"add json output to the export command\" --out BRIEF.md\n"
-               "  brief.py --check BRIEF.md",
+               "  brief.py --check BRIEF.md --repo .\n\n"
+               "Quick-fix constraints: smallest/minimal/quickest/simplest/least invasive\n"
+               "before change/fix/patch/diff (optionally 'possible'), quick fix, hotfix,\n"
+               "band-aid, workaround, for now, temporary. These phrases are not search keywords.\n"
+               "For these tasks, keep the original task in '# Brief:' and fill in:\n"
+               "  - Root cause: todo/store.py:Store.add\n"
+               "  - The change that was asked for: fixes it\n"
+               "Root cause accepts the generated descriptive label, a path or path:symbol,\n"
+               "optionally in backticks. The path must exist under --repo (default: .).\n"
+               "Choose exactly 'fixes it' or 'covers it'. For 'covers it', add an item\n"
+               "under Under-specified naming the bandaid and the root-cause fix, including\n"
+               "the root-cause path, separated by 'or', 'versus', 'vs', ';' or '|':\n"
+               "  - Retry three times in todo/api.py or fix locking in todo/store.py -> yours:\n"
+               "Leave that decision open and ask the user in the final reply. --check exits\n"
+               "1 for a missing/invalid root path, an unchosen classification or missing choice.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     ap.add_argument("task", nargs="?", help="the task, in the user's words")
-    ap.add_argument("--repo", type=Path, default=Path("."), help="repo to search for raw sources (default: .)")
+    ap.add_argument("--repo", type=Path, default=Path("."), help="repo to search and validate root-cause paths in (default: .)")
     ap.add_argument("--out", type=Path, help="write the brief here instead of stdout")
     ap.add_argument("--force", action="store_true", help="overwrite --out if it exists")
     ap.add_argument("--json", action="store_true", help="print the brief and its metadata as JSON")
@@ -146,7 +239,7 @@ def main(argv: list[str] | None = None) -> int:
         if not args.check.is_file():
             print(f"brief: {args.check} not found", file=sys.stderr)
             return 2
-        errs = check(args.check)
+        errs = check(args.check, args.repo)
         for e in errs:
             print(f"FAIL  {e}")
         print(f"brief: {'PASS' if not errs else 'FAIL'} {args.check}")

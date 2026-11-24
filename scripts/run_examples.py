@@ -18,7 +18,7 @@ import sys
 import tempfile
 import time
 import traceback
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 ROOT = Path(__file__).resolve().parent.parent
 SKILLS = sorted(p.name for p in (ROOT / "skills").iterdir() if (p / "SKILL.md").is_file())
@@ -344,7 +344,17 @@ class Examples:
         finally:
             self.run(control, 'cleanup', env=env)
 
+    def child_pids(self, parent):
+        # Separate -o options are strictly POSIX; `--ppid` is GNU-only.
+        rows = (row.split() for row in self.run('ps', '-A', '-o', 'pid=', '-o', 'ppid=', json_stdout=True).splitlines())
+        return [r[0] for r in rows if len(r) == 2 and r[1] == str(parent)]
+
     def wrapped_cleanup(self):
+        with patch.object(self, 'run', return_value='101 42\n102 420\n103 142\n42 1\n104 42\n') as ps:
+            self.ensure(self.child_pids(42) == ['101', '104'],
+                        'child_pids selects only exact PPID matches')
+            self.ensure(ps.call_args_list == [call('ps', '-A', '-o', 'pid=', '-o', 'ppid=', json_stdout=True)],
+                        'child_pids requests PID and PPID with separate POSIX -o options')
         # A wrapper launch command (sh -c, npm, make) forks the real server; cleanup must stop that child too.
         wrapped = self.repo / '.claude/skills/verify-wrapped'
         shutil.copytree(self.skill, wrapped)
@@ -357,7 +367,13 @@ class Examples:
         launch, closed = None, False
         try:
             launch = self.json(control, 'launch', env=env)
-            self.ensure(self.run('ps', '-o', 'pid=', '--ppid', launch['pid']).split(), 'wrapper launch runs the server as a child of the recorded PID')
+            leaf = subprocess.Popen(['sleep', '30'])
+            try:
+                self.ensure(not self.child_pids(leaf.pid), 'child_pids finds no children of a leaf process')
+            finally:
+                leaf.kill()
+                leaf.wait()
+            self.ensure(self.child_pids(launch['pid']), 'wrapper launch runs the server as a child of the recorded PID')
             self.ensure(self.json(control, 'cleanup', env=env)['killed'], 'cleanup stops the recorded wrapper')
             for _ in range(30):
                 with socket.socket() as s:
@@ -1234,6 +1250,93 @@ class Handler(BaseHTTPRequestHandler):
                             for c in mined['classes']), 'direct-JSON class contains both real mistake commit SHAs')
             self.ensure(any('status' in ' '.join(c['signature']).lower() and c['sources'].get('commit',0)>=2
                             for c in mined['classes']), 'status-transition class contains both fix commits')
+            excuse_repo = self.scratch / 'excuse-comments'
+            self.run('git', 'clone', '--quiet', '--no-hardlinks', self.repo, excuse_repo)
+            excuse = "# for now, write rows directly; Store.add's lock is too slow"
+            rewrites = [
+                ('todo/api.py', 'self.reply(201, self.server.store.add(body.get("title")))',
+                 'store = self.server.store\n                rows = store.list_all()\n'
+                 '                row = {"id": len(rows) + 1, "title": body.get("title"), "status": "open"}\n'
+                 '                rows.append(row)\n                ' + excuse + '\n'
+                 '                store.path.write_text(json.dumps(rows))\n                self.reply(201, row)'),
+                ('todo/__main__.py', 'result = store.add(args.title)',
+                 'rows = store.list_all()\n            result = {"id": len(rows) + 1, "title": args.title, "status": "open"}\n'
+                 '            rows.append(result)\n            ' + excuse + '\n'
+                 '            store.path.write_text(json.dumps(rows))'),
+            ]
+            expected_refs = set()
+            for path, before, after in rewrites:
+                file = excuse_repo / path
+                original = file.read_text()
+                self.ensure(original.count(before) == 1, f'excuse fixture replaces the actual Store.add caller in {path}')
+                file.write_text(original.replace(before, after))
+                line = next(n for n, text in enumerate(file.read_text().splitlines(), 1) if text.strip() == excuse)
+                expected_refs.add(f'{path}:{line}')
+                self.run('git', 'add', path, cwd=excuse_repo)
+                self.run('git', '-c', 'user.name=example-dev', '-c', 'user.email=dev@example.local',
+                         '-c', 'commit.gpgsign=false', 'commit', '-qm', f'feat: write rows directly in {path}',
+                         cwd=excuse_repo)
+            comments = self.json(self.script(self.name, 'mine_mistakes.py'), excuse_repo, '--json')
+            evidence = comments['unclassified'] + [item for c in comments['classes'] for item in c['evidence']]
+            self.ensure({item['ref'] for item in evidence if item['source'] == 'code-comment'} == expected_refs,
+                        'mining catches both committed copies of the for-now direct-write excuse at their actual lines')
+            feedback = self.json(self.script('feedback-to-architecture', 'collect_feedback.py'),
+                                 '--repo', excuse_repo, '--code-comments')
+            self.ensure({item['ref'] for item in feedback['items'] if item['source'] == 'code-comment'} == expected_refs,
+                        'collect_feedback --code-comments mines the same two excuse comments through the shared rule')
+            excuse_rules = ROOT / 'skills/correct/references/excuse-comments.json'
+            excuse_rule = json.loads(excuse_rules.read_text())['rules'][0]
+            arithmetic_repo = self.scratch / 'excuse-arithmetic'
+            self.run('git', 'clone', '--quiet', '--no-checkout', '--no-hardlinks', self.repo, arithmetic_repo)
+            (arithmetic_repo / 'average.py').write_text('average = total // temporary\n')
+            self.run('git', 'add', 'average.py', cwd=arithmetic_repo)
+            arithmetic = self.lint(excuse_rules, arithmetic_repo, root=arithmetic_repo)
+            self.ensure(arithmetic['ok'] and not arithmetic['violations'],
+                        'Python floor division by temporary is code, not an excuse comment')
+            mined_arithmetic = self.json(self.script(self.name, 'mine_mistakes.py'), arithmetic_repo, '--json')
+            feedback_arithmetic = self.json(self.script('feedback-to-architecture', 'collect_feedback.py'),
+                                            '--repo', arithmetic_repo, '--code-comments')
+            self.ensure(mined_arithmetic['counts'].get('code-comment', 0) == 0
+                        and feedback_arithmetic['counts'].get('code-comment', 0) == 0,
+                        'mining and feedback share the lint exemption for Python floor division')
+            replay = self.json(self.script(self.name, 'patlint.py'), '--rules', excuse_rules,
+                               '--root', excuse_repo, '--test', '--json')
+            self.ensure(replay['ok'] and {'no-excuse-comment', 'ok'} <= {t['expect'] for t in excuse_rule['tests']},
+                        'no-excuse-comment --test proves both offending comments and quiet code or issue references')
+            excuse_baseline = self.scratch / 'excuse-baseline.json'
+            ratchet = ('--baseline', excuse_baseline)
+            self.lint(excuse_rules, excuse_repo, root=excuse_repo, extra=(*ratchet, '--update-baseline'))
+            self.ensure(json.loads(excuse_baseline.read_text())['counts']['no-excuse-comment'] ==
+                        {'todo/api.py': 1, 'todo/__main__.py': 1},
+                        'first adoption baselines the two existing committed excuse comments')
+            adopted_baseline = excuse_baseline.read_text()
+            store = excuse_repo / 'todo/store.py'
+            original_store = store.read_text()
+            third = '# temporary fix until Store.add\'s lock is faster\n'
+            store.write_text(original_store + '\n' + third)
+            failure = self.run(self.script(self.name, 'patlint.py'), '--rules', excuse_rules,
+                               '--root', excuse_repo, *ratchet, excuse_repo, expected=1)
+            self.ensure('no-excuse-comment' in failure and 'todo/store.py' in failure and excuse_rule['message'] in failure,
+                        'a new excuse comment after baseline exits 1 and names the root-cause or TODO(#123) issue fix')
+            store.write_text(original_store + '\n' + third.replace('# temporary', '# TODO(#7): temporary'))
+            self.ensure(self.lint(excuse_rules, excuse_repo, root=excuse_repo, extra=ratchet)['ok']
+                        and excuse_baseline.read_text() == adopted_baseline,
+                        'the same new comment tracked as TODO(#7) exits 0 without raising the baseline')
+            literal_repo = self.scratch / 'excuse-literals'
+            literal_repo.mkdir()
+            self.run('git', 'init', '-q', cwd=literal_repo)
+            miner_copy = literal_repo / 'mine_mistakes.py'
+            shutil.copyfile(self.script(self.name, 'mine_mistakes.py'), miner_copy)
+            legacy_literals = [r'WORKAROUND_RE = r"\b(HACK|WORKAROUND|FIXME|XXX)\b"',
+                               'ap.add_argument("--no-code-comments", action="store_true", '
+                               'help="skip HACK/WORKAROUND/FIXME/XXX comments")']
+            miner_copy.write_text(miner_copy.read_text() + '\n' + '\n'.join(legacy_literals) + '\n')
+            self.run('git', 'add', 'mine_mistakes.py', cwd=literal_repo)
+            self.run('git', '-c', 'user.name=example-dev', '-c', 'user.email=dev@example.local',
+                     '-c', 'commit.gpgsign=false', 'commit', '-qm', 'test: retain mining source literals', cwd=literal_repo)
+            literals = self.json(self.script(self.name, 'mine_mistakes.py'), literal_repo, '--json')
+            self.ensure(literals['counts'].get('code-comment', 0) == 0,
+                        'a copy of mine_mistakes and its legacy regex/help literals produces no code-comment items')
             self.correct_grok_regressions()
             self.correct_baseline_contract()
             self.review_baseline_retry()
@@ -1419,6 +1522,111 @@ class Handler(BaseHTTPRequestHandler):
             shutil.copyfile(ROOT / 'examples/fixtures/FILLED-BRIEF.md', filled)
             self.run(self.script(self.name,'brief.py'),'--check',filled)
             self.ensure(True,'filled brief with executable outside-check command passes')
+            checker = self.script(self.name, 'brief.py')
+            task = 'quick fix: stop todos getting lost when two adds overlap'
+            quick = self.json(checker, task, '--repo', self.repo, '--json')
+            root_label = '- Root cause (the first place it goes wrong; a path or path:symbol):'
+            change_label = '- The change that was asked for:'
+            self.ensure('quick' not in quick['keywords'], 'quick-fix constraints are not repo search keywords')
+            self.ensure(root_label in quick['brief'] and change_label + ' fixes it | covers it' in quick['brief'],
+                        'quick-fix template asks for the root cause and whether the requested change fixes or covers it')
+            self.ensure(re.search(r'^- Over-specified[^\n]*:\s*quick fix\b', quick['brief'], re.M),
+                        'the matched quick-fix phrase starts the over-specified constraint')
+            multiline = self.json(checker, 'stop todos getting lost\nUse a quick fix', '--repo', self.repo, '--json')
+            missing_root = self.art / 'MULTILINE-MISSING-ROOT.md'
+            fixture = (ROOT / 'examples/fixtures/sharpen/MULTILINE-MISSING-ROOT.md').read_text()
+            missing_root.write_text(multiline['brief'].split('\n\n', 1)[0] + '\n' + fixture.split('\n', 1)[1])
+            failure = self.run(checker, '--check', missing_root, '--repo', self.repo, expected=1)
+            self.ensure('Root cause:' in failure and 'The change that was asked for:' in failure,
+                        'a multiline quick-fix task still requires both root-cause fields after they are removed')
+            self.ensure(multiline['brief'].splitlines()[0] == '# Brief: stop todos getting lost Use a quick fix',
+                        'multiline task whitespace collapses into the brief title')
+            retry = self.art / 'RETRY-BRIEF.md'
+            retry_text = f'''# Brief: {task}
+
+## In my own words
+
+Stop losing todos when adds overlap.
+{change_label} fixes it
+
+## How a top expert would approach it
+
+Read todo/api.py and retry three times in todo/api.py, because it is the quickest change.
+
+## Specification check
+
+- Over-specified: quick fix
+- Under-specified: none
+
+## Outside check
+
+- Command or link: `python3 -m unittest -q`
+- Pass condition: concurrent adds retain both todos.
+'''
+            retry.write_text(retry_text)
+            failure = self.run(checker, '--check', retry, '--repo', self.repo, expected=1)
+            self.ensure('quick fix' in failure and 'Root cause:' in failure,
+                        'a complete retry-only brief fails for its missing root cause and names quick fix')
+            fixed = retry_text.replace('Stop losing todos when adds overlap.',
+                                       'Stop losing todos when adds overlap.\n- Root cause: todo/store.py')
+            retry.write_text(fixed)
+            self.run(checker, '--check', retry, '--repo', self.repo)
+            self.ensure(True, 'an existing root-cause path with fixes it passes')
+            retry.write_text(fixed.replace('- Root cause: todo/store.py', root_label + ' todo/store.py:Store.add'))
+            self.run(checker, '--check', retry, '--repo', self.repo)
+            self.ensure(True, 'the generated root-cause label accepts an existing path with a symbol')
+            retry.write_text(fixed.replace('- Root cause: todo/store.py', '- Root cause: todo/missing.py'))
+            failure = self.run(checker, '--check', retry, '--repo', self.repo, expected=1)
+            self.ensure('todo/missing.py' in failure, 'a nonexistent root-cause path fails and names the path')
+            for invalid in ('', 'maybe', 'fixes it | covers it'):
+                retry.write_text(fixed.replace(change_label + ' fixes it', change_label + ' ' + invalid))
+                failure = self.run(checker, '--check', retry, '--repo', self.repo, expected=1)
+                self.ensure('fixes it' in failure and 'covers it' in failure,
+                            f'the requested-change value {invalid!r} must choose fixes it or covers it')
+            covered = fixed.replace(change_label + ' fixes it', change_label + ' covers it')
+            retry.write_text(covered)
+            failure = self.run(checker, '--check', retry, '--repo', self.repo, expected=1)
+            self.ensure('-> yours:' in failure, 'covers it fails with a fix naming the user-owned choice syntax')
+            incomplete_choice = '- Under-specified:\n  - Retry three times in todo/api.py -> yours:'
+            retry.write_text(covered.replace('- Under-specified: none', incomplete_choice))
+            self.run(checker, '--check', retry, '--repo', self.repo, expected=1)
+            self.ensure(True, 'a user-owned bandaid choice without the root-cause fix still fails')
+            choice = ('- Under-specified:\n'
+                      '  - Retry three times in todo/api.py (bandaid) or fix the lost-write root cause '
+                      'in todo/store.py -> yours:')
+            retry.write_text(covered.replace('- Under-specified: none', choice))
+            self.run(checker, '--check', retry, '--repo', self.repo)
+            self.ensure(True, 'covers it passes when an open user-owned choice names both the bandaid and root-cause fix')
+            for options, description in (
+                    ('fix locking in todo/store.py or fix locking in todo/store.py',
+                     'repeating the root-cause fix does not name two alternatives'),
+                    ('todo/store.py:Store.add or do something',
+                     'a path and symbol alone do not name the root-cause fix')):
+                invalid_choice = '- Under-specified:\n  - ' + options + ' -> yours:'
+                retry.write_text(covered.replace('- Under-specified: none', invalid_choice))
+                failure = self.run(checker, '--check', retry, '--repo', self.repo, expected=1)
+                self.ensure('-> yours:' in failure, description)
+            path_repo = self.scratch / 'brief-paths'
+            (path_repo / 'todo').mkdir(parents=True)
+            shutil.copyfile(self.repo / 'todo/store.py', path_repo / 'todo/store.py')
+            (path_repo / 'todo/store-link.py').symlink_to('store.py')
+            linked = covered.replace('- Under-specified: none', choice).replace('todo/store.py', 'todo/store-link.py')
+            retry.write_text(linked)
+            self.run(checker, '--check', retry, '--repo', path_repo)
+            self.ensure(True, 'an internal root-cause symlink reused in the named user choice passes')
+            outside = self.scratch / 'brief-outside.py'
+            outside.write_text('pass\n')
+            (path_repo / 'todo/outside.py').symlink_to(outside)
+            for reference in ('todo/outside.py', '../brief-outside.py'):
+                retry.write_text(fixed.replace('- Root cause: todo/store.py', '- Root cause: ' + reference))
+                failure = self.run(checker, '--check', retry, '--repo', path_repo, expected=1)
+                self.ensure(reference in failure and 'path in this repo' in failure,
+                            f'root-cause path {reference!r} cannot escape the repo through a symlink or traversal')
+            ordinary = self.json(checker, 'set the minimum title length to 3', '--repo', self.repo, '--json')
+            self.ensure(root_label not in ordinary['brief'] and change_label not in ordinary['brief'],
+                        'minimum title length is an ordinary task and adds neither root-cause field')
+            self.ensure(filled.read_bytes() == (ROOT / 'examples/fixtures/FILLED-BRIEF.md').read_bytes(),
+                        'the existing filled brief fixture passes unchanged')
 
     def formal(self):
         with self.case('formal-verification'):
@@ -1853,11 +2061,19 @@ raise SystemExit(code)
             self.ensure(not failures, f'zero disables each deadline independently while invalid limits remain errors: {failures}')
         finally:
             target.unlink()
+        # 2026-11-24 #1 moved replay and limit details into --help and history into CHANGELOG.md.
         text = (ROOT / 'skills/formal-verification/SKILL.md').read_text()
-        step4 = text.split('## 4. Leave a project-local skill')[1].split('## 5.')[0]
-        self.ensure(all(term in text and term in step4 for term in
-                        ('--seed N --expect-fail NAME', '90 s', '10 s', '--timeout 0', '--call-timeout 0', 'migration')),
-                    'skill and generated-skill instructions include replay and default-limit migration with opt-outs')
+        self.ensure(all(term in text for term in ('90 s', '10 s', 'gen_check.py --help')),
+                    'formal-verification/SKILL.md states the default limits and points to --help for the rest')
+        self.ensure('migration' not in text.lower() and "main's" not in text,
+                    'formal-verification/SKILL.md carries no migration history for generated skills to copy')
+        for checker in ('gen_check.py', 'bounded_check.py'):
+            usage = self.run(sys.executable, self.script('formal-verification', checker), '--help')
+            terms = ('--expect-fail', '--timeout 0', '--call-timeout 0') if checker == 'gen_check.py' else ('--timeout 0', '--call-timeout 0')
+            self.ensure(all(term in usage for term in terms), f'{checker} --help documents {", ".join(terms)}')
+        changelog = (ROOT / 'CHANGELOG.md').read_text()
+        self.ensure('--timeout 0 --call-timeout 0' in changelog and '--seed N --expect-fail NAME' in changelog,
+                    'CHANGELOG.md keeps the default-limit and replay migration notes')
 
     def review_synchronous_deadlines(self):
         """Advance past deadlines without delivering SIGALRM, including the last covered call."""
@@ -2369,9 +2585,12 @@ print(json.dumps({"code": codes[0], "report": json.loads(out.getvalue()), "stder
                 self.ensure(result['code'] == 0 and result['report']['ok'] and 'WARNING' in warning
                             and '--timeout' in warning and '--call-timeout' in warning and 'not enforced' in warning,
                             f'{file} warns that both limits are not enforced for {scenario}, while stdout stays JSON')
-        text = (ROOT / 'skills/formal-verification/SKILL.md').read_text()
-        self.ensure(all(term in text for term in ('SIGALRM', 'main thread', 'native code', 'external')),
-                    'formal-verification documents timer/thread support, native-code limits and an external deadline')
+        for file in ('bounded_check.py', 'gen_check.py'):
+            text = self.run(sys.executable, self.script('formal-verification', file), '--help').lower()
+            self.ensure(all(term in text for term in ('sigalrm', 'main thread', 'native code', 'external')),
+                        f'{file} --help documents timer/thread support, native-code limits and an external deadline')
+        self.ensure("--help" in (ROOT / 'skills/formal-verification/SKILL.md').read_text(),
+                    'formal-verification/SKILL.md points to the checkers\' --help for timer details')
 
     def generated_properties(self):
         checker = self.script(self.name, 'gen_check.py')
@@ -2666,6 +2885,102 @@ properties = {"copy": (sampled_from([" title "]), check)}
 
     def curator(self):
         with self.case('curator'):
+            # Deliberately broken prose lives only in a scratch collection. These
+            # assertions execute the shipped CLI, including its actual exit code.
+            budget_root = self.scratch/'prose-budget'
+            shutil.copytree(ROOT/'skills', budget_root/'skills',
+                            ignore=shutil.ignore_patterns('__pycache__'))
+            (budget_root/'scripts').mkdir()
+            budget_file = budget_root/'scripts/prose-budget.json'
+            shutil.copyfile(ROOT/'scripts/prose-budget.json', budget_file)
+            budget_checker = ROOT/'scripts/prose_budget.py'
+            budget_command = [sys.executable, budget_checker, '--repo', budget_root]
+            real = self.json(sys.executable, budget_checker, '--repo', ROOT, '--json', cwd=ROOT)
+            self.ensure(real['ok'], 'the real skill collection passes prose budgets after paydown')
+            self.run(*budget_command, '--update', cwd=ROOT)
+            budget_skill = budget_root/'skills/formal-verification/SKILL.md'
+            budget_original = budget_skill.read_text()
+            body, sources_heading, sources = budget_original.partition('\n## Sources\n')
+            self.ensure(bool(sources_heading), 'the prose fixture retains the real Sources section')
+            budgets = json.loads(budget_file.read_text())
+            original_budget = budgets['formal-verification']['budget']
+            twenty_words = ' '.join(f'added{i}' for i in range(20))
+            budget_skill.write_text(body + '\n' + twenty_words + sources_heading + sources)
+            output = self.run(*budget_command, expected=1, cwd=ROOT)
+            self.ensure(f'skills/formal-verification/SKILL.md: {original_budget + 20} words, '
+                        f'budget {original_budget} (+20)' in output,
+                        'the over-budget SKILL.md fixture exits 1 naming the skill, count, and budget')
+            budget_skill.write_text(budget_original + '\n' + twenty_words + '\n')
+            self.run(*budget_command, cwd=ROOT)
+            self.ensure(True, 'adding the same 20 words under Sources does not consume prose budget')
+            budget_skill.write_text(budget_original.replace('\n---\n', '\n# ' + twenty_words + '\n---\n', 1))
+            self.run(*budget_command, cwd=ROOT)
+            self.ensure(True, 'frontmatter words are excluded from the prose budget')
+            fenced_sources = '\n```\n## Sources\n' + twenty_words + '\n```\n'
+            budget_skill.write_text(body + fenced_sources + sources_heading + sources)
+            fenced_report = self.json(*budget_command, '--json', expected=1, cwd=ROOT)
+            self.ensure(any(row['skill'] == 'formal-verification'
+                            and row['words'] == original_budget + len(fenced_sources.split())
+                            for row in fenced_report['skills']),
+                        'a fenced Sources heading cannot hide over-budget body words')
+            resumed_prose = '\n## After sources\n' + twenty_words + '\n'
+            budget_skill.write_text(budget_original + resumed_prose)
+            resumed_report = self.json(*budget_command, '--json', expected=1, cwd=ROOT)
+            self.ensure(any(row['skill'] == 'formal-verification'
+                            and row['words'] == original_budget + len(resumed_prose.split())
+                            for row in resumed_report['skills']),
+                        'counting resumes at the next H2 after the Sources section')
+
+            frontmatter, boundary, prose = body.partition('\n---\n')
+            self.ensure(bool(boundary) and len(prose.split()) >= 20,
+                        'the deletion fixture changes body words without changing frontmatter')
+            shorter = re.sub(r'\S+', '', prose, count=20)
+            budget_skill.write_text(frontmatter + boundary + shorter + sources_heading + sources)
+            self.run(*budget_command, '--update', cwd=ROOT)
+            lowered = budget_file.read_bytes()
+            self.ensure(json.loads(lowered)['formal-verification']['budget'] == original_budget - 20,
+                        'deleting 20 body words and --update lowers the skill budget by 20')
+            self.run(*budget_command, '--update', cwd=ROOT)
+            self.ensure(budget_file.read_bytes() == lowered,
+                        'a second --update leaves the budget file byte-for-byte unchanged')
+            budget_skill.write_text(budget_original)
+            self.run(*budget_command, '--update', expected=1, cwd=ROOT)
+            self.ensure(budget_file.read_bytes() == lowered,
+                        '--update fails on restored extra prose and never raises its budget')
+            self.run(*budget_command, '--raise', 'formal-verification', '--reason', 'adds --exhaustive', cwd=ROOT)
+            raised = json.loads(budget_file.read_text())['formal-verification']
+            self.ensure(raised['budget'] == original_budget and raised['reason'] == 'adds --exhaustive'
+                        and re.fullmatch(r'\d{4}-\d{2}-\d{2}', raised['date']),
+                        '--raise exits 0 and records the current count, review reason, and date')
+
+            history_line = "the defaults are incompatible with main's behavior"
+            budget_skill.write_text(body + '\n' + history_line + sources_heading + sources)
+            history_budget = json.loads(budget_file.read_text())
+            history_budget['formal-verification']['budget'] += len(history_line.split())
+            budget_file.write_text(json.dumps(history_budget, indent=2) + '\n')
+            output = self.run(*budget_command, expected=1, cwd=ROOT)
+            history_report = self.json(*budget_command, '--json', expected=1, cwd=ROOT)
+            history_skill = next(row for row in history_report['skills'] if row['skill'] == 'formal-verification')
+            self.ensure('skills/formal-verification/SKILL.md' in output and 'CHANGELOG.md' in output
+                        and history_skill['words'] == history_skill['budget'],
+                        "the main's fixture exits 1 within its word budget and names CHANGELOG.md as the fix")
+            budget_skill.write_text(budget_original)
+            budget_file.write_text(json.dumps(budgets, indent=2) + '\n')
+            missing_budget = dict(budgets)
+            del missing_budget['formal-verification']
+            budget_file.write_text(json.dumps(missing_budget, indent=2) + '\n')
+            output = self.run(*budget_command, expected=1, cwd=ROOT)
+            self.ensure('formal-verification' in output and '--update' in output,
+                        'a skill without a budget exits 1 and names --update as the fix')
+            orphan_budget = {**budgets, 'missing-skill': {'budget': 0}}
+            budget_file.write_text(json.dumps(orphan_budget, indent=2) + '\n')
+            output = self.run(*budget_command, expected=1, cwd=ROOT)
+            self.ensure('missing-skill' in output,
+                        'a budget entry without a skill exits 1 and names the orphan entry')
+            budget_file.write_text(json.dumps(budgets, indent=2) + '\n')
+            self.run(*budget_command, cwd=ROOT)
+            self.ensure(True, 'restoring the scratch skill and budgets restores a passing collection')
+
             self.docs()
             # Populate a fake cached upstream directly: git init only, no remotes or fetches.
             cache = self.scratch/'cache'
@@ -2731,9 +3046,637 @@ properties = {"copy": (sampled_from([" title "]), check)}
             self.run(self.script(self.name,'check_proposals.py'),malformed,expected=1)
             self.ensure(True, 'unstructured proposal text cannot pass as an empty proposal list')
             module = load_module(self.script(self.name,'check_proposals.py'),'example_proposals')
+            fixtures = ROOT/'examples/fixtures/curator'
+            checker = self.script(self.name,'check_proposals.py')
+            # Inline real-post fixtures keep ignored curator history out of the test inputs.
+            # A transport tripwire makes every timestamp assertion prove it needs no fetch.
+            timestamp_root = self.scratch/'post-times'
+            timestamp_root.mkdir()
+            timestamp_bin = timestamp_root/'bin'
+            timestamp_bin.mkdir()
+            timestamp_fetch = timestamp_root/'unexpected-fetch'
+            timestamp_curl = timestamp_bin/'curl'
+            timestamp_curl.write_text('#!/usr/bin/env python3\nimport os\nfrom pathlib import Path\n'
+                                      'Path(os.environ["TIMESTAMP_FETCH"]).write_text("unexpected fetch")\n'
+                                      'raise SystemExit(97)\n')
+            timestamp_curl.chmod(0o755)
+            timestamp_env = dict(self.env,PATH=str(timestamp_bin)+os.pathsep+self.env.get('PATH',''),
+                                 TIMESTAMP_FETCH=str(timestamp_fetch))
+            digest_file = timestamp_root/'digest.md'
+            digest = ('# X digest\nWindow: 2026-11-14T00:00:00Z to 2026-11-24T00:00:00Z\n\n'
+                      '## 1. Quick fixes\n'
+                      '- URL: https://x.com/poteto/status/2121646643124809848\n'
+                      '- Time: 2026-11-15 00:49 Asia/Taipei\n\n'
+                      '## 2. Referenced post\n'
+                      '- URL: https://x.com/rachelnabors/status/2124176031011475785\n'
+                      '- Time: 2026-11-22 00:20 Asia/Taipei\n')
+
+            def check_digest(body, expected=0):
+                digest_file.write_text(body)
+                return self.json(sys.executable,checker,'--digest',digest_file,'--json',
+                                 env=timestamp_env,expected=expected)
+
+            result = check_digest(digest.replace('2026-11-22 00:20','2026-11-21 00:20'),expected=1)
+            self.ensure(any(f'{digest_file}:10:' in p and '2124176031011475785' in p
+                            and '2026-11-22 00:20 Asia/Taipei' in p and '2026-11-21 16:20 UTC' in p
+                            and 'not 2026-11-21 00:20' in p and 'created_at' in p
+                            and 'stated zone' in p for p in result['problems']),
+                        'the real digest day-early mistake fails offline with its line, correct local/UTC times, and fix')
+            result = check_digest(digest)
+            self.ensure(result['ok'] and result['timestamps_checked'] == 2,
+                        'two real status IDs pass offline at 2026-11-15 00:49 and 2026-11-22 00:20 Asia/Taipei')
+            result = check_digest(digest.replace('- Time: 2026-11-15 00:49 Asia/Taipei\n',''),expected=1)
+            self.ensure(any('2121646643124809848' in p and 'Time' in p for p in result['problems']),
+                        'an item missing Time fails without borrowing the next item timestamp')
+            result = check_digest(digest.replace('2026-11-14T00:00:00Z','2026-11-14T16:49:13Z'),expected=1)
+            self.ensure(any('2121646643124809848' in p and 'window' in p.lower() for p in result['problems']),
+                        'a numbered digest item before the ISO window start fails using the exact status instant')
+
+            adjacent = ('# X digest\nWindow: 2026-11-14T00:00:00Z to 2026-11-24T00:00:00Z\n\n'
+                        '1. https://x.com/poteto/status/2121646643124809848 '
+                        '(2026-11-15 00:49 Asia/Taipei; quoted post)\n'
+                        '2. https://x.com/rachelnabors/status/2124176031011475785 '
+                        '(2026-11-22 00:20 Asia/Taipei)\n')
+            result = check_digest(adjacent.replace('2026-11-22 00:20','2026-11-21 00:20'),expected=1)
+            self.ensure(any('2124176031011475785' in p and '2026-11-22 00:20' in p
+                            for p in result['problems']),
+                        'a timestamp immediately parenthesized after a status URL fails on the real wrong day')
+            result = check_digest(adjacent)
+            self.ensure(result['ok'] and result['timestamps_checked'] == 2,
+                        'immediately parenthesized status times pass to the minute with trailing context')
+
+            dated_proposal = timestamp_root/'dated-proposal.md'
+            dated_body = ('# Curator proposals\nDates below are UTC.\n\n'
+                          '2026-11-14 (status 2121646643124809848)\n\n'
+                          '## 1. Check cited post times\n'
+                          '- Source: https://x.com/poteto/status/2121646643124809848\n'
+                          '- Level: lint\n- Skill: curator\n'
+                          '- Change: Compare cited post dates with their status timestamps.\n')
+
+            def check_dated_proposal(body, expected=0):
+                dated_proposal.write_text(body)
+                return self.json(sys.executable,checker,dated_proposal,'--json',
+                                 env=timestamp_env,expected=expected)
+
+            result = check_dated_proposal(dated_body.replace('2026-11-14 (status','2026-11-13 (status'),expected=1)
+            self.ensure(any(f'{dated_proposal}:4:' in p and '2121646643124809848' in p
+                            and '2026-11-14' in p and 'UTC' in p for p in result['problems']),
+                        'a real proposal citing 2026-11-13 (status 2121646643124809848) fails with its UTC date')
+            result = check_dated_proposal(dated_body)
+            self.ensure(result['ok'] and result['items'] == 1 and result['timestamps_checked'] == 1,
+                        'the same real proposal passes with 2026-11-14 and the original proposal field gates')
+            reversed_body = dated_body.replace('2026-11-14 (status 2121646643124809848)',
+                                               '(status 2121646643124809848, 2026-11-14)')
+            result = check_dated_proposal(reversed_body.replace(', 2026-11-14)',', 2026-11-13)'),expected=1)
+            self.ensure(any('2121646643124809848' in p and '2026-11-14' in p for p in result['problems']),
+                        'the parenthesized status-ID-first proposal form rejects the wrong UTC date offline')
+            result = check_dated_proposal(reversed_body)
+            self.ensure(result['ok'] and result['timestamps_checked'] == 1,
+                        'the parenthesized status-ID-first proposal form accepts the correct UTC date offline')
+            for citation in ('2026-11-10 (status 403)', '(status 403, 2026-11-10)'):
+                result = check_dated_proposal(dated_body.replace('2026-11-14 (status 2121646643124809848)', citation))
+                self.ensure(result['ok'] and result.get('timestamps_checked', 0) == 0,
+                            f'HTTP status citation {citation} is not checked as an X status ID')
+            result = check_digest(digest.replace('2121646643124809848', '403'))
+            self.ensure(result['ok'] and result['timestamps_checked'] == 1,
+                        'a short numeric status URL is not decoded as an X Snowflake ID')
+            dated_proposal.write_text(reversed_body)
+            digest_file.write_text(digest)
+            result = self.json(sys.executable,checker,dated_proposal,'--digest',digest_file,'--json',
+                               env=timestamp_env)
+            self.ensure(result['ok'] and result['timestamps_checked'] == 3,
+                        'one offline invocation validates proposal UTC dates and digest local times together')
+            self.ensure(not timestamp_fetch.exists(),
+                        'real digest and proposals pass/fail timestamp fixtures never invoke the network transport')
+            for fixture_name, baseline_name in (('legacy-valid.md','legacy-baseline.json'),
+                                                ('legacy-descriptive-h3.md','legacy-descriptive-baseline.json'),
+                                                ('legacy-fenced-h3.md','legacy-fenced-baseline.json')):
+                baseline = json.loads((fixtures/baseline_name).read_text())
+                legacy = (fixtures/fixture_name).relative_to(ROOT)
+                self.ensure(module.parse((ROOT/legacy).read_text()) == baseline['parsed'],
+                            f'{fixture_name}: legacy H2 proposals retain the exact count, fields, titles, and URLs')
+                legacy_output = self.run(checker,legacy,'--skills-dir','skills',cwd=ROOT,
+                                         expected=baseline['exit_code'])
+                self.ensure(legacy_output == 'quotes not checked (no --fetch)\n'+baseline['stdout']
+                            and not baseline['stderr'],
+                            f'{fixture_name}: legacy CLI output is retained after the explicit no-fetch quote notice')
+                self.ensure(self.json(checker,legacy,'--skills-dir','skills','--json',cwd=ROOT)
+                            == dict(baseline['result'],quotes_checked=False),
+                            f'{fixture_name}: original JSON check fields are retained with quotes_checked false')
+            fenced = (fixtures/'legacy-fenced-h3.md').read_text()
+            fenced_baseline = json.loads((fixtures/'legacy-fenced-baseline.json').read_text())
+            for fence in ('```', '~~~', '````', '~~~~'):
+                for heading in ('###',):
+                    body = fenced.replace('```', fence).replace('### Example', heading+' Example')
+                    self.ensure(module.parse(body) == fenced_baseline['parsed'],
+                                f'{fence} fences keep {heading} example headings inside one legacy proposal')
+                    self.ensure(module.parse(body+'\n'+body) == fenced_baseline['parsed'] * 2,
+                                f'{fence} closing fences preserve the next proposal after {heading} example headings')
+            self.ensure(module.parse('```inline example```\n\n'+fenced) == fenced_baseline['parsed'],
+                        'an inline backtick span before a proposal is not an unclosed fenced block')
+            broken_fence = self.scratch/'unclosed-proposal-fence.md'
+            nested_fences = ('## 1. Check nested examples\n'
+                             '- Source: https://example.invalid/source\n'
+                             '- Level: test\n- Skill: curator\n'
+                             '- Change: Check all proposal fields after examples.\n'
+                             '```markdown\n### Example\n```bash\necho example\n```\n```\n'
+                             '## 2. Invalid proposal\n'
+                             '- Level: banana\n- Skill: missing-skill\n'
+                             '- Change: Check this second proposal independently.\n')
+            broken_fence.write_text(nested_fences)
+            result = self.json(checker,broken_fence,'--skills-dir',collection/'skills','--json',expected=1)
+            self.ensure(result['items'] == 2
+                        and all(any('#2' in p and field in p for p in result['problems'])
+                                for field in ('Source', 'banana', 'missing-skill'))
+                        and any(f'{broken_fence}:11:' in p and 'close the fence' in p
+                                for p in result['problems']),
+                        'an unclosed nested fence names its opening line and cannot hide an invalid later H2 proposal')
+            broken_fence.write_text('No proposals.\n~~~\n')
+            result = self.json(checker,broken_fence,'--fragment','--json',expected=1)
+            self.ensure(any(f'{broken_fence}:2:' in p and 'close the fence' in p
+                            for p in result['problems']),
+                        'a stray tilde fence rejects a no-proposals fragment with its opening line and fix')
+            broken_fence.write_text('```markdown\n## 1. Hidden\n```\nNo proposals:\n')
+            result = self.json(checker,broken_fence,'--json',expected=1)
+            self.ensure(result['items'] == 1 and any('Source' in p for p in result['problems'])
+                        and any(f'{broken_fence}:1:' in p and 'close the fence' in p
+                                for p in result['problems']),
+                        'a fenced H2 stays a legacy proposal and No proposals cannot conceal its missing fields')
+            references = self.scratch/'proposal-references.md'
+            references.write_text('## 1. Check proposal references\n'
+                                  '- Source: https://example.invalid/proposal\n'
+                                  '- Level: lint\n- Skill: curator\n'
+                                  '- Change: Check proposal fields before acceptance.\n'
+                                  '### References\n- Source: https://example.invalid/reference\n')
+            result = self.json(checker,references,'--skills-dir',collection/'skills','--json')
+            self.ensure(result['ok'] and result['items'] == 1
+                        and len(module.parse(references.read_text())) == 1,
+                        'a Source-only References H3 remains part of its valid H2 proposal')
+            result = self.json(checker,fixtures/'fragment-h3-valid.md','--json',expected=1)
+            self.ensure(result['items'] == 0 and any('no proposal sections' in p for p in result['problems']),
+                        'bare H3 proposals require --fragment instead of silently passing as a full file')
+            before_h2 = (fixtures/'fragment-h3-valid.md').read_text() + '\n' + references.read_text()
+            self.ensure(len(module.parse(before_h2)) == 1 and len(module.parse(before_h2,fragment=True)) == 3,
+                        'H3 sections before the first H2 count only in fragment mode')
+            for layout, flags in (('nested',()), ('fragment',('--fragment',))):
+                valid = fixtures/f'{layout}-h3-valid.md'
+                bad = fixtures/f'{layout}-h3-banana.md'
+                result = self.json(checker,valid,*flags,'--skills-dir',collection/'skills','--json')
+                self.ensure(result['items'] == 2 and len(module.parse(valid.read_text(), fragment=bool(flags))) == 2,
+                            f'two H3 proposals parse and validate as two in a {layout}')
+                result = self.json(checker,bad,*flags,'--skills-dir',collection/'skills','--json',expected=1)
+                self.ensure(result['items'] == 2 and any('#2' in p and 'banana' in p for p in result['problems']),
+                            f'the second H3 Level banana fails independently in a {layout}')
+            for name, problem in (('h2-banana.md','banana'), ('h2-missing-source.md','Source')):
+                result = self.json(checker,fixtures/name,'--skills-dir',collection/'skills','--json',expected=1)
+                self.ensure(any(problem in p for p in result['problems']),
+                            f'legacy H2 rejection is retained for {name}')
+            mixed = self.scratch/'mixed-h2-h3.md'
+            mixed.write_text((fixtures/'h2-missing-source.md').read_text()+'\n'
+                             +(fixtures/'fragment-h3-valid.md').read_text())
+            result = module.check(mixed,collection/'skills',False)
+            self.ensure(result['items'] == 3 and not result['ok']
+                        and any('#1' in p and 'Source' in p for p in result['problems']),
+                        'a malformed numbered H2 parent stays invalid when valid H3 children follow it')
+            mixed.write_text('## 1. Missing fields\n\n'+(fixtures/'fragment-h3-valid.md').read_text())
+            result = module.check(mixed,collection/'skills',False)
+            self.ensure(result['items'] == 3 and not result['ok'],
+                        'an empty numbered H2 proposal cannot disappear into an H3 grouping')
+            mixed.write_text('## 1. Parent\n- Source: https://example.invalid/parent\n'
+                             '- Level: ci\n- Skill: curator\n### Implementation\n'
+                             '- Change: Add a parent proposal check.\n\n'
+                             +(fixtures/'fragment-h3-valid.md').read_text())
+            result = module.check(mixed,collection/'skills',False)
+            self.ensure(result['items'] == 3 and result['ok']
+                        and module.parse(mixed.read_text())[0]['fields']['change'] == 'Add a parent proposal check.',
+                        'H2 parent fields under a descriptive H3 remain intact alongside two sourced H3 proposals')
+            mixed.write_text((fixtures/'fragment-h3-banana.md').read_text()+'\nNo proposals.\n')
+            self.ensure(not module.check(mixed,collection/'skills',False,fragment=True)['ok'],
+                        'No proposals. cannot override a malformed proposal already present')
+
+            # Repeat every field gate behind an earlier valid proposal: it cannot lend fields to the next one.
+            first, second = (fixtures/'fragment-h3-valid.md').read_text().split('### Second',1)
+            mutations = (
+                ('source URL', '- Source: https://example.invalid/second', '- Source: not-a-url', 'Source'),
+                ('missing source', '- Source: https://example.invalid/second', '', 'Source'),
+                ('missing level', '- Level: test', '', 'Level'),
+                ('short change', '- Change: Check each proposal independently before acceptance.', '- Change: Fix it', 'Change'),
+                ('missing change', '- Change: Check each proposal independently before acceptance.', '', 'Change'),
+                ('unknown skill', '- Skill: curator', '- Skill: nonexistent-skill', 'Skill'),
+                ('missing skill', '- Skill: curator', '', 'Skill'),
+            )
+            mutant = self.scratch/'proposal-field-mutant.md'
+            for label, old, new, problem in mutations:
+                for layout in ('h2','nested','fragment'):
+                    body = first+'### Second'+second.replace(old,new)
+                    if layout == 'h2':
+                        body = body.replace('### First','## 1. First').replace('### Second','## 2. Second')
+                    elif layout == 'nested':
+                        body = '## Panel proposals\n\n'+body
+                    mutant.write_text(body)
+                    result = module.check(mutant,collection/'skills',False,fragment=layout == 'fragment')
+                    self.ensure(result['items'] == 2 and not result['ok']
+                                and any('#2' in p and problem in p for p in result['problems']),
+                                f'{layout} proposals retain the {label} gate without borrowing earlier fields')
+            for alias, level in module.ALIASES.items():
+                mutant.write_text(first+'### Second'+second.replace('- Level: test',f'- Level: {alias}'))
+                result = module.check(mutant,collection/'skills',False,fragment=True)
+                self.ensure(result['ok'] and result['proposals'][1]['level'] == level,
+                            f'H3 level alias {alias!r} retains its canonical value {level!r}')
+            for skill in ('collection','new:panel-example'):
+                mutant.write_text(first+'### Second'+second.replace('- Skill: curator',f'- Skill: {skill}'))
+                self.ensure(module.check(mutant,collection/'skills',False,fragment=True)['ok'],
+                            f'H3 proposals retain the accepted skill target {skill!r}')
+            fetched = []
+            def fake_fetch(url):
+                fetched.append(url)
+                return 200, 'A fixture page with no quoted claims.'
+            with patch.object(module,'fetch_source',fake_fetch):
+                result = module.check(fixtures/'nested-h3-valid.md',collection/'skills',True)
+            self.ensure(result['ok'] and fetched == ['https://example.invalid/first','https://example.invalid/second']
+                        and all(p['fetch'] == {p['urls'][0]:200} for p in result['proposals']),
+                        '--fetch requests and records each H3 section URL independently')
+            for status in (0,199,300,401,403,429,500):
+                with patch.object(module,'fetch_source',
+                                  lambda url, status=status: (status if url.endswith('/second') else 200, '')):
+                    result = module.check(fixtures/'nested-h3-valid.md',collection/'skills',True)
+                self.ensure(not result['ok'] and any('#2' in p and 'unreachable' in p for p in result['problems']),
+                            f'the second H3 source still fails on HTTP {status or "error"}')
+
+            # Quote fixtures use the real checker and transport subprocess, never a patched matcher.
+            # Only real correct skill files are tracked here: this test's own strings cannot prove themselves.
+            quote_root = self.scratch/'quote-collection'
+            (quote_root/'skills/correct/scripts').mkdir(parents=True)
+            shutil.copyfile(ROOT/'skills/correct/SKILL.md',quote_root/'skills/correct/SKILL.md')
+            shutil.copyfile(ROOT/'skills/correct/scripts/patlint.py',quote_root/'skills/correct/scripts/patlint.py')
+            self.run('git','init','-q','--template=',quote_root)
+            self.run('git','-C',quote_root,'add','skills/correct')
+            (quote_root/'proposals').mkdir()
+            quote_file = quote_root/'proposals/current.md'
+            transport = self.scratch/'quote-transport'
+            transport.mkdir()
+            quote_fetch_log = transport/'fetched.jsonl'
+            quote_pages = transport/'pages.json'
+            quote_curl = transport/'curl'
+            quote_curl.write_text('#!/usr/bin/env python3\nfrom pathlib import Path\nimport json, os, sys, time\n'
+                                  'args = sys.argv[1:]\n'
+                                  'assert args[args.index("--max-time")+1] == os.environ.get("QUOTE_MAX_TIME", "20")\n'
+                                  'url = args[-1]\n'
+                                  'if any(char in url for char in "{}[]"):\n'
+                                  '    assert "-g" in args or "--globoff" in args, "Source URL must stay literal"\n'
+                                  'with open(os.environ["QUOTE_FETCH_LOG"], "a") as stream:\n'
+                                  '    stream.write(json.dumps(url)+"\\n")\n'
+                                  'status, page, *media_types = json.loads(Path(os.environ["QUOTE_PAGES"]).read_text())[url]\n'
+                                  'media_type = media_types[0] if media_types else "text/plain"\n'
+                                  'Path(args[args.index("-D")+1]).write_text(f"HTTP/1.1 {status} Fixture\\r\\nContent-Type: {media_type}\\r\\n\\r\\n")\n'
+                                  'time.sleep(float(os.environ.get("QUOTE_CURL_DELAY", "0")))\n'
+                                  'sys.stdout.buffer.write(Path(page).read_bytes())\n'
+                                  'sys.exit(int(os.environ.get("QUOTE_CURL_EXIT", "0")))\n')
+            quote_curl.chmod(0o755)
+            quote_env = dict(self.env,PATH=str(transport)+os.pathsep+self.env.get('PATH',''),
+                             QUOTE_FETCH_LOG=str(quote_fetch_log),QUOTE_PAGES=str(quote_pages))
+            first_url, second_url = 'https://example.invalid/quote-first', 'https://example.invalid/quote-second'
+            blob_url = 'https://github.com/fixture/skills/blob/abc123/SKILL.md'
+            raw_url = 'https://raw.githubusercontent.com/fixture/skills/abc123/SKILL.md'
+            tweet_url = 'https://api.fxtwitter.com/fixture/status/123'
+            plain_url = 'https://example.invalid/plain-code'
+            phrase = 'violet lanterns protect the quiet archive'
+            sources = {
+                first_url: (200, '<html><p>'+phrase+'</p><p>The curator\'s evidence stays beside each claim.</p>'
+                            '<p>amber birds arrive before dusk; several unrelated details; silver foxes leave at dawn.</p>'
+                            '<p>THE  <em>luminous</em>\n archive &amp; its caretakers — keep_a *careful* `record`.</p></html>'),
+                second_url: (200, '<p>cobalt rivers carry every unlisted quotation</p>'),
+                blob_url: (503, '<p>Service unavailable</p>'),
+                raw_url: (200, 'Raw file evidence confirms the cedar gate.\n'
+                          'a < b\nCopper lanterns illuminate the comparison branch.\nresult -> value'),
+                tweet_url: (200, json.dumps({'tweet':{'text':"The keeper's nested evidence survives JSON decoding."},
+                                             'These hidden keys are never quoted evidence':False})
+                            .replace("'",r'\u0027')),
+                plain_url: (200, 'a < b\n<!--\nPlain code comparisons preserve the quoted evidence.\n-->\nresult -> value'),
+            }
+            manifest = {}
+            for index, (url, (status, body)) in enumerate(sources.items()):
+                page = transport/f'page-{index}.body'
+                page.write_text(body)
+                media_type = 'text/html; charset=utf-8' if url in (first_url,second_url,blob_url) else 'text/plain'
+                manifest[url] = [status,str(page),media_type]
+            quote_pages.write_text(json.dumps(manifest))
+
+            def quoted_proposal(change, why='', url=first_url, title='1. Quote evidence', heading='##'):
+                return (f'{heading} {title}\n- Source: {url}\n- Level: lint\n- Skill: collection\n'
+                        f'- Change: Validate each quoted claim. {change}\n- Why: {why or "Keep fetched evidence accurate."}\n')
+
+            def check_quotes(body, expected=0, fetch=True, fragment=False):
+                quote_file.write_text(body)
+                return self.json(checker,quote_file,'--skills-dir',quote_root/'skills','--json',
+                                 *(('--fetch',) if fetch else ()), *(('--fragment',) if fragment else ()),
+                                 env=quote_env,expected=expected)
+
+            result = check_quotes(quoted_proposal(f'"{phrase}"'))
+            self.ensure(result['ok'] and result['quotes_checked'],
+                        'a four-word-or-longer quote on a real stubbed page body passes --fetch')
+            wrong_phrase = phrase.replace('protect','disturb')
+            result = check_quotes(quoted_proposal(f'"{wrong_phrase}"'),expected=1)
+            self.ensure(any('#1 "1. Quote evidence"' in p and f'quote "{wrong_phrase}"' in p
+                            and 'quote the fetched page exactly' in p and 'add the page you quoted to Source' in p
+                            and 'put proposed text in backticks' in p for p in result['problems']),
+                        'one changed word fails through the real transport and names the quote, proposal, and fixes')
+            diagnostics = quote_root/'logs/curator'
+            diagnostics.mkdir(parents=True)
+            rejected = result
+            for name, content in (
+                    ('2026-11-24.log', '\n'.join(rejected['problems'])),
+                    ('2026-11-24.test-seat-x-propose.err', '\n'.join(rejected['problems'])),
+                    ('2026-11-24.test-seat-x-propose.md', quoted_proposal(f'"{wrong_phrase}"')),
+                    ('2026-11-24.x-propose-prompt.md', quoted_proposal(f'"{wrong_phrase}"'))):
+                artifact = diagnostics/name
+                artifact.write_text(content)
+                try:
+                    for tracked in (False, True):
+                        if tracked:
+                            self.run('git', '-C', quote_root, 'add', artifact)
+                        result = check_quotes(quoted_proposal(f'"{wrong_phrase}"'), expected=1)
+                        self.ensure(result['problems'] == rejected['problems'],
+                                    f'{name} (tracked={tracked}) cannot validate its rejected quote on rerun')
+                finally:
+                    artifact.unlink()
+            digest_evidence = diagnostics/'2026-11-24.x-digest.md'
+            digest_evidence.write_text(wrong_phrase)
+            try:
+                self.ensure(check_quotes(quoted_proposal(f'"{wrong_phrase}"'))['ok'],
+                            'an untracked x-digest remains valid collection quotation evidence')
+            finally:
+                digest_evidence.unlink()
+            result = check_quotes(quoted_proposal('“The curator’s evidence stays beside each claim.”'))
+            self.ensure(result['ok'], 'curly double quotes and apostrophes match straight apostrophes in a fetched body')
+            result = check_quotes(quoted_proposal('"amber birds arrive before dusk…silver foxes leave at dawn"'))
+            self.ensure(result['ok'], 'ellipsis quote parts match in order within one fetched page body')
+            result = check_quotes(quoted_proposal('"silver foxes leave at dawn...amber birds arrive before dusk"'),expected=1)
+            self.ensure(any('quote "silver foxes' in p for p in result['problems']),
+                        'ellipsis parts present only in reverse order fail')
+            result = check_quotes(quoted_proposal('"the luminous archive & its caretakers - keepa careful record."'))
+            self.ensure(result['ok'], 'HTML tags/entities, case, dashes, Markdown markers and backticks normalize alike')
+            correct_line = next(line for line in (quote_root/'skills/correct/SKILL.md').read_text().splitlines()
+                                if line.startswith('Human review is not a level.'))
+            result = check_quotes(quoted_proposal(f'"{correct_line}"'))
+            self.ensure(result['ok'] and all(correct_line not in body for _, body in sources.values()),
+                        'a quote of an actual tracked correct/SKILL.md line passes without any source page holding it')
+            patlint_quote = 'regex_prefixes must contain regex strings and non-empty include glob lists'
+            result = check_quotes(quoted_proposal(f'At skills/correct/scripts/patlint.py:170, "{patlint_quote}"'))
+            self.ensure(result['ok'] and all(patlint_quote not in body for _, body in sources.values()),
+                        'a verbatim patlint.py:170 quote survives comment delimiters elsewhere in the tracked Python file')
+            result = check_quotes(quoted_proposal('"Plain code comparisons preserve the quoted evidence."',url=plain_url))
+            self.ensure(result['ok'], 'text/plain evidence between a < b and -> retains literal HTML comment delimiters')
+            result = check_quotes(quoted_proposal('"three invented words" and `"an invented proposed message stays unchecked"`'
+                                                  '\n  ```text\n  "a fenced proposed message is also skipped"\n  ```'))
+            self.ensure(result['ok'], 'three-word quotes and backticked inline or fenced proposed messages are skipped')
+            result = check_quotes(quoted_proposal('\n  - Nested evidence: "'+phrase+'"',
+                                                  why='Check this continuation:\n    “The curator’s evidence stays beside each claim.”'))
+            self.ensure(result['ok'], 'multiline Change and Why bullets retain quoted claims and normalize their text')
+            result = check_quotes(quoted_proposal('Add a concrete check.',why='Check this continuation:\n    "'+wrong_phrase+'"'),
+                                  expected=1)
+            self.ensure(any(wrong_phrase in p for p in result['problems']), 'a missing quote in a multiline Why fails')
+            borrowed = 'cobalt rivers carry every unlisted quotation'
+            result = check_quotes(quoted_proposal('"'+borrowed+'"',title='Borrower',heading='###')
+                                  +quoted_proposal('Add a concrete check.',url=second_url,title='Other source',heading='###'),
+                                  expected=1,fragment=True)
+            self.ensure(any('#1 "Borrower"' in p and borrowed in p for p in result['problems'])
+                        and not any('#2' in p for p in result['problems']),
+                        'a quote on only another proposal\'s fetched page fails without borrowing its evidence')
+            result = check_quotes(quoted_proposal('"Raw file evidence confirms the cedar gate."',url=blob_url))
+            self.ensure(result['ok'] and blob_url in quote_fetch_log.read_text() and raw_url in quote_fetch_log.read_text(),
+                        'a GitHub blob returning 503 passes with the quote on its additional raw file fetch')
+            result = check_quotes(quoted_proposal('"Copper lanterns illuminate the comparison branch."',url=blob_url))
+            self.ensure(result['ok'], 'a verbatim raw-body quote between a < b and a later -> survives HTML normalization')
+            for url in ('https://example.invalid/{a,b}', 'https://example.invalid/[1-2]'):
+                manifest[url] = manifest[first_url]
+                quote_pages.write_text(json.dumps(manifest))
+                with patch.dict(os.environ, quote_env):
+                    status, body = module.fetch_source(url)
+                self.ensure(status == 200 and phrase in body
+                            and json.loads(quote_fetch_log.read_text().splitlines()[-1]) == url,
+                            f'curl disables glob expansion for the literal Source URL {url}')
+            result = check_quotes(quoted_proposal('“The keeper’s nested evidence survives JSON decoding.”',url=tweet_url))
+            self.ensure(result['ok'], 'FxTwitter nested JSON string values decode escaped apostrophes before matching')
+            result = check_quotes(quoted_proposal('"These hidden keys are never quoted evidence"',url=tweet_url),expected=1)
+            self.ensure(any('These hidden keys' in p for p in result['problems']),
+                        'FxTwitter JSON keys cannot count as quoted page text')
+            cap_url = 'https://example.invalid/oversized-body'
+            cap_page = transport/'oversized.body'
+            beyond_cap = 'Maroon observatories sit beyond the retained body'
+            cap_page.write_bytes(phrase.encode()+b' '*(5*1024*1024-len(phrase))+beyond_cap.encode())
+            manifest[cap_url] = [200,str(cap_page)]
+            quote_pages.write_text(json.dumps(manifest))
+            result = check_quotes(quoted_proposal(f'"{phrase}"',url=cap_url))
+            self.ensure(result['ok'], 'a quote within the retained 5 MiB body prefix passes even when the server ignores bounds')
+            result = check_quotes(quoted_proposal(f'"{beyond_cap}"',url=cap_url),expected=1)
+            self.ensure(any(beyond_cap in p for p in result['problems']),
+                        'page text beyond the 5 MiB body cap cannot prove a quote')
+            with patch.dict(quote_env,QUOTE_CURL_EXIT='7'):
+                result = check_quotes(quoted_proposal(f'"{phrase}"'),expected=1)
+            self.ensure(any('unreachable' in p for p in result['problems']),
+                        'a nonzero curl exit cannot accept an otherwise matching body and HTTP 200 header')
+            start = time.monotonic()
+            with patch.dict(os.environ,dict(quote_env,QUOTE_MAX_TIME='0.1',QUOTE_CURL_DELAY='3')):
+                with patch.object(module,'FETCH_SECONDS',0.1):
+                    timed_out = module.fetch_source(first_url)
+            self.ensure(timed_out == (0,'') and time.monotonic()-start < 2.5,
+                        'a stalled transport is killed within the fetch deadline even when the stub ignores --max-time')
+            before_quote_fetch = quote_fetch_log.read_text()
+            result = check_quotes(quoted_proposal(f'"{wrong_phrase}"'),fetch=False)
+            output = self.run(checker,quote_file,'--skills-dir',quote_root/'skills',env=quote_env)
+            self.ensure(result['ok'] and result['quotes_checked'] is False
+                        and 'quotes not checked (no --fetch)' in output and quote_fetch_log.read_text() == before_quote_fetch,
+                        'without --fetch quotes are unchecked, the report says so, and no transport is invoked')
+
+            # Real subprocesses, stub seats and a stub curl exercise the panel without any network or model CLI.
+            panel = self.scratch/'panel'
+            panel.mkdir()
+            prompt = panel/'prompt.md'
+            prompt.write_text('Read this exact prompt and return a proposal fragment.\n')
+            no_proposals = panel/'no-proposals.md'
+            no_proposals.write_text('No proposals.\n')
+            empty = panel/'empty.md'
+            empty.write_text('')
+            unstructured = panel/'unstructured.md'
+            unstructured.write_text('This fragment has no proposal or explicit outcome.\n')
+            bin_dir = panel/'bin'
+            bin_dir.mkdir()
+            fetch_log = panel/'fetched.jsonl'
+            curl = bin_dir/'curl'
+            curl.write_text('#!/usr/bin/env python3\nfrom pathlib import Path\nimport json, os, sys\n'
+                            'with open(os.environ["PANEL_FETCH_LOG"], "a") as stream:\n'
+                            '    stream.write(json.dumps(sys.argv[-1])+"\\n")\n'
+                            'status = 403 if os.environ.get("PANEL_FAIL_FETCH") == sys.argv[-1] else 200\n'
+                            'Path(sys.argv[sys.argv.index("-D")+1]).write_text(f"HTTP/1.1 {status} Fixture\\r\\n\\r\\n")\n'
+                            'sys.stdout.write("A stubbed panel source body.")\n')
+            curl.chmod(0o755)
+            panel_env = dict(env,PATH=str(bin_dir)+os.pathsep+env.get('PATH',''),
+                             PANEL_FETCH_LOG=str(fetch_log),CURATOR_TIMEOUT='10',
+                             POTETO_CACHE=str(panel/'unused-cache'),POTETO_UPSTREAM_URL='invalid-panel-upstream')
+            config = panel/'seats.json'
+            seat_code = ('from pathlib import Path; import sys; '
+                         'Path(sys.argv[2]).write_text(sys.stdin.read()); '
+                         'sys.stderr.write("seat diagnostics\\n"); '
+                         'sys.stdout.write(Path(sys.argv[1]).read_text()); sys.exit(int(sys.argv[3]))')
+            def seat(name, vendor, fixture, code=0):
+                return {'name':name,'vendor':vendor,
+                        'argv':[sys.executable,'-c',seat_code,str(fixture),str(panel/f'{name}.stdin'),str(code)]}
+            panel_runs = 0
+            def run_panel(seats, expected=0, extra=(), environment=None):
+                nonlocal panel_runs
+                panel_runs += 1
+                date = f'2026-11-{panel_runs:02d}'
+                config.write_text(json.dumps(seats))
+                output = self.run(self.script(self.name,'curate.sh'),'--panel',prompt,'--panel-config',config,
+                                  '--repo',collection,'--date',date,*extra,env=environment or panel_env,expected=expected)
+                self.ensure(not (collection/f'logs/curator/{date}.upstream.json').exists(),
+                            f'panel run {panel_runs} does not invoke the upstream diff stage')
+                return date, output
+            good_seats = [seat('claude-stub','anthropic',fixtures/'fragment-h3-valid.md'),
+                          seat('codex-stub','openai',no_proposals)]
+            date, _ = run_panel(good_seats)
+            panel_log = collection/f'logs/curator/{date}.log'
+            records = [json.loads(line) for line in panel_log.read_text().splitlines() if line.startswith('{')]
+            for entry in good_seats:
+                name = entry['name']
+                self.ensure((panel/f'{name}.stdin').read_text() == prompt.read_text(),
+                            f'{name} receives the exact prompt on stdin')
+                self.ensure((collection/f'logs/curator/{date}.{name}-x-propose.md').read_text()
+                            == Path(entry['argv'][-3]).read_text()
+                            and (collection/f'logs/curator/{date}.{name}-x-propose.err').read_text() == 'seat diagnostics\n',
+                            f'{name} saves the fragment and separate stderr artifact')
+                self.ensure(any((r.get('name') or r.get('seat')) == name and r['vendor'] == entry['vendor']
+                                and r['argv'] == entry['argv'] and r['exit_code'] == 0 and r['check_exit_code'] == 0
+                                for r in records), f'{name} logs vendor, argv, command exit, and gate exit')
+            self.ensure([json.loads(line) for line in fetch_log.read_text().splitlines()]
+                        == ['https://example.invalid/first','https://example.invalid/second'],
+                        'panel invokes the fragment fetch gate on every H3 URL with stubbed transport')
+            self.ensure((collection/f'logs/curator/{date}.codex-stub-x-propose.md').read_text() == 'No proposals.\n',
+                        'a fragment containing only No proposals. passes the panel gate')
+            symlink_seats = [seat('symlink-seat','anthropic',no_proposals),
+                             seat('symlink-peer','openai',no_proposals)]
+            config.write_text(json.dumps(symlink_seats))
+            sentinel_bytes = b'Preserve this sentinel byte-for-byte.\n\x00\xff'
+            for number, suffix in enumerate(('.md','.err','.log'), 10):
+                symlink_date = f'2026-12-{number:02d}'
+                sentinel = collection/'panel-sentinel' if suffix == '.md' else panel/'outside-sentinel'
+                sentinel.write_bytes(sentinel_bytes)
+                destination = collection/'logs/curator'/(
+                    f'{symlink_date}.log' if suffix == '.log' else f'{symlink_date}.symlink-seat-x-propose{suffix}')
+                destination.symlink_to('../../panel-sentinel' if suffix == '.md' else sentinel)
+                command = ([self.script(self.name,'curate.sh'),'--panel',prompt] if suffix != '.log'
+                           else [sys.executable,self.script(self.name,'run_panel.py'),prompt])
+                try:
+                    output = self.run(*command,'--panel-config',config,'--repo',collection,
+                                      '--date',symlink_date,env=panel_env,expected=2)
+                    self.ensure(sentinel.read_bytes() == sentinel_bytes and str(destination) in output
+                                and 'symlink' in output and 'replace' in output
+                                and not (panel/'symlink-seat.stdin').exists(),
+                                f'panel rejects the {suffix} symlink before seats run and preserves its sentinel target')
+                finally:
+                    destination.unlink()
+            escaped_repo = panel/'escaped-repo'
+            for directory in ('skills','research/upstream','logs'):
+                (escaped_repo/directory).mkdir(parents=True,exist_ok=True)
+            outside_logs = panel/'outside-logs'
+            outside_logs.mkdir()
+            (escaped_repo/'logs/curator').symlink_to(outside_logs,target_is_directory=True)
+            output = self.run(self.script(self.name,'curate.sh'),'--panel',prompt,'--panel-config',config,
+                              '--repo',escaped_repo,'--date','2026-12-13',env=panel_env,expected=2)
+            self.ensure(str(escaped_repo/'logs/curator') in output and 'inside' in output
+                        and not list(outside_logs.iterdir()) and not (panel/'symlink-seat.stdin').exists(),
+                        'panel refuses a logs/curator directory resolving outside the repo before writing any output')
+            panel_module = load_module(self.script(self.name,'run_panel.py'),'example_panel_cleanup')
+            for number, error in enumerate((PermissionError, ProcessLookupError), 1):
+                cleanup_date = f'2026-12-{number:02d}'
+                config.write_text(json.dumps([seat('finished-seat','anthropic',no_proposals),
+                                              seat('finished-peer','openai',no_proposals)]))
+                with patch.dict(os.environ,panel_env), patch.object(panel_module.os,'killpg',side_effect=error) as killpg:
+                    code = panel_module.main([str(prompt),'--panel-config',str(config),
+                                              '--repo',str(collection),'--date',cleanup_date])
+                records = [json.loads(line) for line in (collection/f'logs/curator/{cleanup_date}.log').read_text().splitlines()
+                           if line.startswith('{')]
+                self.ensure(code == 0 and killpg.call_count == 2 and len(records) == 2
+                            and all(r['exit_code'] == 0 and r['check_exit_code'] == 0 for r in records),
+                            f'{error.__name__} during finished-seat cleanup preserves exit 0 instead of reporting exit 127')
+            for name, fixture, code in (('empty-seat',empty,0), ('unstructured-seat',unstructured,0),
+                                        ('banana-seat',fixtures/'fragment-h3-banana.md',0),
+                                        ('crashed-seat',no_proposals,23)):
+                date, output = run_panel([seat(name,'anthropic',fixture,code),
+                                          seat('later-seat','openai',no_proposals)],expected=1)
+                self.ensure(name in output and (collection/f'logs/curator/{date}.later-seat-x-propose.md').is_file(),
+                            f'{name} exits 1 naming the failed seat and still runs the later seat')
+            same_vendor = [seat('one-vendor-a','openai',no_proposals),seat('one-vendor-b','openai',no_proposals)]
+            before_fetch = fetch_log.read_text()
+            _, output = run_panel(same_vendor,expected=2)
+            self.ensure('--allow-single-vendor' in output and all(not (panel/f"{s['name']}.stdin").exists() for s in same_vendor)
+                        and fetch_log.read_text() == before_fetch,
+                        'same-vendor panel exits 2 before any seat or fetch and names the override fix')
+            run_panel(same_vendor,extra=('--allow-single-vendor',))
+            self.ensure(all((panel/f"{s['name']}.stdin").is_file() for s in same_vendor),
+                        '--allow-single-vendor explicitly enables the same-vendor panel')
+            _, output = run_panel(good_seats,expected=1,
+                                  environment=dict(panel_env,PANEL_FAIL_FETCH='https://example.invalid/second'))
+            self.ensure('claude-stub' in output and '403' in output,
+                        'panel names the failed seat when its second H3 source cannot be fetched')
+            preflight = seat('preflight-first','anthropic',no_proposals)
+            for malformed_seat, fix in (
+                ({'name':'later-invalid','vendor':'openai','argv':'not-an-array'},'argv'),
+                (seat('PREFLIGHT-FIRST','openai',no_proposals),'duplicate'),
+                (seat('../invalid-name','openai',no_proposals),'name'),
+            ):
+                date, output = run_panel([preflight,malformed_seat],expected=2)
+                self.ensure(fix in output and not (panel/'preflight-first.stdin').exists()
+                            and not (collection/f'logs/curator/{date}.log').exists(),
+                            f'invalid later seat {fix} fails preflight before an earlier seat or log is started')
+            for flag in ('--offline','--no-fetch'):
+                _, output = run_panel([preflight,seat('preflight-second','openai',no_proposals)],
+                                      extra=(flag,),expected=2)
+                self.ensure(flag in output and not (panel/'preflight-first.stdin').exists(),
+                            f'panel rejects {flag} before running seats instead of silently skipping source fetches')
+            override_args = panel/'override-argv.json'
+            shell_sentinel = panel/'shell-must-not-run'
+            override_seat = {'name':'override-seat','vendor':'anthropic','argv':[
+                sys.executable,'-c',
+                'from pathlib import Path; import json, sys; sys.stdin.read(); '
+                'Path(sys.argv[1]).write_text(json.dumps(sys.argv[2:])); print("No proposals.")',
+                str(override_args),'${CURATOR_MODEL:-default-model}','${CURATOR_EFFORT:-default-effort}',
+                'prefix-${CURATOR_MODEL:-unchanged}']}
+            override_value = f'model with spaces $(touch {shell_sentinel})'
+            for model, effort, expected_args in (
+                (override_value,'high effort',[override_value,'high effort','prefix-${CURATOR_MODEL:-unchanged}']),
+                ('','',['default-model','default-effort','prefix-${CURATOR_MODEL:-unchanged}']),
+            ):
+                run_panel([override_seat,seat('override-peer','openai',no_proposals)],
+                          environment=dict(panel_env,CURATOR_MODEL=model,CURATOR_EFFORT=effort))
+                self.ensure(json.loads(override_args.read_text()) == expected_args and not shell_sentinel.exists(),
+                            'panel model and effort overrides/defaults expand only whole argv tokens without shell evaluation')
+            child_started = panel/'timeout-child-started'
+            late_marker = panel/'timeout-child-late'
+            child_code = ('from pathlib import Path; import sys, time; '
+                          'Path(sys.argv[1]).write_text("started"); time.sleep(2); '
+                          'Path(sys.argv[2]).write_text("escaped timeout"); print("late child output", flush=True)')
+            parent_code = ('import subprocess, sys, time; '
+                           'subprocess.Popen([sys.executable,"-c",sys.argv[1],sys.argv[2],sys.argv[3]]); '
+                           'print("No proposals.", flush=True); time.sleep(10)')
+            timeout_seat = {'name':'timeout-seat','vendor':'anthropic','argv':[
+                sys.executable,'-c',parent_code,child_code,str(child_started),str(late_marker)]}
+            date, output = run_panel([timeout_seat,seat('timeout-peer','openai',no_proposals)],expected=1,
+                                     environment=dict(panel_env,CURATOR_TIMEOUT='1'))
+            records = [json.loads(line) for line in (collection/f'logs/curator/{date}.log').read_text().splitlines()
+                       if line.startswith('{')]
+            self.ensure('timeout-seat' in output and child_started.is_file()
+                        and any(r.get('name') == 'timeout-seat' and r['exit_code'] == 124 for r in records),
+                        'a seat that already spawned a child times out with exit 124 and a named failure')
+            fragment = collection/f'logs/curator/{date}.timeout-seat-x-propose.md'
+            checked_bytes = fragment.read_bytes()
+            time.sleep(2.3)
+            self.ensure(not late_marker.exists() and fragment.read_bytes() == checked_bytes,
+                        'seat timeout kills descendants so a child cannot mutate the validated fragment afterwards')
             for status in (401,403,429):
-                module.fetch_status = lambda url, status=status: status
-                result = module.check(proposal,collection/'skills',True)
+                with patch.object(module,'fetch_source',lambda url, status=status: (status,'')):
+                    result = module.check(proposal,collection/'skills',True)
                 self.ensure(not result['ok'], f'HTTP {status} fails the fetched-source acceptance gate (stubbed transport, no network)')
             self.ensure(not self.run('git','-C',upstream,'remote').strip(), 'local upstream fixture has no git remotes')
 

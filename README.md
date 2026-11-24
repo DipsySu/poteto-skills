@@ -41,7 +41,7 @@ git clone <this repo> poteto-skills && cd poteto-skills
 
 `install.sh` only creates, updates, or removes entries named after this collection's skills, and it leaves anything it didn't install alone (for example `~/.claude/skills/synced`). Install all skills together: `feedback-to-architecture` reuses `correct`'s scripts, and `maintain-verification-skill` reuses `create-verification-skill`'s.
 
-Requirements: Python 3.11+ (developed on 3.13) using the stdlib only, bash, and git. `gh` is optional, for reading PR comments. The curator also uses `curl` and, for its online steps, the `claude` CLI. TLA+ needs Java and `tla2tools.jar`; without them, `formal-verification` falls back to its stdlib `bounded_check.py`.
+Requirements: Python 3.11+ (developed on 3.13) using the stdlib only, bash, and git. `gh` is optional, for reading PR comments. The curator also uses `curl` and, for its online steps, the `claude` CLI; panel mode uses the CLIs configured in [panel.json](skills/curator/references/panel.json). TLA+ needs Java and `tla2tools.jar`; without them, `formal-verification` falls back to its stdlib `bounded_check.py`.
 
 ## Quick start
 
@@ -65,6 +65,7 @@ install.sh                    symlink or copy into Claude Code / Cursor skill di
 research/                     NOTES.md (source inventory) and verbatim upstream snapshots
 examples/todo-app/            example repo the helpers are exercised against
 scripts/verify.sh             the collection's self-check; scripts/run-examples.sh runs every helper for real
+scripts/prose_budget.py       SKILL.md word-count ratchet; budgets in scripts/prose-budget.json
 ```
 
 ## Credits
@@ -79,6 +80,7 @@ The ideas, structure, and much of the vocabulary come from [pstack](https://gith
 ./scripts/verify.sh                   # packaging, syntax, installer, app tests, saved example results
 ./scripts/verify.sh --run-examples    # regenerate example results first
 python3 scripts/check_docs.py         # helper paths/flags, links, counts, every source citation
+python3 scripts/prose_budget.py       # skill prose budgets and misplaced branch history
 ```
 
 The docs check reads README.md, MAPPING.md, and first-party `skills/*/SKILL.md`. It checks supported flags using cached, bounded `--help` calls, without executing examples. A skill's explicit `check-docs: readme-avoid` policy keeps README defaults aligned; other supported flags may appear only in README. Generated `verify-*` and vendored `tools/` commands belong to the target app. Source IDs come from NOTES.md; adding a row needs no checker edit, but any explicit source-range claim must be updated too.

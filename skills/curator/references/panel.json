@@ -1,0 +1,21 @@
+[
+  {
+    "name": "claude",
+    "vendor": "anthropic",
+    "argv": [
+      "claude", "-p", "--model", "${CURATOR_MODEL:-fable}",
+      "--effort", "${CURATOR_EFFORT:-max}", "--output-format", "text",
+      "--permission-mode", "plan", "--tools", "Read,Grep,Glob,WebSearch,WebFetch",
+      "--allowedTools", "Read,Grep,Glob,WebSearch,WebFetch", "--strict-mcp-config",
+      "--no-session-persistence"
+    ]
+  },
+  {
+    "name": "codex",
+    "vendor": "openai",
+    "argv": [
+      "codex", "exec", "--model", "gpt-6-astra", "--sandbox", "read-only",
+      "-c", "approval_policy=\"never\"", "--ephemeral", "--color", "never", "-"
+    ]
+  }
+]

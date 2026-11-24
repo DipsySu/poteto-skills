@@ -1,0 +1,40 @@
+{
+  "source_commit": "d7309e441bc43dce8f1290bf9132d756c0490067",
+  "parsed": [
+    {
+      "title": "1. Keep example headings inside the proposal",
+      "fields": {
+        "source": "https://example.invalid/source",
+        "level": "test",
+        "skill": "curator",
+        "change": "Keep fenced Markdown examples inside their containing proposal."
+      },
+      "urls": [
+        "https://example.invalid/source"
+      ]
+    }
+  ],
+  "result": {
+    "file": "examples/fixtures/curator/legacy-fenced-h3.md",
+    "items": 1,
+    "deterministic": 1,
+    "prose_or_review": 0,
+    "problems": [],
+    "warnings": [],
+    "ok": true,
+    "proposals": [
+      {
+        "title": "1. Keep example headings inside the proposal",
+        "level": "test",
+        "skill": "curator",
+        "urls": [
+          "https://example.invalid/source"
+        ],
+        "fetch": null
+      }
+    ]
+  },
+  "exit_code": 0,
+  "stdout": "check_proposals: PASS: 1 proposal(s), 1 above prose, 0 prose/review (examples/fixtures/curator/legacy-fenced-h3.md)\n",
+  "stderr": ""
+}

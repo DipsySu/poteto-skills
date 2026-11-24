@@ -11,7 +11,7 @@ A few minutes of framing before the work starts decides whether the work is righ
 
 ```bash
 python3 $SKILL_DIR/scripts/brief.py "<the task, in the user's words>" --out BRIEF.md   # lists repo files matching the task
-python3 $SKILL_DIR/scripts/brief.py --check BRIEF.md                                  # exit 1 while blanks remain
+python3 $SKILL_DIR/scripts/brief.py --check BRIEF.md --repo .                         # completion and quick-fix root-cause gate
 ```
 
 1. **In your own words.** Restate what the user is really after and the problem behind the request. If your restatement and the literal request differ, act on the goal and say so in one line. That is the whole of /in-your-own-words.
@@ -19,7 +19,7 @@ python3 $SKILL_DIR/scripts/brief.py --check BRIEF.md                            
 3. **Specification check.** Loosen constraints that don't serve the goal as readily as you add ones that do. Leave choices that belong to the user open; ask only when the work can't proceed without them. Fold in only what makes the work better, not bigger.
 4. **Outside check.** Always keep one check outside your own judgment: a command, a reference output, a dataset, or a named person. Write the command and the pass condition. `--check` fails without a runnable command or a URL.
 
-Keep `BRIEF.md` out of commits unless the user asks for it. In the final reply, report the outside check's result, not the brief.
+Keep `BRIEF.md` out of commits unless the user asks for it. In the final reply, report the outside check's result; if the requested change `covers it`, ask the user the open choice recorded in the brief. See `brief.py --help` for the checked fields.
 
 ## Sources
 

@@ -553,7 +553,58 @@ def run_property(mod, name, gen, check, rng, count, repo, limits, result, called
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description=__doc__)
+    ap = argparse.ArgumentParser(
+        description=__doc__,
+        epilog="""replay and rejection:
+  --examples counts generated inputs after pinned examples. The seed is printed in
+  every report, and to stderr before the first text-mode check. Each property's
+  random stream is keyed by seed and property name, so an earlier timeout cannot
+  change later samples. To replay older shared-stream runs exactly, keep the old
+  checker; revalidate recorded commands and pin known counterexamples in examples.
+  A property that otherwise passes but rejects more than 50% of generated inputs
+  fails with filter_too_much. This is a project policy, not Hypothesis's published
+  threshold. Failures/timeouts retain their result; failures report prior rejections.
+  --expect-fail NAME needs that counterexample, all other properties passing,
+  target coverage, and no infrastructure, filter, timeout or incomplete result.
+  For an able-to-fail proof, scratch-break the real implementation and restore it
+  in finally.
+
+limits and shrinking:
+  Defaults: 90 s per run, 10 s per input's hooks and check. A call timeout prints
+  the input and seed, ends that property as timeout, and other properties still run.
+  Imports use --timeout or 90 s. PROPS.CHECK_TIMEOUT then applies to elapsed time
+  since startup unless --timeout overrides it; an exhausted budget starts no property.
+  --timeout 0 and --call-timeout 0 disable their limits independently; CHECK_TIMEOUT=0
+  disables only the post-import run limit. Previously unlimited checks may need explicit budgets.
+  A call timeout during shrinking ends that property's reduction but still runs the
+  others. The confirmed failure, best counterexample and accepted coverage remain;
+  the timed-out candidate contributes neither failure nor coverage. The property
+  records timeout_scope: call, timeout_phase: shrink, input and incomplete; the
+  top-level report also records incomplete. Unexpected confirmed failures keep exit 1.
+  With --expect-fail, a shrink call timeout exits 3 unless another property failed
+  unexpectedly (exit 1). Run timeouts and Ctrl-C stop the run; confirmed expected
+  failures cannot complete --expect-fail and exit 3. A timeout is not a proof.
+
+signal handling and incomplete output:
+  Limits reserve SIGALRM/setitimer on the Unix main thread; checked code must not
+  use them. Unsupported platforms or worker threads warn on stderr that limits
+  are not enforced. Native code can delay signals: keep an external process deadline.
+  One-shot alarms use the earlier enabled run/call deadline; return-time checks
+  still apply. After expiry, a short retry is armed before raising, in case code
+  swallows the timeout. If both deadlines elapsed, the earlier absolute deadline
+  wins; ties use the run deadline. On exit, the previous handler/timer is restored,
+  accounting for elapsed time, if the checker still owns it.
+  Confirmed results and accepted coverage are recorded before a pending timeout
+  is delivered. Input formatting and exception __str__ run afterward and remain
+  interruptible. Interrupted formatting keeps the failure with output_incomplete
+  and an unformatted-input placeholder when needed. Failure type and a minimal
+  diagnostic are saved before exception messages run. Interrupted property exception
+  messages retain the counterexample and coverage (exit 1 for unexpected failures).
+  Interrupted import or infrastructure error messages (hooks, generation, shrinking)
+  retain the error type and exit 2. Formatting never runs while recording a result.
+""",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     ap.add_argument('props', type=Path, help='PROPS.py with properties and declared TARGETS')
     ap.add_argument('--repo', type=Path, required=True, help='repository whose functions must run')
     ap.add_argument('--seed', type=int, default=0, help='random seed (default: 0)')
