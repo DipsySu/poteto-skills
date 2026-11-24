@@ -2752,10 +2752,12 @@ properties = {"copy": (sampled_from([" title "]), check)}
                             f'{fixture_name}: legacy H2 proposals retain the exact count, fields, titles, and URLs')
                 legacy_output = self.run(checker,legacy,'--skills-dir','skills',cwd=ROOT,
                                          expected=baseline['exit_code'])
-                self.ensure(legacy_output == baseline['stdout'] and not baseline['stderr'],
-                            f'{fixture_name}: pre-change exit code and exact CLI output are retained')
+                self.ensure(legacy_output == 'quotes not checked (no --fetch)\n'+baseline['stdout']
+                            and not baseline['stderr'],
+                            f'{fixture_name}: legacy CLI output is retained after the explicit no-fetch quote notice')
                 self.ensure(self.json(checker,legacy,'--skills-dir','skills','--json',cwd=ROOT)
-                            == baseline['result'], f'{fixture_name}: the entire original JSON check result is retained')
+                            == dict(baseline['result'],quotes_checked=False),
+                            f'{fixture_name}: original JSON check fields are retained with quotes_checked false')
             for layout, flags in (('nested',()), ('fragment',('--fragment',))):
                 valid = fixtures/f'{layout}-h3-valid.md'
                 bad = fixtures/f'{layout}-h3-banana.md'
@@ -2828,17 +2830,152 @@ properties = {"copy": (sampled_from([" title "]), check)}
             fetched = []
             def fake_fetch(url):
                 fetched.append(url)
-                return 200
-            with patch.object(module,'fetch_status',fake_fetch):
+                return 200, 'A fixture page with no quoted claims.'
+            with patch.object(module,'fetch_source',fake_fetch):
                 result = module.check(fixtures/'nested-h3-valid.md',collection/'skills',True)
             self.ensure(result['ok'] and fetched == ['https://example.invalid/first','https://example.invalid/second']
                         and all(p['fetch'] == {p['urls'][0]:200} for p in result['proposals']),
                         '--fetch requests and records each H3 section URL independently')
             for status in (0,199,300,401,403,429,500):
-                with patch.object(module,'fetch_status',lambda url, status=status: status if url.endswith('/second') else 200):
+                with patch.object(module,'fetch_source',
+                                  lambda url, status=status: (status if url.endswith('/second') else 200, '')):
                     result = module.check(fixtures/'nested-h3-valid.md',collection/'skills',True)
                 self.ensure(not result['ok'] and any('#2' in p and 'unreachable' in p for p in result['problems']),
                             f'the second H3 source still fails on HTTP {status or "error"}')
+
+            # Quote fixtures use the real checker and transport subprocess, never a patched matcher.
+            # Only the real correct skill is tracked here: this test's own strings cannot prove themselves.
+            quote_root = self.scratch/'quote-collection'
+            (quote_root/'skills/correct').mkdir(parents=True)
+            shutil.copyfile(ROOT/'skills/correct/SKILL.md',quote_root/'skills/correct/SKILL.md')
+            self.run('git','init','-q','--template=',quote_root)
+            self.run('git','-C',quote_root,'add','skills/correct/SKILL.md')
+            (quote_root/'proposals').mkdir()
+            quote_file = quote_root/'proposals/current.md'
+            transport = self.scratch/'quote-transport'
+            transport.mkdir()
+            quote_fetch_log = transport/'fetched.jsonl'
+            quote_pages = transport/'pages.json'
+            quote_curl = transport/'curl'
+            quote_curl.write_text('#!/usr/bin/env python3\nfrom pathlib import Path\nimport json, os, sys, time\n'
+                                  'args = sys.argv[1:]\n'
+                                  'assert args[args.index("--max-time")+1] == os.environ.get("QUOTE_MAX_TIME", "20")\n'
+                                  'url = args[-1]\n'
+                                  'with open(os.environ["QUOTE_FETCH_LOG"], "a") as stream:\n'
+                                  '    stream.write(json.dumps(url)+"\\n")\n'
+                                  'status, page = json.loads(Path(os.environ["QUOTE_PAGES"]).read_text())[url]\n'
+                                  'Path(args[args.index("-D")+1]).write_text(f"HTTP/1.1 {status} Fixture\\r\\n\\r\\n")\n'
+                                  'time.sleep(float(os.environ.get("QUOTE_CURL_DELAY", "0")))\n'
+                                  'sys.stdout.buffer.write(Path(page).read_bytes())\n'
+                                  'sys.exit(int(os.environ.get("QUOTE_CURL_EXIT", "0")))\n')
+            quote_curl.chmod(0o755)
+            quote_env = dict(self.env,PATH=str(transport)+os.pathsep+self.env.get('PATH',''),
+                             QUOTE_FETCH_LOG=str(quote_fetch_log),QUOTE_PAGES=str(quote_pages))
+            first_url, second_url = 'https://example.invalid/quote-first', 'https://example.invalid/quote-second'
+            blob_url = 'https://github.com/fixture/skills/blob/abc123/SKILL.md'
+            raw_url = 'https://raw.githubusercontent.com/fixture/skills/abc123/SKILL.md'
+            tweet_url = 'https://api.fxtwitter.com/fixture/status/123'
+            phrase = 'violet lanterns protect the quiet archive'
+            sources = {
+                first_url: (200, '<html><p>'+phrase+'</p><p>The curator\'s evidence stays beside each claim.</p>'
+                            '<p>amber birds arrive before dusk; several unrelated details; silver foxes leave at dawn.</p>'
+                            '<p>THE  <em>luminous</em>\n archive &amp; its caretakers — keep_a *careful* `record`.</p></html>'),
+                second_url: (200, '<p>cobalt rivers carry every unlisted quotation</p>'),
+                blob_url: (503, '<p>Service unavailable</p>'),
+                raw_url: (200, 'Raw file evidence confirms the cedar gate.'),
+                tweet_url: (200, json.dumps({'tweet':{'text':"The keeper's nested evidence survives JSON decoding."},
+                                             'These hidden keys are never quoted evidence':False})
+                            .replace("'",r'\u0027')),
+            }
+            manifest = {}
+            for index, (url, (status, body)) in enumerate(sources.items()):
+                page = transport/f'page-{index}.body'
+                page.write_text(body)
+                manifest[url] = [status,str(page)]
+            quote_pages.write_text(json.dumps(manifest))
+
+            def quoted_proposal(change, why='', url=first_url, title='1. Quote evidence', heading='##'):
+                return (f'{heading} {title}\n- Source: {url}\n- Level: lint\n- Skill: collection\n'
+                        f'- Change: Validate each quoted claim. {change}\n- Why: {why or "Keep fetched evidence accurate."}\n')
+
+            def check_quotes(body, expected=0, fetch=True):
+                quote_file.write_text(body)
+                return self.json(checker,quote_file,'--skills-dir',quote_root/'skills','--json',
+                                 *(('--fetch',) if fetch else ()),env=quote_env,expected=expected)
+
+            result = check_quotes(quoted_proposal(f'"{phrase}"'))
+            self.ensure(result['ok'] and result['quotes_checked'],
+                        'a four-word-or-longer quote on a real stubbed page body passes --fetch')
+            wrong_phrase = phrase.replace('protect','disturb')
+            result = check_quotes(quoted_proposal(f'"{wrong_phrase}"'),expected=1)
+            self.ensure(any('#1 "1. Quote evidence"' in p and f'quote "{wrong_phrase}"' in p
+                            and 'quote the fetched page exactly' in p and 'add the page you quoted to Source' in p
+                            and 'put proposed text in backticks' in p for p in result['problems']),
+                        'one changed word fails through the real transport and names the quote, proposal, and fixes')
+            result = check_quotes(quoted_proposal('“The curator’s evidence stays beside each claim.”'))
+            self.ensure(result['ok'], 'curly double quotes and apostrophes match straight apostrophes in a fetched body')
+            result = check_quotes(quoted_proposal('"amber birds arrive before dusk…silver foxes leave at dawn"'))
+            self.ensure(result['ok'], 'ellipsis quote parts match in order within one fetched page body')
+            result = check_quotes(quoted_proposal('"silver foxes leave at dawn...amber birds arrive before dusk"'),expected=1)
+            self.ensure(any('quote "silver foxes' in p for p in result['problems']),
+                        'ellipsis parts present only in reverse order fail')
+            result = check_quotes(quoted_proposal('"the luminous archive & its caretakers - keepa careful record."'))
+            self.ensure(result['ok'], 'HTML tags/entities, case, dashes, Markdown markers and backticks normalize alike')
+            correct_line = next(line for line in (quote_root/'skills/correct/SKILL.md').read_text().splitlines()
+                                if line.startswith('Human review is not a level.'))
+            result = check_quotes(quoted_proposal(f'"{correct_line}"'))
+            self.ensure(result['ok'] and all(correct_line not in body for _, body in sources.values()),
+                        'a quote of an actual tracked correct/SKILL.md line passes without any source page holding it')
+            result = check_quotes(quoted_proposal('"three invented words" and `"an invented proposed message stays unchecked"`'
+                                                  '\n  ```text\n  "a fenced proposed message is also skipped"\n  ```'))
+            self.ensure(result['ok'], 'three-word quotes and backticked inline or fenced proposed messages are skipped')
+            result = check_quotes(quoted_proposal('\n  - Nested evidence: "'+phrase+'"',
+                                                  why='Check this continuation:\n    “The curator’s evidence stays beside each claim.”'))
+            self.ensure(result['ok'], 'multiline Change and Why bullets retain quoted claims and normalize their text')
+            result = check_quotes(quoted_proposal('Add a concrete check.',why='Check this continuation:\n    "'+wrong_phrase+'"'),
+                                  expected=1)
+            self.ensure(any(wrong_phrase in p for p in result['problems']), 'a missing quote in a multiline Why fails')
+            borrowed = 'cobalt rivers carry every unlisted quotation'
+            result = check_quotes(quoted_proposal('"'+borrowed+'"',title='Borrower',heading='###')
+                                  +quoted_proposal('Add a concrete check.',url=second_url,title='Other source',heading='###'),expected=1)
+            self.ensure(any('#1 "Borrower"' in p and borrowed in p for p in result['problems'])
+                        and not any('#2' in p for p in result['problems']),
+                        'a quote on only another proposal\'s fetched page fails without borrowing its evidence')
+            result = check_quotes(quoted_proposal('"Raw file evidence confirms the cedar gate."',url=blob_url))
+            self.ensure(result['ok'] and blob_url in quote_fetch_log.read_text() and raw_url in quote_fetch_log.read_text(),
+                        'a GitHub blob returning 503 passes with the quote on its additional raw file fetch')
+            result = check_quotes(quoted_proposal('“The keeper’s nested evidence survives JSON decoding.”',url=tweet_url))
+            self.ensure(result['ok'], 'FxTwitter nested JSON string values decode escaped apostrophes before matching')
+            result = check_quotes(quoted_proposal('"These hidden keys are never quoted evidence"',url=tweet_url),expected=1)
+            self.ensure(any('These hidden keys' in p for p in result['problems']),
+                        'FxTwitter JSON keys cannot count as quoted page text')
+            cap_url = 'https://example.invalid/oversized-body'
+            cap_page = transport/'oversized.body'
+            beyond_cap = 'Maroon observatories sit beyond the retained body'
+            cap_page.write_bytes(phrase.encode()+b' '*(5*1024*1024-len(phrase))+beyond_cap.encode())
+            manifest[cap_url] = [200,str(cap_page)]
+            quote_pages.write_text(json.dumps(manifest))
+            result = check_quotes(quoted_proposal(f'"{phrase}"',url=cap_url))
+            self.ensure(result['ok'], 'a quote within the retained 5 MiB body prefix passes even when the server ignores bounds')
+            result = check_quotes(quoted_proposal(f'"{beyond_cap}"',url=cap_url),expected=1)
+            self.ensure(any(beyond_cap in p for p in result['problems']),
+                        'page text beyond the 5 MiB body cap cannot prove a quote')
+            with patch.dict(quote_env,QUOTE_CURL_EXIT='7'):
+                result = check_quotes(quoted_proposal(f'"{phrase}"'),expected=1)
+            self.ensure(any('unreachable' in p for p in result['problems']),
+                        'a nonzero curl exit cannot accept an otherwise matching body and HTTP 200 header')
+            start = time.monotonic()
+            with patch.dict(os.environ,dict(quote_env,QUOTE_MAX_TIME='0.1',QUOTE_CURL_DELAY='3')):
+                with patch.object(module,'FETCH_SECONDS',0.1):
+                    timed_out = module.fetch_source(first_url)
+            self.ensure(timed_out == (0,'') and time.monotonic()-start < 2.5,
+                        'a stalled transport is killed within the fetch deadline even when the stub ignores --max-time')
+            before_quote_fetch = quote_fetch_log.read_text()
+            result = check_quotes(quoted_proposal(f'"{wrong_phrase}"'),fetch=False)
+            output = self.run(checker,quote_file,'--skills-dir',quote_root/'skills',env=quote_env)
+            self.ensure(result['ok'] and result['quotes_checked'] is False
+                        and 'quotes not checked (no --fetch)' in output and quote_fetch_log.read_text() == before_quote_fetch,
+                        'without --fetch quotes are unchecked, the report says so, and no transport is invoked')
 
             # Real subprocesses, stub seats and a stub curl exercise the panel without any network or model CLI.
             panel = self.scratch/'panel'
@@ -2855,10 +2992,12 @@ properties = {"copy": (sampled_from([" title "]), check)}
             bin_dir.mkdir()
             fetch_log = panel/'fetched.jsonl'
             curl = bin_dir/'curl'
-            curl.write_text('#!/usr/bin/env python3\nimport json, os, sys\n'
+            curl.write_text('#!/usr/bin/env python3\nfrom pathlib import Path\nimport json, os, sys\n'
                             'with open(os.environ["PANEL_FETCH_LOG"], "a") as stream:\n'
                             '    stream.write(json.dumps(sys.argv[-1])+"\\n")\n'
-                            'print(403 if os.environ.get("PANEL_FAIL_FETCH") == sys.argv[-1] else 200, end="")\n')
+                            'status = 403 if os.environ.get("PANEL_FAIL_FETCH") == sys.argv[-1] else 200\n'
+                            'Path(sys.argv[sys.argv.index("-D")+1]).write_text(f"HTTP/1.1 {status} Fixture\\r\\n\\r\\n")\n'
+                            'sys.stdout.write("A stubbed panel source body.")\n')
             curl.chmod(0o755)
             panel_env = dict(env,PATH=str(bin_dir)+os.pathsep+env.get('PATH',''),
                              PANEL_FETCH_LOG=str(fetch_log),CURATOR_TIMEOUT='10',
@@ -2978,8 +3117,8 @@ properties = {"copy": (sampled_from([" title "]), check)}
             self.ensure(not late_marker.exists() and fragment.read_bytes() == checked_bytes,
                         'seat timeout kills descendants so a child cannot mutate the validated fragment afterwards')
             for status in (401,403,429):
-                module.fetch_status = lambda url, status=status: status
-                result = module.check(proposal,collection/'skills',True)
+                with patch.object(module,'fetch_source',lambda url, status=status: (status,'')):
+                    result = module.check(proposal,collection/'skills',True)
                 self.ensure(not result['ok'], f'HTTP {status} fails the fetched-source acceptance gate (stubbed transport, no network)')
             self.ensure(not self.run('git','-C',upstream,'remote').strip(), 'local upstream fixture has no git remotes')
 
