@@ -2744,6 +2744,98 @@ properties = {"copy": (sampled_from([" title "]), check)}
             module = load_module(self.script(self.name,'check_proposals.py'),'example_proposals')
             fixtures = ROOT/'examples/fixtures/curator'
             checker = self.script(self.name,'check_proposals.py')
+            # Inline real-post fixtures keep ignored curator history out of the test inputs.
+            # A transport tripwire makes every timestamp assertion prove it needs no fetch.
+            timestamp_root = self.scratch/'post-times'
+            timestamp_root.mkdir()
+            timestamp_bin = timestamp_root/'bin'
+            timestamp_bin.mkdir()
+            timestamp_fetch = timestamp_root/'unexpected-fetch'
+            timestamp_curl = timestamp_bin/'curl'
+            timestamp_curl.write_text('#!/usr/bin/env python3\nimport os\nfrom pathlib import Path\n'
+                                      'Path(os.environ["TIMESTAMP_FETCH"]).write_text("unexpected fetch")\n'
+                                      'raise SystemExit(97)\n')
+            timestamp_curl.chmod(0o755)
+            timestamp_env = dict(self.env,PATH=str(timestamp_bin)+os.pathsep+self.env.get('PATH',''),
+                                 TIMESTAMP_FETCH=str(timestamp_fetch))
+            digest_file = timestamp_root/'digest.md'
+            digest = ('# X digest\nWindow: 2026-11-14T00:00:00Z to 2026-11-24T00:00:00Z\n\n'
+                      '## 1. Quick fixes\n'
+                      '- URL: https://x.com/poteto/status/2121646643124809848\n'
+                      '- Time: 2026-11-15 00:49 Asia/Taipei\n\n'
+                      '## 2. Referenced post\n'
+                      '- URL: https://x.com/rachelnabors/status/2124176031011475785\n'
+                      '- Time: 2026-11-22 00:20 Asia/Taipei\n')
+
+            def check_digest(body, expected=0):
+                digest_file.write_text(body)
+                return self.json(sys.executable,checker,'--digest',digest_file,'--json',
+                                 env=timestamp_env,expected=expected)
+
+            result = check_digest(digest.replace('2026-11-22 00:20','2026-11-21 00:20'),expected=1)
+            self.ensure(any(f'{digest_file}:10:' in p and '2124176031011475785' in p
+                            and '2026-11-22 00:20 Asia/Taipei' in p and '2026-11-21 16:20 UTC' in p
+                            and 'not 2026-11-21 00:20' in p and 'created_at' in p
+                            and 'stated zone' in p for p in result['problems']),
+                        'the real digest day-early mistake fails offline with its line, correct local/UTC times, and fix')
+            result = check_digest(digest)
+            self.ensure(result['ok'] and result['timestamps_checked'] == 2,
+                        'two real status IDs pass offline at 2026-11-15 00:49 and 2026-11-22 00:20 Asia/Taipei')
+            result = check_digest(digest.replace('- Time: 2026-11-15 00:49 Asia/Taipei\n',''),expected=1)
+            self.ensure(any('2121646643124809848' in p and 'Time' in p for p in result['problems']),
+                        'an item missing Time fails without borrowing the next item timestamp')
+            result = check_digest(digest.replace('2026-11-14T00:00:00Z','2026-11-14T16:49:13Z'),expected=1)
+            self.ensure(any('2121646643124809848' in p and 'window' in p.lower() for p in result['problems']),
+                        'a numbered digest item before the ISO window start fails using the exact status instant')
+
+            adjacent = ('# X digest\nWindow: 2026-11-14T00:00:00Z to 2026-11-24T00:00:00Z\n\n'
+                        '1. https://x.com/poteto/status/2121646643124809848 '
+                        '(2026-11-15 00:49 Asia/Taipei; quoted post)\n'
+                        '2. https://x.com/rachelnabors/status/2124176031011475785 '
+                        '(2026-11-22 00:20 Asia/Taipei)\n')
+            result = check_digest(adjacent.replace('2026-11-22 00:20','2026-11-21 00:20'),expected=1)
+            self.ensure(any('2124176031011475785' in p and '2026-11-22 00:20' in p
+                            for p in result['problems']),
+                        'a timestamp immediately parenthesized after a status URL fails on the real wrong day')
+            result = check_digest(adjacent)
+            self.ensure(result['ok'] and result['timestamps_checked'] == 2,
+                        'immediately parenthesized status times pass to the minute with trailing context')
+
+            dated_proposal = timestamp_root/'dated-proposal.md'
+            dated_body = ('# Curator proposals\nDates below are UTC.\n\n'
+                          '2026-11-14 (status 2121646643124809848)\n\n'
+                          '## 1. Check cited post times\n'
+                          '- Source: https://x.com/poteto/status/2121646643124809848\n'
+                          '- Level: lint\n- Skill: curator\n'
+                          '- Change: Compare cited post dates with their status timestamps.\n')
+
+            def check_dated_proposal(body, expected=0):
+                dated_proposal.write_text(body)
+                return self.json(sys.executable,checker,dated_proposal,'--json',
+                                 env=timestamp_env,expected=expected)
+
+            result = check_dated_proposal(dated_body.replace('2026-11-14 (status','2026-11-13 (status'),expected=1)
+            self.ensure(any(f'{dated_proposal}:4:' in p and '2121646643124809848' in p
+                            and '2026-11-14' in p and 'UTC' in p for p in result['problems']),
+                        'a real proposal citing 2026-11-13 (status 2121646643124809848) fails with its UTC date')
+            result = check_dated_proposal(dated_body)
+            self.ensure(result['ok'] and result['items'] == 1 and result['timestamps_checked'] == 1,
+                        'the same real proposal passes with 2026-11-14 and the original proposal field gates')
+            reversed_body = dated_body.replace('2026-11-14 (status 2121646643124809848)',
+                                               '(status 2121646643124809848, 2026-11-14)')
+            result = check_dated_proposal(reversed_body.replace(', 2026-11-14)',', 2026-11-13)'),expected=1)
+            self.ensure(any('2121646643124809848' in p and '2026-11-14' in p for p in result['problems']),
+                        'the parenthesized status-ID-first proposal form rejects the wrong UTC date offline')
+            result = check_dated_proposal(reversed_body)
+            self.ensure(result['ok'] and result['timestamps_checked'] == 1,
+                        'the parenthesized status-ID-first proposal form accepts the correct UTC date offline')
+            digest_file.write_text(digest)
+            result = self.json(sys.executable,checker,dated_proposal,'--digest',digest_file,'--json',
+                               env=timestamp_env)
+            self.ensure(result['ok'] and result['timestamps_checked'] == 3,
+                        'one offline invocation validates proposal UTC dates and digest local times together')
+            self.ensure(not timestamp_fetch.exists(),
+                        'real digest and proposals pass/fail timestamp fixtures never invoke the network transport')
             for fixture_name, baseline_name in (('legacy-valid.md','legacy-baseline.json'),
                                                 ('legacy-descriptive-h3.md','legacy-descriptive-baseline.json')):
                 baseline = json.loads((fixtures/baseline_name).read_text())

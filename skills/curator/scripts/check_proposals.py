@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check a curator proposals file against the acceptance bar.
 
-  check_proposals.py FILE [--fragment] [--fetch] [--skills-dir DIR] [--json]
+  check_proposals.py [FILE] [--digest FILE] [--fragment] [--fetch] [--skills-dir DIR] [--json]
 
 Each proposal is an H2 section (`## 1. Title`) or an H3 section (`### Title`)
 with its own Source bullet, either under an H2 or in a bare --fragment:
@@ -21,6 +21,10 @@ or a collection file (tracked, proposals/, logs/curator/), excluding this propos
 HTML/entities, case, curly punctuation, dashes, Markdown emphasis and whitespace are
 normalized; ... or … parts must occur in order in one source/file. Proposed messages,
 commands and test inputs belong in backticks and are skipped. No --fetch skips quotes.
+Status timestamps are always checked offline: proposals pair YYYY-MM-DD (status ID)
+or (status ID, YYYY-MM-DD) in UTC, outside code spans/fences. --digest checks URL/Time
+items and URL (YYYY-MM-DD HH:MM Zone) citations to the minute in the named IANA zone.
+Every URL item needs Time; numbered items must be on/after the header's ISO window start.
 Exit 0 valid, 1 invalid, 2 usage error.
 """
 from __future__ import annotations
@@ -35,8 +39,10 @@ import subprocess
 import sys
 import tempfile
 import time
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlsplit
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 LEVELS = ["architecture", "types", "lint", "test", "verification", "ci", "prose", "review"]
 ALIASES = {"static-analysis": "lint", "static analysis": "lint", "docs": "prose", "doc": "prose",
@@ -47,6 +53,158 @@ FIELD_RE = re.compile(r"^\s*[-*]\s*\**([A-Za-z][\w ]*?)\**\s*:\s*(.*)$", re.M)
 PROPOSAL_FIELDS = {"source", "level", "skill", "change"}
 MAX_SOURCE_BYTES = 5 * 1024 * 1024
 FETCH_SECONDS = 20
+DATE = r"\d{4}-\d{2}-\d{2}"
+STATUS_URL_RE = re.compile(
+    r"https?://(?:(?:www|mobile)\.)?(?:x\.com|twitter\.com|api\.fxtwitter\.com)/"
+    r"(?:[\w]+|i/web)/status/(?P<id>\d+)(?![\w/])(?:\?[^\s<>)\]`'\"]*)?"
+)
+STAMP_RE = re.compile(rf"(?P<time>{DATE} \d{{2}}:\d{{2}})[ \t]+(?P<zone>[\w/+\-]+)(?=$|[\s;,)])")
+INLINE_STAMP_RE = re.compile(STATUS_URL_RE.pattern + rf"[)>]?[ \t]*\((?P<stamp>{DATE}[^)\n]*)")
+PROPOSAL_DATE_RES = (
+    re.compile(rf"\b(?P<date>{DATE})[ \t]*\(status[ \t]+(?P<id>\d+)\)"),
+    re.compile(rf"\(status[ \t]+(?P<id>\d+),[ \t]*(?P<date>{DATE})\)"),
+)
+ISO_INSTANT_RE = re.compile(rf"{DATE}T\d{{2}}:\d{{2}}(?::\d{{2}}(?:\.\d+)?)?(?:Z|[+-]\d{{2}}:\d{{2}})")
+
+
+def status_time(status: str) -> datetime:
+    """Decode X's Snowflake milliseconds without floating point or local timezone."""
+    number = int(status)
+    if not 0 < number < 2**64:
+        raise ValueError("status ID must be a positive 64-bit integer")
+    return datetime(1970, 1, 1, tzinfo=timezone.utc) + timedelta(
+        milliseconds=(number >> 22) + 1288834974657)
+
+
+def check_post_time(path: Path, line: int, status: str, written: str,
+                    problems: list[str], *, date_only: bool = False) -> datetime | None:
+    where = f"{path}:{line}: status {status}"
+    try:
+        posted = status_time(status)
+    except (ValueError, OverflowError):
+        problems.append(f"{where}: invalid status ID; copy the numeric ID from the post's status URL")
+        return None
+    if date_only:
+        fmt, zone_name, zone = "%Y-%m-%d", "UTC", timezone.utc
+        stated = written
+    else:
+        match = STAMP_RE.match(written.strip())
+        if not match:
+            problems.append(f"{where}: invalid Time {written!r}; write YYYY-MM-DD HH:MM Zone "
+                            "using the post's created_at converted to an IANA zone (e.g. Asia/Taipei)")
+            return posted
+        stated, zone_name = match['time'], match['zone']
+        fmt = "%Y-%m-%d %H:%M"
+        try:
+            zone = ZoneInfo(zone_name)
+        except (ZoneInfoNotFoundError, ValueError):
+            problems.append(f"{where}: unknown time zone {zone_name!r}; use an IANA zone such as "
+                            "Asia/Taipei or UTC and install the system zoneinfo database if missing")
+            return posted
+    try:
+        datetime.strptime(stated, fmt)
+    except ValueError:
+        problems.append(f"{where}: invalid calendar time {stated!r}; copy the time from the post's "
+                        f"created_at, converted to {zone_name}")
+        return posted
+    actual = posted.astimezone(zone).strftime(fmt)
+    if actual != stated:
+        fix = ("copy the UTC date from the post's created_at" if date_only else
+               "copy the time from the post's created_at, converted to the stated zone")
+        problems.append(f"{where} was posted {actual} {zone_name} "
+                        f"({posted:%Y-%m-%d %H:%M} UTC), not {stated}; {fix}")
+    return posted
+
+
+def proposal_times(path: Path, text: str) -> tuple[list[str], int]:
+    # Proposed test inputs/messages in code are not claims about a cited post.
+    masked = re.sub(r"(?<!`)(`+)(?!`)[\s\S]*?(?<!`)\1(?!`)",
+                    lambda m: re.sub(r"[^\n]", " ", m[0]), text)
+    problems, count = [], 0
+    for line, body in enumerate(masked.splitlines(), 1):
+        for pattern in PROPOSAL_DATE_RES:
+            for match in pattern.finditer(body):
+                count += 1
+                check_post_time(path, line, match['id'], match['date'], problems, date_only=True)
+    return problems, count
+
+
+def check_digest(path: Path) -> dict:
+    """Check independent Markdown items; never borrow a Time from the next item."""
+    problems = []
+    count = items = 0
+    window = None
+    in_header = True
+    numbered = False
+    urls, times, adjacent = [], [], []
+
+    def finish():
+        nonlocal count, items
+        primary = []
+        for line, value in urls:
+            items += 1
+            if not times:
+                problems.append(f"{path}:{line}: URL item {value} has no - Time: line; add "
+                                "- Time: YYYY-MM-DD HH:MM Zone from the post's created_at")
+            for match in STATUS_URL_RE.finditer(value):
+                for time_line, written in times:
+                    count += 1
+                    posted = check_post_time(path, time_line, match['id'], written, problems)
+                    primary.append((line, match['id'], posted))
+                if not times:
+                    try:
+                        primary.append((line, match['id'], status_time(match['id'])))
+                    except (ValueError, OverflowError):
+                        pass  # The missing Time already fails this item.
+        inline_posts = []
+        for line, match in adjacent:
+            count += 1
+            posted = check_post_time(path, line, match['id'], match['stamp'], problems)
+            inline_posts.append((line, match['id'], posted))
+        # Related citations may predate the window; only the numbered item's
+        # primary URL (or inline entries when there is no URL field) is gated.
+        if numbered and window is not None:
+            for line, status, posted in primary if urls else inline_posts:
+                if posted is not None and posted < window:
+                    problems.append(f"{path}:{line}: status {status} was posted {posted.isoformat()} "
+                                    f"before window start {window.isoformat()}; remove it from the numbered "
+                                    "items or correct the header's ISO window start")
+        urls.clear()
+        times.clear()
+        adjacent.clear()
+
+    for line, body in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+        heading = re.match(r"^#{1,6}[ \t]+(.*)", body)
+        listed = re.match(r"^\s*\d+[.)][ \t]+", body)
+        if heading or listed:
+            finish()
+            numbered = bool(listed or re.match(r"\d+[.)][ \t]+", heading[1]))
+            if listed or body.startswith('##'):
+                in_header = False
+        if in_header:
+            label = re.search(r"\bWindow(?:[ \t]+start)?[ \t]*:", body, re.I)
+            instant = ISO_INSTANT_RE.search(body, label.end()) if label else None
+            if instant:
+                try:
+                    window = datetime.fromisoformat(instant[0])
+                except ValueError:
+                    problems.append(f"{path}:{line}: invalid window start {instant[0]!r}; "
+                                    "write a valid ISO instant with Z or a UTC offset")
+        field = re.match(r"^\s*[-*][ \t]+(?:\*\*)?(URL|Time)(?:\*\*)?[ \t]*:[ \t]*(.*)", body, re.I)
+        if field:
+            if field[1].lower() == 'url':
+                if urls:
+                    finish()
+                urls.append((line, field[2]))
+            else:
+                times.append((line, field[2]))
+        adjacent.extend((line, match) for match in INLINE_STAMP_RE.finditer(body))
+    finish()
+    if not items and not count:
+        problems.append(f"{path}: no timestamped digest items; add - URL: and - Time: lines "
+                        "or a status URL followed by (YYYY-MM-DD HH:MM Zone)")
+    return {"file": str(path), "items": items, "timestamps_checked": count,
+            "problems": problems, "warnings": [], "ok": not problems}
 
 
 def normalize(text: str) -> str:
@@ -258,7 +416,8 @@ def check(path: Path, skills_dir: Path | None, do_fetch: bool) -> dict:
     text = path.read_text(encoding="utf-8", errors="replace")
     items = parse(text, with_quotes=do_fetch)
     skills = {p.name for p in skills_dir.iterdir() if (p / "SKILL.md").is_file()} if skills_dir and skills_dir.is_dir() else None
-    problems, warnings = [], []
+    problems, timestamp_count = proposal_times(path, text)
+    warnings = []
     fetched: dict[str, tuple[int, str]] = {}
     unmatched = []
     if not items and not re.search(r"^No proposals(?:[.:]|$)", text, re.M):
@@ -319,6 +478,7 @@ def check(path: Path, skills_dir: Path | None, do_fetch: bool) -> dict:
                             'or put proposed text in backticks')
     det = sum(1 for it in items if it.get("level") in DETERMINISTIC)
     return {"file": str(path), "items": len(items), "deterministic": det, "prose_or_review": len(items) - det,
+            **({"timestamps_checked": timestamp_count} if timestamp_count else {}),
             "problems": problems, "warnings": warnings, "ok": not problems, "quotes_checked": do_fetch,
             "proposals": [{"title": it["title"], "level": it.get("level"), "skill": it["fields"].get("skill"),
                            "urls": it["urls"], "fetch": it.get("fetch")} for it in items]}
@@ -331,39 +491,72 @@ def main(argv: list[str] | None = None) -> int:
                     "skill, and a concrete change. Reads ## proposals and ### proposals with their own Source "
                     "bullets, under an H2 or standalone. Other proposal fields without Source still fail. "
                     "--fetch checks double-quoted phrases (4+ words) in Change/Why against that proposal's "
-                    "fetched sources or collection files. Put proposed messages, commands and test inputs in backticks.",
+                    "fetched sources or collection files. Put proposed messages, commands and test inputs in backticks. "
+                    "Status-ID date/time checks always run locally, including calls from curate.sh --offline.",
         epilog="Fetch: at most 5 MiB per body, curl --max-time 20; GitHub blob URLs also fetch raw file text.\n"
                "api.fxtwitter.com JSON contributes string values. Matching normalizes HTML/entities, case,\n"
                "curly quotes/apostrophes, en/em dashes, Markdown emphasis and whitespace. Ellipsis (...) or\n"
                "… parts must occur in order within one page/file. Local evidence: tracked files plus\n"
                "proposals/ and logs/curator/, excluding the input itself. Collection root is the parent\n"
                "of --skills-dir, or this script's checkout. Without --fetch, quotes are not checked.\n\n"
+               "Timestamps (no network): decode X Snowflake IDs using (id >> 22) + 1288834974657 ms.\n"
+               "Proposals: YYYY-MM-DD (status ID) and (status ID, YYYY-MM-DD) use the UTC date;\n"
+               "backticked/fenced examples are skipped. --digest pairs each - URL: with - Time:\n"
+               "and status URLs immediately followed by (YYYY-MM-DD HH:MM Zone). Times compare\n"
+               "to the minute in the named IANA zone (system zoneinfo required). Every URL item\n"
+               "needs a Time line. Numbered headings/list items must be on/after Window:'s first\n"
+               "ISO instant in the header (Z or offset); related citations may be older.\n"
+               "Fix mismatches by copying created_at converted to the stated zone (UTC for dates).\n\n"
                "examples:\n  check_proposals.py proposals/2026-10-19.md\n"
-               "  check_proposals.py proposals/2026-10-19.md --fetch --skills-dir skills",
+               "  check_proposals.py proposals/2026-10-19.md --fetch --skills-dir skills\n"
+               "  check_proposals.py --digest logs/curator/2026-11-24.x-digest.md",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    ap.add_argument("proposals", type=Path, help="proposals/YYYY-MM-DD.md")
+    ap.add_argument("proposals", type=Path, nargs='?', help="proposals/YYYY-MM-DD.md")
+    ap.add_argument("--digest", type=Path, metavar="FILE",
+                    help="check digest status-ID times offline, alone or alongside a proposals file")
     ap.add_argument("--fragment", action="store_true",
                     help="accept standalone panel output (### proposals or No proposals.); all checks still apply")
     ap.add_argument("--fetch", action="store_true", help="fetch source bodies with curl and verify quotations")
     ap.add_argument("--skills-dir", type=Path, help="validate Skill: names here; parent is the collection for local quotes")
     ap.add_argument("--json", action="store_true", help="machine-readable output")
     args = ap.parse_args(argv)
-    if not args.proposals.is_file():
-        print(f"check_proposals: {args.proposals} not found", file=sys.stderr)
+    if args.proposals is None and args.digest is None:
+        ap.error("provide a proposals FILE or --digest FILE")
+    if args.proposals is None and (args.fetch or args.fragment):
+        ap.error("--fetch and --fragment require a proposals FILE; use --digest FILE alone for offline digest checks")
+    for path in (args.proposals, args.digest):
+        if path is not None and not path.is_file():
+            print(f"check_proposals: {path} not found; provide an existing input file", file=sys.stderr)
+            return 2
+    try:
+        res = check(args.proposals, args.skills_dir, args.fetch) if args.proposals else None
+        digest = check_digest(args.digest) if args.digest else None
+    except OSError as error:
+        print(f"check_proposals: {error}; make the input file readable and rerun", file=sys.stderr)
         return 2
-    res = check(args.proposals, args.skills_dir, args.fetch)
+    if res is None:
+        res = digest
+    elif digest is not None:
+        res['digest'] = digest
+        res['timestamps_checked'] = res.get('timestamps_checked', 0) + digest['timestamps_checked']
+        res['problems'].extend(digest['problems'])
+        res['ok'] = not res['problems']
     if args.json:
         print(json.dumps(res, indent=2))
     else:
-        if not res['quotes_checked']:
+        if args.proposals and not res['quotes_checked']:
             print('quotes not checked (no --fetch)')
         for p in res["problems"]:
             print(f"FAIL  {p}")
         for w in res["warnings"]:
             print(f"warn  {w}")
-        print(f"check_proposals: {'PASS' if res['ok'] else 'FAIL'}: {res['items']} proposal(s), "
-              f"{res['deterministic']} above prose, {res['prose_or_review']} prose/review ({args.proposals})")
+        if args.proposals:
+            print(f"check_proposals: {'PASS' if res['ok'] else 'FAIL'}: {res['items']} proposal(s), "
+                  f"{res['deterministic']} above prose, {res['prose_or_review']} prose/review ({args.proposals})")
+        if digest is not None:
+            print(f"check_digest: {'PASS' if digest['ok'] else 'FAIL'}: "
+                  f"{digest['timestamps_checked']} timestamp(s) ({args.digest})")
     return 0 if res["ok"] else 1
 
 

@@ -29,6 +29,7 @@ $SKILL_DIR/scripts/upstream_diff.sh                     # changed, new, and remo
 $SKILL_DIR/scripts/curate.sh --propose --offline        # no network or LLM: requires a populated local cache
 $SKILL_DIR/scripts/curate.sh --panel PROMPT.md          # seat routing and options: curate.sh --help
 python3 $SKILL_DIR/scripts/check_proposals.py proposals/2026-10-19.md --fetch --skills-dir skills
+python3 $SKILL_DIR/scripts/check_proposals.py --digest logs/curator/2026-11-24.x-digest.md
 $SKILL_DIR/scripts/curate.sh --apply --offline          # deterministic apply: sync changed upstream files into research/upstream/
 ```
 
@@ -66,3 +67,4 @@ Reject unsourced claims, prose that restates an existing rule, and anything that
 - S20 Barnaby Robson, "On pstack" (scheduled daily routines), secondary: https://barnabyrobson.org/on-pstack/
 - Panel routing: [@poteto v0.15.46](https://x.com/poteto/status/2123824683862855898) and [setup-pstack](https://raw.githubusercontent.com/cursor/plugins/005d8f6e8ec057b738adcd08a08b30db0478402d/pstack/skills/setup-pstack/SKILL.md).
 - Quote verification: [reframe](https://raw.githubusercontent.com/cursor/plugins/005d8f6e8ec057b738adcd08a08b30db0478402d/pstack/skills/reframe/SKILL.md) and [cursor/plugins#1324](https://github.com/cursor/plugins/pull/1324).
+- Post timestamps: [Snowflake ID](https://en.wikipedia.org/wiki/Snowflake_ID) and the [misdated post](https://x.com/rachelnabors/status/2124176031011475785).
