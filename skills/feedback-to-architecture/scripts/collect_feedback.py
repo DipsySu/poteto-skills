@@ -57,7 +57,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--since", help="only commits after this date (YYYY-MM-DD or git --since syntax)")
     ap.add_argument("--max-commits", type=int, default=2000, help="newest N commits to read (default 2000)")
     ap.add_argument("--no-git", action="store_true", help="skip commit history")
-    ap.add_argument("--code-comments", action="store_true", help="also include HACK/WORKAROUND/FIXME/XXX comments")
+    ap.add_argument("--code-comments", action="store_true",
+                    help="also include source comments matched by correct/references/excuse-comments.json; "
+                         "the shared no-excuse-comment rule excludes issue numbers and URLs")
     ap.add_argument("--out", type=Path, help="write feedback.json here (default: stdout)")
     args = ap.parse_args(argv)
 
@@ -73,7 +75,11 @@ def main(argv: list[str] | None = None) -> int:
             items += mm.git_items(repo, args.since, args.max_commits)
             git_used = True
             if args.code_comments:
-                items += mm.code_comment_items(repo)
+                try:
+                    items += mm.code_comment_items(repo)
+                except mm.patlint.RulesError as error:
+                    print(f"collect_feedback: {error}; restore {mm.EXCUSE_RULES} from the correct skill", file=sys.stderr)
+                    return 2
         else:
             print(f"collect_feedback: {repo} is not a git repo; skipping commit history", file=sys.stderr)
     for f in args.pr_comments:

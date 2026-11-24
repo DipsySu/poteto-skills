@@ -1,0 +1,247 @@
+{
+  "rules": [
+    {
+      "id": "no-excuse-comment",
+      "include": [
+        "**/*.py",
+        "**/*.pyi",
+        "**/*.js",
+        "**/*.jsx",
+        "**/*.ts",
+        "**/*.tsx",
+        "**/*.mjs",
+        "**/*.cjs",
+        "**/*.mts",
+        "**/*.cts",
+        "**/*.go",
+        "**/*.rs",
+        "**/*.sh",
+        "**/*.bash",
+        "**/*.zsh",
+        "**/*.rb",
+        "**/*.java",
+        "**/*.kt",
+        "**/*.kts",
+        "**/*.swift",
+        "**/*.c",
+        "**/*.h",
+        "**/*.cc",
+        "**/*.cpp",
+        "**/*.cxx",
+        "**/*.hh",
+        "**/*.hpp",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.sql",
+        "**/*.lua",
+        "**/*.html",
+        "**/*.htm",
+        "**/*.xml",
+        "**/*.css",
+        "**/*.scss",
+        "**/*.sass",
+        "**/*.less",
+        "**/*.vue",
+        "**/*.svelte",
+        "**/*.dart",
+        "**/*.m",
+        "**/*.mm"
+      ],
+      "ignore_case": true,
+      "regex": "^(?![^\\r\\n]*(?:#[0-9]+\\b|\\b(?:[a-z][a-z0-9+.-]*://|www\\.)\\S+))(?:[ \\t]*(?:#|//|/\\*|\\*|--|<!--)|(?:[^\"'`/\\r\\n]|\"(?:\\\\.|[^\"\\\\\\r\\n])*\"|'(?:\\\\.|[^'\\\\\\r\\n])*'|`(?:\\\\.|[^`\\\\\\r\\n])*`|(?<=[&<])'[A-Za-z_]\\w*\\b(?!')|/(?!/))*[ \\t](?:#|//))[^\\r\\n]*\\b(?:HACK|WORKAROUND|XXX|FIXME|for[ \\t]+now|temporar(?:y|ily)|quick[ \\t]+fix|band-?aid|fine[ \\t]+for[ \\t]+now|too[ \\t]+risky)\\b",
+      "message": "Fix the root cause in this change, or delete the comment and track the work in an issue written as `TODO(#123)`; an excuse comment licenses a bandaid that the next agent copies.",
+      "tests": [
+        {
+          "expect": "no-excuse-comment",
+          "code": "    # for now, write rows directly; the lock is too slow",
+          "path": "todo/api.py"
+        },
+        {
+          "expect": "no-excuse-comment",
+          "code": "// HACK: retry once",
+          "path": "src/store.js"
+        },
+        {
+          "expect": "no-excuse-comment",
+          "code": "x = load()  # temporary",
+          "path": "todo/store.py"
+        },
+        {
+          "expect": "no-excuse-comment",
+          "code": "/* WORKAROUND: bypass validation */",
+          "path": "src/store.c"
+        },
+        {
+          "expect": "no-excuse-comment",
+          "code": " * FIXME: bypass validation",
+          "path": "src/store.rs"
+        },
+        {
+          "expect": "no-excuse-comment",
+          "code": "-- XXX: bypass validation",
+          "path": "schema.sql"
+        },
+        {
+          "expect": "no-excuse-comment",
+          "code": "<!-- temporary fix until the lock is faster -->",
+          "path": "index.html"
+        },
+        {
+          "expect": "no-excuse-comment",
+          "code": "// temporarily skip validation",
+          "path": "src/store.ts"
+        },
+        {
+          "expect": "no-excuse-comment",
+          "code": "# quick fix: write rows directly",
+          "path": "tool.sh"
+        },
+        {
+          "expect": "no-excuse-comment",
+          "code": "# bandaid: write rows directly",
+          "path": "tool.py"
+        },
+        {
+          "expect": "no-excuse-comment",
+          "code": "# band-aid: write rows directly",
+          "path": "tool.py"
+        },
+        {
+          "expect": "no-excuse-comment",
+          "code": "# fine for now",
+          "path": "tool.py"
+        },
+        {
+          "expect": "no-excuse-comment",
+          "code": "# too risky to change ownership",
+          "path": "tool.py"
+        },
+        {
+          "expect": "no-excuse-comment",
+          "code": "# hack: retry once",
+          "path": "tool.py"
+        },
+        {
+          "expect": "no-excuse-comment",
+          "code": "x = load(); // TEMPORARY",
+          "path": "src/store.go"
+        },
+        {
+          "expect": "no-excuse-comment",
+          "code": "value = \"safe\"  # temporary",
+          "path": "tool.py"
+        },
+        {
+          "expect": "ok",
+          "code": "# TODO(#42): move retries into Store.add",
+          "path": "todo/api.py"
+        },
+        {
+          "expect": "ok",
+          "code": "# TODO(#7): temporary direct write until ownership moves",
+          "path": "todo/store.py"
+        },
+        {
+          "expect": "ok",
+          "code": "# HACK: retry once; tracked in #123",
+          "path": "tool.py"
+        },
+        {
+          "expect": "ok",
+          "code": "// temporary; see https://example.com/issues/42",
+          "path": "src/store.js"
+        },
+        {
+          "expect": "ok",
+          "code": "// https://example.com/issues/42: HACK retry once",
+          "path": "src/store.js"
+        },
+        {
+          "expect": "ok",
+          "code": "# quick fix; see www.example.com/issues/42",
+          "path": "tool.py"
+        },
+        {
+          "expect": "ok",
+          "code": "ap.add_argument(\"--no-code-comments\", action=\"store_true\", help=\"skip HACK/WORKAROUND/FIXME/XXX comments\")",
+          "path": "mine_mistakes.py"
+        },
+        {
+          "expect": "ok",
+          "code": "WORKAROUND_RE = r\"\\b(HACK|WORKAROUND|FIXME|XXX)\\b\"",
+          "path": "mine_mistakes.py"
+        },
+        {
+          "expect": "ok",
+          "code": "value = \" # temporary\"",
+          "path": "tool.py"
+        },
+        {
+          "expect": "ok",
+          "code": "value = ' // HACK'",
+          "path": "tool.js"
+        },
+        {
+          "expect": "ok",
+          "code": "value = ` // temporary`",
+          "path": "tool.js"
+        },
+        {
+          "expect": "ok",
+          "code": "# Store.add owns persistence",
+          "path": "todo/api.py"
+        },
+        {
+          "expect": "ok",
+          "code": "# hackathon and temporary_name are identifiers",
+          "path": "tool.py"
+        },
+        {
+          "expect": "ok",
+          "code": "# temporary",
+          "path": "README.md"
+        },
+        {
+          "expect": "ok",
+          "code": "// temporary",
+          "path": "rules.json"
+        },
+        {
+          "expect": "ok",
+          "code": "HACK = \"temporary\"",
+          "path": "tool.py"
+        },
+        {
+          "expect": "no-excuse-comment",
+          "code": "this.#store.load(); // temporary",
+          "path": "src/store.ts"
+        },
+        {
+          "expect": "no-excuse-comment",
+          "code": "value=${input#prefix} # temporary",
+          "path": "tool.sh"
+        },
+        {
+          "expect": "no-excuse-comment",
+          "code": "let borrowed: &'a str = value; // HACK: avoid ownership",
+          "path": "src/store.rs"
+        },
+        {
+          "expect": "ok",
+          "code": "value = 'HACK # for now'",
+          "path": "tool.py"
+        },
+        {
+          "expect": "no-excuse-comment",
+          "code": "let borrowed: &'a str = value; // HACK: it's slow",
+          "path": "src/store.rs"
+        },
+        {
+          "expect": "no-excuse-comment",
+          "code": "struct Store<'a> { // temporary",
+          "path": "src/store.rs"
+        }
+      ]
+    }
+  ]
+}

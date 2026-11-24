@@ -22,7 +22,7 @@ gh api repos/OWNER/REPO/pulls/comments --paginate > review-comments.json   # opt
 python3 $SKILL_DIR/scripts/mine_mistakes.py . --feedback review-comments.json chat-notes.md   # whole history first
 ```
 
-- Reads reverts and the commits they revert, fix commits (message + changed identifiers), HACK/FIXME/WORKAROUND comments, review comments, and AGENTS.md/CLAUDE.md rules.
+- Reads reverts and the commits they revert, fix commits (message + changed identifiers), excuse comments using the shared lint rule, review comments, and AGENTS.md/CLAUDE.md rules.
 - A class counts once it happened twice (`--min-count 2`; a revert and its target are one occurrence). Leave "seen once" items alone.
 - `REPEAT` = a rule already exists and nothing that runs enforces it. Those go first, fixed higher up, in the same change.
 - The clustering is a start, not a verdict. Read the evidence; split or merge classes and say why.
@@ -52,6 +52,8 @@ $P --test                                # kept proof: run locally and in CI, no
 $P --baseline .patlint-baseline.json --update-baseline .   # adopt existing hits once (ratchet)
 $P --baseline .patlint-baseline.json .                     # the command CI runs
 ```
+
+Copy `no-excuse-comment` from [`references/excuse-comments.json`](references/excuse-comments.json) into the project's `lint-rules.json`, run `$P --test`, and adopt existing comments once with `$P --baseline .patlint-baseline.json --update-baseline .`.
 
 - Each rule keeps `tests`: objects with `expect` (its rule id or `ok`), raw `code`, relative `path`, and optional `from` sha. `--test` fails on missing or noisy matches, or a rule with no case expecting its id. Matching uses the lint's regex flags and include/exclude globs.
 - `--record RULE --commit FIX_SHA` requires removed matching lines and a whole-file hit at the parent with zero hits at the fix; added matching lines fail. It replaces that rule's tests only after proof succeeds. `--record` and `--test` are exclusive modes; ordinary lint still needs paths. For cases from a review without a fix commit, add raw snippets by hand and run `--test`.

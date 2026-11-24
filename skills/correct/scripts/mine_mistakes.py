@@ -8,7 +8,8 @@ Evidence sources:
     (list of {id, body, path, line, user.login, html_url, created_at}), the
     normalized feedback.json written by collect_feedback.py, or markdown notes
     (each bullet or paragraph is one item)
-  * code comments that explain workarounds (HACK, WORKAROUND, FIXME, XXX)
+  * excuse comments matched by references/excuse-comments.json (source files only;
+    comments naming an issue number or URL are already tracked and excluded)
   * AGENTS.md / CLAUDE.md rules: matched against each class; a matching rule that
     nothing enforces marks the class as a repeat
 
@@ -40,6 +41,7 @@ HERE = Path(__file__).resolve().parent
 if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 import rule_table  # noqa: E402  (sibling script)
+import patlint  # noqa: E402  (shared rule loader and matching scope)
 
 FIX_RE = re.compile(
     r"\b(fix(?:es|ed|ing|up)?|bug ?fix|hotfix|regression|broke(?:n)?|oops|typo|forgot|"
@@ -55,7 +57,7 @@ NORMATIVE = re.compile(r"\b(must|never|always|do not|don't|should(?:n't)?|only|a
 REVERT_SUBJECT = re.compile(r'^Revert\s+"', re.I)
 REVERTS_SHA = re.compile(r"This reverts commit ([0-9a-f]{7,40})", re.I)
 TRAILER = re.compile(r"^\s*(Co-Authored-By|Signed-off-by|Reviewed-by|Change-Id|Acked-by|Tested-by)\s*:", re.I)
-WORKAROUND_RE = r"\b(HACK|WORKAROUND|FIXME|XXX)\b"
+EXCUSE_RULES = HERE.parent / "references" / "excuse-comments.json"
 
 STOP = set("""
 a about above after against all also am an and any are as at be because been before being below between both but by
@@ -260,20 +262,31 @@ def git_items(repo: Path, since: str | None = None, max_commits: int = 2000) -> 
 
 
 def code_comment_items(repo: Path, limit: int = 200) -> list[dict]:
+    rules = patlint.load_rules(EXCUSE_RULES)
+    rule = next((r for r in rules if r["id"] == "no-excuse-comment"), None)
+    if rule is None:
+        raise patlint.RulesError(f"{EXCUSE_RULES}: restore the `no-excuse-comment` rule")
+    if limit <= 0:
+        return []
     try:
-        out = run_git(repo, "grep", "-n", "-I", "-E", WORKAROUND_RE)
+        # A portable ERE candidate filter; only the shared rule decides a hit.
+        out = run_git(repo, "grep", "-n", "-I", "-i", "-E", "[#/*-]")
     except RuntimeError:  # git grep exits 1 when nothing matches
         return []
     items = []
-    for ln in out.splitlines()[:limit]:
+    for ln in out.splitlines():
         path, _, rest = ln.partition(":")
         lineno, _, text = rest.partition(":")
+        if not patlint.line_matches(rule, path, text):
+            continue
         text = re.sub(r"^\s*(#+|//+|/\*+|\*+|--|<!--)\s*", "", text).strip()
         if not text:
             continue
         items.append({"id": f"code:{path}:{lineno}", "source": "code-comment", "kind": None, "ref": f"{path}:{lineno}",
                       "text": text, "paths": [path], "line": int(lineno) if lineno.isdigit() else None,
                       "author": None, "date": None, "url": None})
+        if len(items) >= limit:
+            break
     return items
 
 
@@ -662,7 +675,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--threshold", type=float, default=0.3, help="cosine similarity to join a class (default 0.3)")
     ap.add_argument("--max-commits", type=int, default=2000, help="newest N commits to read (default 2000)")
     ap.add_argument("--no-git", action="store_true", help="skip git history (feedback files only)")
-    ap.add_argument("--no-code-comments", action="store_true", help="skip HACK/WORKAROUND/FIXME/XXX comments")
+    ap.add_argument("--no-code-comments", action="store_true",
+                    help="skip source comments matched by correct/references/excuse-comments.json; "
+                         "the shared no-excuse-comment rule excludes issue numbers and URLs")
     ap.add_argument("--json", action="store_true", help="machine-readable output")
     args = ap.parse_args(argv)
 
@@ -678,7 +693,11 @@ def main(argv: list[str] | None = None) -> int:
     if git_ok:
         items += git_items(repo, args.since, args.max_commits)
         if not args.no_code_comments:
-            items += code_comment_items(repo)
+            try:
+                items += code_comment_items(repo)
+            except patlint.RulesError as error:
+                print(f"mine_mistakes: {error}; restore {EXCUSE_RULES} from the correct skill", file=sys.stderr)
+                return 2
     for f in args.feedback:
         if not f.is_file():
             print(f"mine_mistakes: feedback file {f} not found", file=sys.stderr)

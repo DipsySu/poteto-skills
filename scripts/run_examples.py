@@ -1245,6 +1245,80 @@ class Handler(BaseHTTPRequestHandler):
                             for c in mined['classes']), 'direct-JSON class contains both real mistake commit SHAs')
             self.ensure(any('status' in ' '.join(c['signature']).lower() and c['sources'].get('commit',0)>=2
                             for c in mined['classes']), 'status-transition class contains both fix commits')
+            excuse_repo = self.scratch / 'excuse-comments'
+            self.run('git', 'clone', '--quiet', '--no-hardlinks', self.repo, excuse_repo)
+            excuse = "# for now, write rows directly; Store.add's lock is too slow"
+            rewrites = [
+                ('todo/api.py', 'self.reply(201, self.server.store.add(body.get("title")))',
+                 'store = self.server.store\n                rows = store.list_all()\n'
+                 '                row = {"id": len(rows) + 1, "title": body.get("title"), "status": "open"}\n'
+                 '                rows.append(row)\n                ' + excuse + '\n'
+                 '                store.path.write_text(json.dumps(rows))\n                self.reply(201, row)'),
+                ('todo/__main__.py', 'result = store.add(args.title)',
+                 'rows = store.list_all()\n            result = {"id": len(rows) + 1, "title": args.title, "status": "open"}\n'
+                 '            rows.append(result)\n            ' + excuse + '\n'
+                 '            store.path.write_text(json.dumps(rows))'),
+            ]
+            expected_refs = set()
+            for path, before, after in rewrites:
+                file = excuse_repo / path
+                original = file.read_text()
+                self.ensure(original.count(before) == 1, f'excuse fixture replaces the actual Store.add caller in {path}')
+                file.write_text(original.replace(before, after))
+                line = next(n for n, text in enumerate(file.read_text().splitlines(), 1) if text.strip() == excuse)
+                expected_refs.add(f'{path}:{line}')
+                self.run('git', 'add', path, cwd=excuse_repo)
+                self.run('git', '-c', 'user.name=example-dev', '-c', 'user.email=dev@example.local',
+                         '-c', 'commit.gpgsign=false', 'commit', '-qm', f'feat: write rows directly in {path}',
+                         cwd=excuse_repo)
+            comments = self.json(self.script(self.name, 'mine_mistakes.py'), excuse_repo, '--json')
+            evidence = comments['unclassified'] + [item for c in comments['classes'] for item in c['evidence']]
+            self.ensure({item['ref'] for item in evidence if item['source'] == 'code-comment'} == expected_refs,
+                        'mining catches both committed copies of the for-now direct-write excuse at their actual lines')
+            feedback = self.json(self.script('feedback-to-architecture', 'collect_feedback.py'),
+                                 '--repo', excuse_repo, '--code-comments')
+            self.ensure({item['ref'] for item in feedback['items'] if item['source'] == 'code-comment'} == expected_refs,
+                        'collect_feedback --code-comments mines the same two excuse comments through the shared rule')
+            excuse_rules = ROOT / 'skills/correct/references/excuse-comments.json'
+            excuse_rule = json.loads(excuse_rules.read_text())['rules'][0]
+            replay = self.json(self.script(self.name, 'patlint.py'), '--rules', excuse_rules,
+                               '--root', excuse_repo, '--test', '--json')
+            self.ensure(replay['ok'] and {'no-excuse-comment', 'ok'} <= {t['expect'] for t in excuse_rule['tests']},
+                        'no-excuse-comment --test proves both offending comments and quiet code or issue references')
+            excuse_baseline = self.scratch / 'excuse-baseline.json'
+            ratchet = ('--baseline', excuse_baseline)
+            self.lint(excuse_rules, excuse_repo, root=excuse_repo, extra=(*ratchet, '--update-baseline'))
+            self.ensure(json.loads(excuse_baseline.read_text())['counts']['no-excuse-comment'] ==
+                        {'todo/api.py': 1, 'todo/__main__.py': 1},
+                        'first adoption baselines the two existing committed excuse comments')
+            adopted_baseline = excuse_baseline.read_text()
+            store = excuse_repo / 'todo/store.py'
+            original_store = store.read_text()
+            third = '# temporary fix until Store.add\'s lock is faster\n'
+            store.write_text(original_store + '\n' + third)
+            failure = self.run(self.script(self.name, 'patlint.py'), '--rules', excuse_rules,
+                               '--root', excuse_repo, *ratchet, excuse_repo, expected=1)
+            self.ensure('no-excuse-comment' in failure and 'todo/store.py' in failure and excuse_rule['message'] in failure,
+                        'a new excuse comment after baseline exits 1 and names the root-cause or TODO(#123) issue fix')
+            store.write_text(original_store + '\n' + third.replace('# temporary', '# TODO(#7): temporary'))
+            self.ensure(self.lint(excuse_rules, excuse_repo, root=excuse_repo, extra=ratchet)['ok']
+                        and excuse_baseline.read_text() == adopted_baseline,
+                        'the same new comment tracked as TODO(#7) exits 0 without raising the baseline')
+            literal_repo = self.scratch / 'excuse-literals'
+            literal_repo.mkdir()
+            self.run('git', 'init', '-q', cwd=literal_repo)
+            miner_copy = literal_repo / 'mine_mistakes.py'
+            shutil.copyfile(self.script(self.name, 'mine_mistakes.py'), miner_copy)
+            legacy_literals = [r'WORKAROUND_RE = r"\b(HACK|WORKAROUND|FIXME|XXX)\b"',
+                               'ap.add_argument("--no-code-comments", action="store_true", '
+                               'help="skip HACK/WORKAROUND/FIXME/XXX comments")']
+            miner_copy.write_text(miner_copy.read_text() + '\n' + '\n'.join(legacy_literals) + '\n')
+            self.run('git', 'add', 'mine_mistakes.py', cwd=literal_repo)
+            self.run('git', '-c', 'user.name=example-dev', '-c', 'user.email=dev@example.local',
+                     '-c', 'commit.gpgsign=false', 'commit', '-qm', 'test: retain mining source literals', cwd=literal_repo)
+            literals = self.json(self.script(self.name, 'mine_mistakes.py'), literal_repo, '--json')
+            self.ensure(literals['counts'].get('code-comment', 0) == 0,
+                        'a copy of mine_mistakes and its legacy regex/help literals produces no code-comment items')
             self.correct_grok_regressions()
             self.correct_baseline_contract()
             self.review_baseline_retry()
