@@ -97,7 +97,8 @@ def main():
             mapping = (ROOT/'MAPPING.md').read_text()
             require(all(f'`{name}`' in mapping for name in EXPECTED),'MAPPING.md omits a skill')
             output = run(sys.executable,ROOT/'scripts/check_docs.py','--repo',ROOT)
-            return 'required files present; mapping lists every skill; ' + output.strip()
+            prose = run(sys.executable,ROOT/'scripts/prose_budget.py','--repo',ROOT)
+            return 'required files present; mapping lists every skill; ' + output.strip() + '; ' + prose.strip()
         check('docs and mapping',docs)
 
         def install():

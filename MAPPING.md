@@ -36,6 +36,7 @@ Pyramid layers (S1): 1 codebase improvements (architecture, types, invariants) >
 | curator | `upstream_diff.sh [--json]`, `curate.sh [--propose\|--apply] [--offline]` | upstream report, proposals, local curator branch |
 | curator | `curate.sh --panel PROMPT.md [--panel-config FILE] [--allow-single-vendor]`, `run_panel.py` | configured seats, per-seat fragments and stderr, routing and exit codes in the curator log; mixed vendors required unless explicitly overridden |
 | curator | `check_proposals.py [FILE] [--digest FILE] [--fragment] [--fetch] [--skills-dir DIR] [--json]` | every H2 proposal and H3 proposal with its own Source checked independently; with `--fetch`, retains up to 5 MB per source and checks four-word-or-longer quotes in Change/Why against its own sources or collection files; skips backticked text; without `--fetch`, reports quotes not checked; always checks paired UTC dates against X status IDs; `--digest` checks URL/Time pairs and adjacent timestamp parentheses to the minute in the stated zone, missing times, and numbered posts before an ISO window start; can run without a proposals file |
+| collection | `scripts/prose_budget.py [--repo DIR] [--update] [--raise SKILL --reason TEXT] [--json]` | SKILL.md word-count ratchet in `scripts/prose-budget.json`, excluding frontmatter and Sources; exit 1 on growth, missing/orphaned budgets, or branch history; update only lowers budgets, raise records a reason and date |
 
 ## Upstream material not adopted as skills
 
@@ -46,6 +47,8 @@ Pyramid layers (S1): 1 codebase improvements (architecture, types, invariants) >
 | S19 Claude Code adapter | Install paths are handled by `install.sh`. |
 
 ## Reproducible validation
+
+`scripts/prose_budget.py`, also called by `verify.docs()`, gates skill prose after paydown. Use `--update` to record reductions; an intentional raise requires `--raise SKILL --reason TEXT`. Script behavior belongs in `--help` or errors and collection history in CHANGELOG.md. Source: [pstack prose pruning, PR #1249](https://github.com/cursor/plugins/pull/1249).
 
 `scripts/check_docs.py [--repo DIR]`, called by `verify.docs()`, checks collection helper paths and supported command flags, explicit README usage policies, local Markdown links/heading anchors, whole-set counts, and all cited IDs against NOTES.md. Each skill still needs at least one source citation. It resolves `$SKILL_DIR`, `$S/<skill>`, sibling skills, and literal command variables; bare `scripts/` paths are collection-relative. Generated `verify-*`, placeholder paths, and vendored `tools/` commands are excluded. Inline links (including titles/angle destinations), reference links, and Unicode/duplicate heading slugs are supported; remote URLs are not fetched.
 

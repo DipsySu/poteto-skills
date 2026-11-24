@@ -663,6 +663,18 @@ def main(argv: list[str] | None = None) -> int:
                "  patlint.py --rules lint-rules.json --test   # kept proof for CI\n\n"
                "inline exception (same line or the line above):\n"
                "  # patlint: allow RULE_ID reason=why expires=2026-12-31 approved-by=human\n\n"
+               "repository and baseline selection:\n"
+               "  A new rule with untracked hits is not adopted by --update-baseline: its key stays absent.\n"
+               "  Track or ignore those files and rerun; other rules may still be updated. Git lookup failures\n"
+               "  inside a checkout exit 2 without updating the baseline. Ordinary non-git directories fall\n"
+               "  back quietly to filesystem traversal, independent of locale or git diagnostic language.\n"
+               "  Checkout detection uses .git markers, including linked-worktree files.\n"
+               "  The repository comes from --root or the current directory. Git queries ignore inherited\n"
+               "  GIT_DIR / GIT_WORK_TREE so hooks and linked worktrees use that repository's index and ignore\n"
+               "  rules for file and directory arguments. Alternate casing on case-insensitive filesystems\n"
+               "  preserves relative file names and baseline eligibility. A file explicitly named inside\n"
+               "  a nested checkout is linted as given, but its nested index cannot make it baseline-eligible\n"
+               "  in the outer repository.\n\n"
                "exit: 0 clean, 1 violations/expired or invalid exceptions/ratchet refused, 2 usage or rules error",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )

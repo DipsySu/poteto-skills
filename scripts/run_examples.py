@@ -2034,11 +2034,19 @@ raise SystemExit(code)
             self.ensure(not failures, f'zero disables each deadline independently while invalid limits remain errors: {failures}')
         finally:
             target.unlink()
+        # 2026-11-24 #1 moved replay and limit details into --help and history into CHANGELOG.md.
         text = (ROOT / 'skills/formal-verification/SKILL.md').read_text()
-        step4 = text.split('## 4. Leave a project-local skill')[1].split('## 5.')[0]
-        self.ensure(all(term in text and term in step4 for term in
-                        ('--seed N --expect-fail NAME', '90 s', '10 s', '--timeout 0', '--call-timeout 0', 'migration')),
-                    'skill and generated-skill instructions include replay and default-limit migration with opt-outs')
+        self.ensure(all(term in text for term in ('90 s', '10 s', 'gen_check.py --help')),
+                    'formal-verification/SKILL.md states the default limits and points to --help for the rest')
+        self.ensure('migration' not in text.lower() and "main's" not in text,
+                    'formal-verification/SKILL.md carries no migration history for generated skills to copy')
+        for checker in ('gen_check.py', 'bounded_check.py'):
+            usage = self.run(sys.executable, self.script('formal-verification', checker), '--help')
+            terms = ('--expect-fail', '--timeout 0', '--call-timeout 0') if checker == 'gen_check.py' else ('--timeout 0', '--call-timeout 0')
+            self.ensure(all(term in usage for term in terms), f'{checker} --help documents {", ".join(terms)}')
+        changelog = (ROOT / 'CHANGELOG.md').read_text()
+        self.ensure('--timeout 0 --call-timeout 0' in changelog and '--seed N --expect-fail NAME' in changelog,
+                    'CHANGELOG.md keeps the default-limit and replay migration notes')
 
     def review_synchronous_deadlines(self):
         """Advance past deadlines without delivering SIGALRM, including the last covered call."""
@@ -2550,9 +2558,12 @@ print(json.dumps({"code": codes[0], "report": json.loads(out.getvalue()), "stder
                 self.ensure(result['code'] == 0 and result['report']['ok'] and 'WARNING' in warning
                             and '--timeout' in warning and '--call-timeout' in warning and 'not enforced' in warning,
                             f'{file} warns that both limits are not enforced for {scenario}, while stdout stays JSON')
-        text = (ROOT / 'skills/formal-verification/SKILL.md').read_text()
-        self.ensure(all(term in text for term in ('SIGALRM', 'main thread', 'native code', 'external')),
-                    'formal-verification documents timer/thread support, native-code limits and an external deadline')
+        for file in ('bounded_check.py', 'gen_check.py'):
+            text = self.run(sys.executable, self.script('formal-verification', file), '--help').lower()
+            self.ensure(all(term in text for term in ('sigalrm', 'main thread', 'native code', 'external')),
+                        f'{file} --help documents timer/thread support, native-code limits and an external deadline')
+        self.ensure("--help" in (ROOT / 'skills/formal-verification/SKILL.md').read_text(),
+                    'formal-verification/SKILL.md points to the checkers\' --help for timer details')
 
     def generated_properties(self):
         checker = self.script(self.name, 'gen_check.py')
@@ -2847,6 +2858,102 @@ properties = {"copy": (sampled_from([" title "]), check)}
 
     def curator(self):
         with self.case('curator'):
+            # Deliberately broken prose lives only in a scratch collection. These
+            # assertions execute the shipped CLI, including its actual exit code.
+            budget_root = self.scratch/'prose-budget'
+            shutil.copytree(ROOT/'skills', budget_root/'skills',
+                            ignore=shutil.ignore_patterns('__pycache__'))
+            (budget_root/'scripts').mkdir()
+            budget_file = budget_root/'scripts/prose-budget.json'
+            shutil.copyfile(ROOT/'scripts/prose-budget.json', budget_file)
+            budget_checker = ROOT/'scripts/prose_budget.py'
+            budget_command = [sys.executable, budget_checker, '--repo', budget_root]
+            real = self.json(sys.executable, budget_checker, '--repo', ROOT, '--json', cwd=ROOT)
+            self.ensure(real['ok'], 'the real skill collection passes prose budgets after paydown')
+            self.run(*budget_command, '--update', cwd=ROOT)
+            budget_skill = budget_root/'skills/formal-verification/SKILL.md'
+            budget_original = budget_skill.read_text()
+            body, sources_heading, sources = budget_original.partition('\n## Sources\n')
+            self.ensure(bool(sources_heading), 'the prose fixture retains the real Sources section')
+            budgets = json.loads(budget_file.read_text())
+            original_budget = budgets['formal-verification']['budget']
+            twenty_words = ' '.join(f'added{i}' for i in range(20))
+            budget_skill.write_text(body + '\n' + twenty_words + sources_heading + sources)
+            output = self.run(*budget_command, expected=1, cwd=ROOT)
+            self.ensure(f'skills/formal-verification/SKILL.md: {original_budget + 20} words, '
+                        f'budget {original_budget} (+20)' in output,
+                        'the over-budget SKILL.md fixture exits 1 naming the skill, count, and budget')
+            budget_skill.write_text(budget_original + '\n' + twenty_words + '\n')
+            self.run(*budget_command, cwd=ROOT)
+            self.ensure(True, 'adding the same 20 words under Sources does not consume prose budget')
+            budget_skill.write_text(budget_original.replace('\n---\n', '\n# ' + twenty_words + '\n---\n', 1))
+            self.run(*budget_command, cwd=ROOT)
+            self.ensure(True, 'frontmatter words are excluded from the prose budget')
+            fenced_sources = '\n```\n## Sources\n' + twenty_words + '\n```\n'
+            budget_skill.write_text(body + fenced_sources + sources_heading + sources)
+            fenced_report = self.json(*budget_command, '--json', expected=1, cwd=ROOT)
+            self.ensure(any(row['skill'] == 'formal-verification'
+                            and row['words'] == original_budget + len(fenced_sources.split())
+                            for row in fenced_report['skills']),
+                        'a fenced Sources heading cannot hide over-budget body words')
+            resumed_prose = '\n## After sources\n' + twenty_words + '\n'
+            budget_skill.write_text(budget_original + resumed_prose)
+            resumed_report = self.json(*budget_command, '--json', expected=1, cwd=ROOT)
+            self.ensure(any(row['skill'] == 'formal-verification'
+                            and row['words'] == original_budget + len(resumed_prose.split())
+                            for row in resumed_report['skills']),
+                        'counting resumes at the next H2 after the Sources section')
+
+            frontmatter, boundary, prose = body.partition('\n---\n')
+            self.ensure(bool(boundary) and len(prose.split()) >= 20,
+                        'the deletion fixture changes body words without changing frontmatter')
+            shorter = re.sub(r'\S+', '', prose, count=20)
+            budget_skill.write_text(frontmatter + boundary + shorter + sources_heading + sources)
+            self.run(*budget_command, '--update', cwd=ROOT)
+            lowered = budget_file.read_bytes()
+            self.ensure(json.loads(lowered)['formal-verification']['budget'] == original_budget - 20,
+                        'deleting 20 body words and --update lowers the skill budget by 20')
+            self.run(*budget_command, '--update', cwd=ROOT)
+            self.ensure(budget_file.read_bytes() == lowered,
+                        'a second --update leaves the budget file byte-for-byte unchanged')
+            budget_skill.write_text(budget_original)
+            self.run(*budget_command, '--update', expected=1, cwd=ROOT)
+            self.ensure(budget_file.read_bytes() == lowered,
+                        '--update fails on restored extra prose and never raises its budget')
+            self.run(*budget_command, '--raise', 'formal-verification', '--reason', 'adds --exhaustive', cwd=ROOT)
+            raised = json.loads(budget_file.read_text())['formal-verification']
+            self.ensure(raised['budget'] == original_budget and raised['reason'] == 'adds --exhaustive'
+                        and re.fullmatch(r'\d{4}-\d{2}-\d{2}', raised['date']),
+                        '--raise exits 0 and records the current count, review reason, and date')
+
+            history_line = "the defaults are incompatible with main's behavior"
+            budget_skill.write_text(body + '\n' + history_line + sources_heading + sources)
+            history_budget = json.loads(budget_file.read_text())
+            history_budget['formal-verification']['budget'] += len(history_line.split())
+            budget_file.write_text(json.dumps(history_budget, indent=2) + '\n')
+            output = self.run(*budget_command, expected=1, cwd=ROOT)
+            history_report = self.json(*budget_command, '--json', expected=1, cwd=ROOT)
+            history_skill = next(row for row in history_report['skills'] if row['skill'] == 'formal-verification')
+            self.ensure('skills/formal-verification/SKILL.md' in output and 'CHANGELOG.md' in output
+                        and history_skill['words'] == history_skill['budget'],
+                        "the main's fixture exits 1 within its word budget and names CHANGELOG.md as the fix")
+            budget_skill.write_text(budget_original)
+            budget_file.write_text(json.dumps(budgets, indent=2) + '\n')
+            missing_budget = dict(budgets)
+            del missing_budget['formal-verification']
+            budget_file.write_text(json.dumps(missing_budget, indent=2) + '\n')
+            output = self.run(*budget_command, expected=1, cwd=ROOT)
+            self.ensure('formal-verification' in output and '--update' in output,
+                        'a skill without a budget exits 1 and names --update as the fix')
+            orphan_budget = {**budgets, 'missing-skill': {'budget': 0}}
+            budget_file.write_text(json.dumps(orphan_budget, indent=2) + '\n')
+            output = self.run(*budget_command, expected=1, cwd=ROOT)
+            self.ensure('missing-skill' in output,
+                        'a budget entry without a skill exits 1 and names the orphan entry')
+            budget_file.write_text(json.dumps(budgets, indent=2) + '\n')
+            self.run(*budget_command, cwd=ROOT)
+            self.ensure(True, 'restoring the scratch skill and budgets restores a passing collection')
+
             self.docs()
             # Populate a fake cached upstream directly: git init only, no remotes or fetches.
             cache = self.scratch/'cache'

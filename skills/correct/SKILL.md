@@ -11,10 +11,6 @@ Design for the worst-case contributor: an agent that sees only the files it open
 
 `$SKILL_DIR` is the directory holding this file. All scripts: Python 3 stdlib, `--help`, `--json`.
 
-A new rule with untracked hits is not adopted by `--update-baseline`: its rule key stays absent, and stderr explains how to track or ignore the files and rerun. Other rules may still be updated. Git lookup failures inside a worktree exit 2 without updating the baseline; ordinary non-git directories fall back quietly to filesystem traversal regardless of the locale or git diagnostic language. Checkout detection uses `.git` markers (including worktree files), not translated error text.
-
-The repository is resolved from `--root` or the current directory. Git queries ignore inherited `GIT_DIR` / `GIT_WORK_TREE`, so hooks and linked worktrees use that repository's index and ignore rules for both file and directory arguments. Alternate casing of the repository root or its directories on a case-insensitive filesystem preserves relative file names and baseline eligibility. A file explicitly named inside a nested checkout is still linted as given, but that nested index cannot make it eligible for the outer repository's baseline.
-
 ## 1. Mine the classes
 
 ```bash

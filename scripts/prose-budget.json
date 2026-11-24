@@ -1,0 +1,26 @@
+{
+  "architect": {
+    "budget": 558
+  },
+  "correct": {
+    "budget": 1115
+  },
+  "create-verification-skill": {
+    "budget": 1020
+  },
+  "curator": {
+    "budget": 614
+  },
+  "feedback-to-architecture": {
+    "budget": 542
+  },
+  "formal-verification": {
+    "budget": 1268
+  },
+  "maintain-verification-skill": {
+    "budget": 698
+  },
+  "sharpen": {
+    "budget": 275
+  }
+}

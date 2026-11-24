@@ -65,6 +65,7 @@ install.sh                    symlink or copy into Claude Code / Cursor skill di
 research/                     NOTES.md (source inventory) and verbatim upstream snapshots
 examples/todo-app/            example repo the helpers are exercised against
 scripts/verify.sh             the collection's self-check; scripts/run-examples.sh runs every helper for real
+scripts/prose_budget.py       SKILL.md word-count ratchet; budgets in scripts/prose-budget.json
 ```
 
 ## Credits
@@ -79,6 +80,7 @@ The ideas, structure, and much of the vocabulary come from [pstack](https://gith
 ./scripts/verify.sh                   # packaging, syntax, installer, app tests, saved example results
 ./scripts/verify.sh --run-examples    # regenerate example results first
 python3 scripts/check_docs.py         # helper paths/flags, links, counts, every source citation
+python3 scripts/prose_budget.py       # skill prose budgets and misplaced branch history
 ```
 
 The docs check reads README.md, MAPPING.md, and first-party `skills/*/SKILL.md`. It checks supported flags using cached, bounded `--help` calls, without executing examples. A skill's explicit `check-docs: readme-avoid` policy keeps README defaults aligned; other supported flags may appear only in README. Generated `verify-*` and vendored `tools/` commands belong to the target app. Source IDs come from NOTES.md; adding a row needs no checker edit, but any explicit source-range claim must be updated too.
